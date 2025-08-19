@@ -1,0 +1,90 @@
+
+package onnara;
+
+import javax.xml.bind.annotation.XmlAccessType;
+import javax.xml.bind.annotation.XmlAccessorType;
+import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlType;
+
+
+/**
+ * <p>BmsLnkIniComExchangeIdResVO complex type에 대한 Java 클래스입니다.
+ * 
+ * <p>다음 스키마 단편이 이 클래스에 포함되는 필요한 콘텐츠를 지정합니다.
+ * 
+ * <pre>
+ * &lt;complexType name="BmsLnkIniComExchangeIdResVO">
+ *   &lt;complexContent>
+ *     &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
+ *       &lt;sequence>
+ *         &lt;element name="commonResVo" type="{java:gov.bms.lnk.ini.vo}BmsLnkIniCommonResVO"/>
+ *         &lt;element name="exchangeResultIdVo" type="{java:gov.bms.lnk.ini.vo}BmsLnkIniComExchangeResultID"/>
+ *       &lt;/sequence>
+ *     &lt;/restriction>
+ *   &lt;/complexContent>
+ * &lt;/complexType>
+ * </pre>
+ * 
+ * 
+ */
+@XmlAccessorType(XmlAccessType.FIELD)
+@XmlType(name = "BmsLnkIniComExchangeIdResVO", propOrder = {
+    "commonResVo",
+    "exchangeResultIdVo"
+})
+public class BmsLnkIniComExchangeIdResVO {
+
+    @XmlElement(required = true, nillable = true)
+    protected BmsLnkIniCommonResVO commonResVo;
+    @XmlElement(required = true, nillable = true)
+    protected BmsLnkIniComExchangeResultID exchangeResultIdVo;
+
+    /**
+     * commonResVo 속성의 값을 가져옵니다.
+     * 
+     * @return
+     *     possible object is
+     *     {@link BmsLnkIniCommonResVO }
+     *     
+     */
+    public BmsLnkIniCommonResVO getCommonResVo() {
+        return commonResVo;
+    }
+
+    /**
+     * commonResVo 속성의 값을 설정합니다.
+     * 
+     * @param value
+     *     allowed object is
+     *     {@link BmsLnkIniCommonResVO }
+     *     
+     */
+    public void setCommonResVo(BmsLnkIniCommonResVO value) {
+        this.commonResVo = value;
+    }
+
+    /**
+     * exchangeResultIdVo 속성의 값을 가져옵니다.
+     * 
+     * @return
+     *     possible object is
+     *     {@link BmsLnkIniComExchangeResultID }
+     *     
+     */
+    public BmsLnkIniComExchangeResultID getExchangeResultIdVo() {
+        return exchangeResultIdVo;
+    }
+
+    /**
+     * exchangeResultIdVo 속성의 값을 설정합니다.
+     * 
+     * @param value
+     *     allowed object is
+     *     {@link BmsLnkIniComExchangeResultID }
+     *     
+     */
+    public void setExchangeResultIdVo(BmsLnkIniComExchangeResultID value) {
+        this.exchangeResultIdVo = value;
+    }
+
+}

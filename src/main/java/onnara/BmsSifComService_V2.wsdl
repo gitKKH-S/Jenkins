@@ -1,0 +1,255 @@
+<?xml version='1.0' encoding='UTF-8'?><wsdl:definitions xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" xmlns:tns="http://hamoni.mogaha.go.kr/bms" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:ns1="http://schemas.xmlsoap.org/soap/http" name="BmsSifComService_V2" targetNamespace="http://hamoni.mogaha.go.kr/bms">
+  <wsdl:types>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:tns="java:gov.bms.lnk.ini.vo" xmlns:n1="http://hamoni.mogaha.go.kr/bms" attributeFormDefault="qualified" elementFormDefault="qualified" targetNamespace="java:gov.bms.lnk.ini.vo" version="1.0">
+
+  <xs:element name="bmsLnkIniCommonResVO" type="tns:BmsLnkIniCommonResVO"/>
+
+  <xs:complexType name="BmsLnkIniLoginVO">
+    <xs:sequence>
+      <xs:element name="authKey" nillable="true" type="xs:string"/>
+      <xs:element name="deptCd" nillable="true" type="xs:string"/>
+      <xs:element name="loginId" nillable="true" type="xs:string"/>
+      <xs:element name="systemId" nillable="true" type="xs:string"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="BmsLnkIniComExchangeIdResVO">
+    <xs:sequence>
+      <xs:element name="commonResVo" nillable="true" type="tns:BmsLnkIniCommonResVO"/>
+      <xs:element name="exchangeResultIdVo" nillable="true" type="tns:BmsLnkIniComExchangeResultID"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="BmsLnkIniCommonResVO">
+    <xs:sequence>
+      <xs:element name="errConts" nillable="true" type="xs:string"/>
+      <xs:element name="recptDthms" nillable="true" type="xs:string"/>
+      <xs:element name="recptRsltCd" nillable="true" type="xs:string"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="BmsLnkIniComExchangeResultID">
+    <xs:sequence>
+      <xs:element name="exId" nillable="true" type="xs:string"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="BmsLnkIniComAddAttachReqVO">
+    <xs:sequence>
+      <xs:element name="exchangeLinkFileVo" nillable="true" type="tns:BmsLnkIniComExchangeLinkFileVO"/>
+      <xs:element name="loginVo" nillable="true" type="tns:BmsLnkIniLoginVO"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="BmsLnkIniComExchangeLinkFileVO">
+    <xs:sequence>
+      <xs:element name="exID" nillable="true" type="xs:string"/>
+      <xs:element name="fileID" nillable="true" type="xs:string"/>
+      <xs:element name="fileSize" nillable="true" type="xs:string"/>
+      <xs:element name="fileTitle" nillable="true" type="xs:string"/>
+      <xs:element name="systemType" nillable="true" type="xs:string"/>
+      <xs:element name="userID" nillable="true" type="xs:string"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="BmsLnkIniComGetAttachReqVO">
+    <xs:sequence>
+      <xs:element name="fileId" nillable="true" type="xs:string"/>
+      <xs:element name="loginVo" nillable="true" type="tns:BmsLnkIniLoginVO"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="BmsLnkIniComGetAttachResVO">
+    <xs:sequence>
+      <xs:element name="commonResVo" nillable="true" type="tns:BmsLnkIniCommonResVO"/>
+      <xs:element name="fileId" nillable="true" type="xs:string"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="BmsLnkIniComAddFileUpLoadInfoReqVO">
+    <xs:sequence>
+      <xs:element name="exchangeLinkFileVo" nillable="true" type="tns:BmsLnkIniComExchangeLinkFileVO"/>
+      <xs:element name="fileId" nillable="true" type="xs:string"/>
+      <xs:element name="fileName" nillable="true" type="xs:string"/>
+      <xs:element name="fileTitle" nillable="true" type="xs:string"/>
+      <xs:element name="loginVo" nillable="true" type="tns:BmsLnkIniLoginVO"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="BmsLnkIniComAddFileUpLoadInfoResVO">
+    <xs:sequence>
+      <xs:element name="commonResVo" nillable="true" type="tns:BmsLnkIniCommonResVO"/>
+      <xs:element name="fileId" nillable="true" type="xs:string"/>
+      <xs:element name="fileName" nillable="true" type="xs:string"/>
+      <xs:element name="fileTitle" nillable="true" type="xs:string"/>
+    </xs:sequence>
+  </xs:complexType>
+
+</xs:schema>
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:tns="http://hamoni.mogaha.go.kr/bms" xmlns:ns0="java:gov.bms.lnk.ini.vo" attributeFormDefault="unqualified" elementFormDefault="unqualified" targetNamespace="http://hamoni.mogaha.go.kr/bms">
+  <xsd:import namespace="java:gov.bms.lnk.ini.vo"/>
+  <xsd:element name="Exception" type="tns:Exception"/>
+  <xsd:complexType name="Exception">
+    <xsd:sequence>
+      <xsd:element minOccurs="0" name="message" type="xsd:string"/>
+    </xsd:sequence>
+  </xsd:complexType>
+  <xsd:element name="getExchangeID" nillable="true" type="ns0:BmsLnkIniLoginVO"/>
+  <xsd:element name="getExchangeIDResponse" nillable="true" type="ns0:BmsLnkIniComExchangeIdResVO"/>
+  <xsd:element name="addExchangeFileInfo" nillable="true" type="ns0:BmsLnkIniComAddAttachReqVO"/>
+  <xsd:element name="addExchangeFileInfoResponse" nillable="true" type="ns0:BmsLnkIniCommonResVO"/>
+  <xsd:element name="getExchangeFile" nillable="true" type="ns0:BmsLnkIniComGetAttachReqVO"/>
+  <xsd:element name="getExchangeFileResponse" nillable="true" type="ns0:BmsLnkIniComGetAttachResVO"/>
+  <xsd:element name="addFileUpLoadInfo" nillable="true" type="ns0:BmsLnkIniComAddFileUpLoadInfoReqVO"/>
+  <xsd:element name="addFileUpLoadInfoResponse" nillable="true" type="ns0:BmsLnkIniComAddFileUpLoadInfoResVO"/>
+  <xsd:element name="isAliveResponse" nillable="true" type="xsd:boolean"/>
+</xsd:schema>
+  </wsdl:types>
+  <wsdl:message name="isAlive">
+  </wsdl:message>
+  <wsdl:message name="addExchangeFileInfo">
+    <wsdl:part element="tns:addExchangeFileInfo" name="addExchangeFileInfo">
+    </wsdl:part>
+  </wsdl:message>
+  <wsdl:message name="getExchangeIDResponse">
+    <wsdl:part element="tns:getExchangeIDResponse" name="getExchangeIDResponse">
+    </wsdl:part>
+  </wsdl:message>
+  <wsdl:message name="addFileUpLoadInfo">
+    <wsdl:part element="tns:addFileUpLoadInfo" name="addFileUpLoadInfo">
+    </wsdl:part>
+  </wsdl:message>
+  <wsdl:message name="addFileUpLoadInfoResponse">
+    <wsdl:part element="tns:addFileUpLoadInfoResponse" name="addFileUpLoadInfoResponse">
+    </wsdl:part>
+  </wsdl:message>
+  <wsdl:message name="getExchangeFileResponse">
+    <wsdl:part element="tns:getExchangeFileResponse" name="getExchangeFileResponse">
+    </wsdl:part>
+  </wsdl:message>
+  <wsdl:message name="getExchangeFile">
+    <wsdl:part element="tns:getExchangeFile" name="getExchangeFile">
+    </wsdl:part>
+  </wsdl:message>
+  <wsdl:message name="isAliveResponse">
+    <wsdl:part element="tns:isAliveResponse" name="isAliveResponse">
+    </wsdl:part>
+  </wsdl:message>
+  <wsdl:message name="getExchangeID">
+    <wsdl:part element="tns:getExchangeID" name="getExchangeID">
+    </wsdl:part>
+  </wsdl:message>
+  <wsdl:message name="addExchangeFileInfoResponse">
+    <wsdl:part element="tns:addExchangeFileInfoResponse" name="addExchangeFileInfoResponse">
+    </wsdl:part>
+  </wsdl:message>
+  <wsdl:message name="Exception">
+    <wsdl:part element="tns:Exception" name="Exception">
+    </wsdl:part>
+  </wsdl:message>
+  <wsdl:portType name="BmsSifComService_V2Port">
+    <wsdl:operation name="getExchangeID">
+      <wsdl:input message="tns:getExchangeID" name="getExchangeID">
+    </wsdl:input>
+      <wsdl:output message="tns:getExchangeIDResponse" name="getExchangeIDResponse">
+    </wsdl:output>
+      <wsdl:fault message="tns:Exception" name="Exception">
+    </wsdl:fault>
+    </wsdl:operation>
+    <wsdl:operation name="addExchangeFileInfo">
+      <wsdl:input message="tns:addExchangeFileInfo" name="addExchangeFileInfo">
+    </wsdl:input>
+      <wsdl:output message="tns:addExchangeFileInfoResponse" name="addExchangeFileInfoResponse">
+    </wsdl:output>
+      <wsdl:fault message="tns:Exception" name="Exception">
+    </wsdl:fault>
+    </wsdl:operation>
+    <wsdl:operation name="getExchangeFile">
+      <wsdl:input message="tns:getExchangeFile" name="getExchangeFile">
+    </wsdl:input>
+      <wsdl:output message="tns:getExchangeFileResponse" name="getExchangeFileResponse">
+    </wsdl:output>
+      <wsdl:fault message="tns:Exception" name="Exception">
+    </wsdl:fault>
+    </wsdl:operation>
+    <wsdl:operation name="addFileUpLoadInfo">
+      <wsdl:input message="tns:addFileUpLoadInfo" name="addFileUpLoadInfo">
+    </wsdl:input>
+      <wsdl:output message="tns:addFileUpLoadInfoResponse" name="addFileUpLoadInfoResponse">
+    </wsdl:output>
+      <wsdl:fault message="tns:Exception" name="Exception">
+    </wsdl:fault>
+    </wsdl:operation>
+    <wsdl:operation name="isAlive">
+      <wsdl:input message="tns:isAlive" name="isAlive">
+    </wsdl:input>
+      <wsdl:output message="tns:isAliveResponse" name="isAliveResponse">
+    </wsdl:output>
+    </wsdl:operation>
+  </wsdl:portType>
+  <wsdl:binding name="BmsSifComService_V2SoapBinding" type="tns:BmsSifComService_V2Port">
+    <soap:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+    <wsdl:operation name="addExchangeFileInfo">
+      <soap:operation soapAction="" style="document"/>
+      <wsdl:input name="addExchangeFileInfo">
+        <soap:body use="literal"/>
+      </wsdl:input>
+      <wsdl:output name="addExchangeFileInfoResponse">
+        <soap:body use="literal"/>
+      </wsdl:output>
+      <wsdl:fault name="Exception">
+        <soap:fault name="Exception" use="literal"/>
+      </wsdl:fault>
+    </wsdl:operation>
+    <wsdl:operation name="getExchangeID">
+      <soap:operation soapAction="" style="document"/>
+      <wsdl:input name="getExchangeID">
+        <soap:body use="literal"/>
+      </wsdl:input>
+      <wsdl:output name="getExchangeIDResponse">
+        <soap:body use="literal"/>
+      </wsdl:output>
+      <wsdl:fault name="Exception">
+        <soap:fault name="Exception" use="literal"/>
+      </wsdl:fault>
+    </wsdl:operation>
+    <wsdl:operation name="addFileUpLoadInfo">
+      <soap:operation soapAction="" style="document"/>
+      <wsdl:input name="addFileUpLoadInfo">
+        <soap:body use="literal"/>
+      </wsdl:input>
+      <wsdl:output name="addFileUpLoadInfoResponse">
+        <soap:body use="literal"/>
+      </wsdl:output>
+      <wsdl:fault name="Exception">
+        <soap:fault name="Exception" use="literal"/>
+      </wsdl:fault>
+    </wsdl:operation>
+    <wsdl:operation name="getExchangeFile">
+      <soap:operation soapAction="" style="document"/>
+      <wsdl:input name="getExchangeFile">
+        <soap:body use="literal"/>
+      </wsdl:input>
+      <wsdl:output name="getExchangeFileResponse">
+        <soap:body use="literal"/>
+      </wsdl:output>
+      <wsdl:fault name="Exception">
+        <soap:fault name="Exception" use="literal"/>
+      </wsdl:fault>
+    </wsdl:operation>
+    <wsdl:operation name="isAlive">
+      <soap:operation soapAction="" style="document"/>
+      <wsdl:input name="isAlive">
+        <soap:body use="literal"/>
+      </wsdl:input>
+      <wsdl:output name="isAliveResponse">
+        <soap:body use="literal"/>
+      </wsdl:output>
+    </wsdl:operation>
+  </wsdl:binding>
+  <wsdl:service name="BmsSifComService_V2">
+    <wsdl:port binding="tns:BmsSifComService_V2SoapBinding" name="BmsSifComService_V2Port">
+      <soap:address location="http://105.10.2.204/bms/service/BmsSifComService_V2"/>
+    </wsdl:port>
+  </wsdl:service>
+</wsdl:definitions>
