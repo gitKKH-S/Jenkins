@@ -6,36 +6,38 @@ import javax.crypto.SecretKey;
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.PBEKeySpec;
-import javax.naming.Context;
-import javax.naming.directory.DirContext;
-import javax.naming.directory.InitialDirContext;
 import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.xpath.*;
+import org.w3c.dom.Document;
+
 import java.io.*;
+import java.io.ObjectInputFilter;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
+import java.nio.file.attribute.FileAttribute;
+import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.PosixFilePermissions;
 import java.security.*;
 import java.security.spec.KeySpec;
 import java.time.Instant;
 import java.util.*;
 
-import org.w3c.dom.Document;
-import javax.xml.xpath.*;
-
 public class SecureExamples {
 
     // === CWE-89: SQL Injection (준비된 문 사용) ======================================
-    public void sqlSafeQueryExample(String username) throws Exception {
-        // 예시: JDBC가 있다고 가정만 하고, 실 DB연결은 생략
-        // String sql = "SELECT * FROM users WHERE username = ?";  // 안전
+    public void sqlSafeQueryExample(String username) {
+        if (username == null || username.isBlank()) {
+            throw new IllegalArgumentException("username");
+        }
+        // 예시(실제 DB 연결은 생략):
+        // String sql = "SELECT * FROM users WHERE username = ?";
         // try (Connection c = ds.getConnection();
         //      PreparedStatement ps = c.prepareStatement(sql)) {
         //     ps.setString(1, username);
         //     try (ResultSet rs = ps.executeQuery()) { ... }
         // }
-        if (username == null) throw new IllegalArgumentException("username");
         System.out.println("[CWE-89] PreparedStatement로 파라미터 바인딩");
     }
 
@@ -54,9 +56,9 @@ public class SecureExamples {
     public void safeCommandExec(String cmd) throws Exception {
         Set<String> allow = Set.of("ipconfig", "whoami", "dir");
         if (!allow.contains(cmd)) throw new SecurityException("Command not allowed");
-        ProcessBuilder pb = new ProcessBuilder(cmd); // 인자 분리, 쉘 미사용
+        ProcessBuilder pb = new ProcessBuilder(cmd); // 쉘 미사용, 인자 분리
         pb.redirectErrorStream(true);
-        // Process p = pb.start(); try (BufferedReader br = ...) { ... }
+        // try (BufferedReader br = new BufferedReader(new InputStreamReader(pb.start().getInputStream()))) { ... }
         System.out.println("[CWE-78] Allowed command exec: " + cmd);
     }
 
@@ -74,7 +76,6 @@ public class SecureExamples {
 
     // === CWE-502: 역직렬화 안전 (필터/화이트리스트 & 자바 직렬화 지양) ================
     public static byte[] sampleSerialized() throws IOException {
-        // 데모용 직렬화 바이트
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         try (ObjectOutputStream oos = new ObjectOutputStream(bos)) {
             oos.writeObject("SAFE");
@@ -83,9 +84,9 @@ public class SecureExamples {
     }
     public void deserializeSafely(byte[] data) throws Exception {
         try (ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(data))) {
-            // Java 9+ 필터: 허용 타입만
+            // JDK 9+ per-stream 필터: 허용 타입만
             ObjectInputFilter filter = ObjectInputFilter.Config.createFilter("java.lang.String;!*");
-            ObjectInputFilter.Config.setObjectInputFilter(ois, filter);
+            ois.setObjectInputFilter(filter);
             Object obj = ois.readObject();
             if (!(obj instanceof String)) throw new SecurityException("Unexpected type");
             System.out.println("[CWE-502] Deserialized allowed type: " + obj);
@@ -96,12 +97,11 @@ public class SecureExamples {
     public void passwordHashAndVerify(String password) throws Exception {
         byte[] salt = new byte[16];
         SecureRandom.getInstanceStrong().nextBytes(salt);
-        int iter = 120_000; // 정책에 맞게 상향 가능
+        int iter = 120_000;
         KeySpec spec = new PBEKeySpec(password.toCharArray(), salt, iter, 256);
         SecretKeyFactory skf = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256");
         byte[] hash = skf.generateSecret(spec).getEncoded();
 
-        // 검증 샘플
         boolean ok = verifyPassword(password, salt, iter, hash);
         System.out.println("[CWE-759/760/916] Password verified=" + ok);
     }
@@ -109,7 +109,7 @@ public class SecureExamples {
         KeySpec spec = new PBEKeySpec(password.toCharArray(), salt, iter, expected.length * 8);
         SecretKeyFactory skf = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256");
         byte[] got = skf.generateSecret(spec).getEncoded();
-        return constantTimeEquals(expected, got); // 타이밍 완화
+        return constantTimeEquals(expected, got);
     }
 
     // === CWE-327/326: 안전한 대칭키 암호 (AES/GCM, ECB 금지) =========================
@@ -145,18 +145,17 @@ public class SecureExamples {
         String masked = secret.replaceAll(".", "*");
         System.out.println("[CWE-532] log info=" + info + ", secret=" + masked);
         try {
-            throw new IOException("Internal I/O"); // 내부적으로만 상세
+            throw new IOException("Internal I/O");
         } catch (IOException e) {
             System.out.println("[CWE-209] Error occurred. Please contact support with code=" + Instant.now().toEpochMilli());
-            // 내부 로거엔 e를 남기되, 외부 출력은 최소화
+            // 내부 로거에는 e를 남기세요(예: Logger.error("...", e));
         }
     }
 
     // === CWE-601: 열린 리다이렉트 방지 (상대경로/허용 호스트만 허용) ==================
-    public void preventOpenRedirect(String target) throws Exception {
+    public void preventOpenRedirect(String target) {
         URI uri = URI.create(target);
         if (uri.isAbsolute()) throw new SecurityException("Absolute URL not allowed");
-        // 또는 화이트리스트 도메인만 허용
         System.out.println("[CWE-601] Redirect to relative path: " + uri);
     }
 
@@ -188,10 +187,9 @@ public class SecureExamples {
     }
 
     // === CWE-90: LDAP Injection 방지 (필터 이스케이프) ================================
-    public void ldapSafeSearch(String username) throws Exception {
+    public void ldapSafeSearch(String username) {
         String escaped = ldapEscape(username);
-        String filter = "(uid=" + escaped + ")";  // 안전 필터
-        // DirContext ctx = new InitialDirContext(env); ctx.search("ou=people", filter, controls);
+        String filter = "(uid=" + escaped + ")";
         System.out.println("[CWE-90] LDAP filter=" + filter);
     }
     private String ldapEscape(String v) {
@@ -210,7 +208,7 @@ public class SecureExamples {
         Document doc = f.newDocumentBuilder()
                 .parse(new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8)));
 
-        String safe = id.replace("'", "&apos;"); // 가장 간단 이스케이프(전처리 검증 병행 권장)
+        String safe = id.replace("'", "&apos;"); // 간단 이스케이프(실무는 검증 병행)
         XPath xp = XPathFactory.newInstance().newXPath();
         String expr = String.format("//id[text()='%s']", safe);
         String val = xp.evaluate(expr, doc);
@@ -220,7 +218,8 @@ public class SecureExamples {
     // === CWE-772: 리소스 해제 누락 방지 (try-with-resources) =========================
     public void tryWithResourcesDemo() throws Exception {
         Path p = Paths.get("example.txt");
-        try (BufferedWriter w = Files.newBufferedWriter(p, StandardCharsets.UTF_8, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING)) {
+        try (BufferedWriter w = Files.newBufferedWriter(p, StandardCharsets.UTF_8,
+                StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING)) {
             w.write("hello");
         }
         System.out.println("[CWE-772] File written safely");
@@ -235,7 +234,6 @@ public class SecureExamples {
     // === CWE-732: 중요 리소스 권한 과다 배정 방지 ====================================
     public void writeFileWithLeastPrivilege() throws Exception {
         Path p = Paths.get("secure-data.txt");
-        // Windows에서도 동작하지만 POSIX 권한은 *nix에서만 적용
         Set<PosixFilePermission> perms = PosixFilePermissions.fromString("rw-------"); // 600
         FileAttribute<Set<PosixFilePermission>> attr = PosixFilePermissions.asFileAttribute(perms);
         try {
