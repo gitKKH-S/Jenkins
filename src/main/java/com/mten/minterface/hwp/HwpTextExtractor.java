@@ -33,7 +33,6 @@ import java.io.Writer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.mten.minterface.hwp.v3.HwpTextExtractorV3;
 import com.mten.minterface.hwp.v5.HwpTextExtractorV5;
 
 
