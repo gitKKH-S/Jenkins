@@ -116,11 +116,11 @@
     </dependency>
 
     <!-- [선택] eGovFrame - 중앙 저장소에 없으면 주석 유지 후 아래 'C. eGov 처리' 참고 -->
-  <dependency>
-    <groupId>egovframework.rte</groupId>
-    <artifactId>egovframework.rte.fdl.property</artifactId>
-    <version>3.10.0</version>
-  </dependency>
+<dependency>
+  <groupId>egovframework.rte</groupId>
+  <artifactId>egovframework.rte.fdl.property</artifactId>
+  <version>3.6.0</version>
+</dependency>
   </dependencies>
 
   <build>
