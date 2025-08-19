@@ -7,109 +7,36 @@
   <groupId>org.example</groupId>
   <artifactId>Jenkins</artifactId>
   <version>1.0-SNAPSHOT</version>
-
-  <!-- 웹앱 구조로 이사 → war 패키징 -->
   <packaging>war</packaging>
 
   <properties>
     <maven.compiler.source>17</maven.compiler.source>
     <maven.compiler.target>17</maven.compiler.target>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <failOnMissingWebXml>false</failOnMissingWebXml>
+    <maven.compiler.showDeprecation>true</maven.compiler.showDeprecation>
   </properties>
 
-  <!-- 외부 소스(서블릿/Spring/POI/HttpClient/json-lib 등) 컴파일용 의존성 -->
+  <!-- 필요 최소한의 웹/서블릿 API (코드에 javax.servlet.* 사용 시) -->
   <dependencies>
-    <!-- 서블릿 API (javax.* 기반, 컨테이너 제공) -->
     <dependency>
       <groupId>javax.servlet</groupId>
       <artifactId>javax.servlet-api</artifactId>
       <version>4.0.1</version>
       <scope>provided</scope>
     </dependency>
-
-    <!-- Spring MVC (javax.servlet 기반 마지막 LTS 라인) -->
+    <!-- JSP를 쓰면 열어두세요
     <dependency>
-      <groupId>org.springframework</groupId>
-      <artifactId>spring-webmvc</artifactId>
-      <version>5.3.36</version>
+      <groupId>javax.servlet.jsp</groupId>
+      <artifactId>javax.servlet.jsp-api</artifactId>
+      <version>2.3.3</version>
+      <scope>provided</scope>
     </dependency>
-
-    <!-- Apache Commons -->
-    <dependency>
-      <groupId>commons-codec</groupId>
-      <artifactId>commons-codec</artifactId>
-      <version>1.16.1</version>
-    </dependency>
-    <dependency>
-      <groupId>commons-logging</groupId>
-      <artifactId>commons-logging</artifactId>
-      <version>1.2</version>
-    </dependency>
-
-    <!-- Jackson -->
-    <dependency>
-      <groupId>com.fasterxml.jackson.core</groupId>
-      <artifactId>jackson-databind</artifactId>
-      <version>2.17.2</version>
-    </dependency>
-
-    <!-- json-lib (net.sf.json) - 구프로젝트 호환용: 보조 의존성도 함께 명시 -->
-    <dependency>
-      <groupId>net.sf.json-lib</groupId>
-      <artifactId>json-lib</artifactId>
-      <version>2.4</version>
-      <classifier>jdk15</classifier>
-    </dependency>
-    <dependency>
-      <groupId>commons-beanutils</groupId>
-      <artifactId>commons-beanutils</artifactId>
-      <version>1.9.4</version>
-    </dependency>
-    <dependency>
-      <groupId>commons-collections</groupId>
-      <artifactId>commons-collections</artifactId>
-      <version>3.2.2</version>
-    </dependency>
-    <dependency>
-      <groupId>commons-lang</groupId>
-      <artifactId>commons-lang</artifactId>
-      <version>2.6</version>
-    </dependency>
-    <dependency>
-      <groupId>net.sf.ezmorph</groupId>
-      <artifactId>ezmorph</artifactId>
-      <version>1.0.6</version>
-    </dependency>
-
-    <!-- HttpComponents (org.apache.http.* / params 포함 라인) -->
-    <dependency>
-      <groupId>org.apache.httpcomponents</groupId>
-      <artifactId>httpclient</artifactId>
-      <version>4.5.14</version>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.httpcomponents</groupId>
-      <artifactId>httpmime</artifactId>
-      <version>4.5.14</version>
-    </dependency>
-
-    <!-- Apache POI (HSSF/XSSF/POIFS 등) -->
-    <dependency>
-      <groupId>org.apache.poi</groupId>
-      <artifactId>poi</artifactId>
-      <version>5.2.5</version>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.poi</groupId>
-      <artifactId>poi-ooxml</artifactId>
-      <version>5.2.5</version>
-    </dependency>
+    -->
   </dependencies>
 
   <build>
     <plugins>
-      <!-- 컴파일러 -->
+      <!-- Java 컴파일러 -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
@@ -121,24 +48,15 @@
         </configuration>
       </plugin>
 
-      <!-- 리소스 인코딩 통일 -->
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-resources-plugin</artifactId>
-        <version>3.3.1</version>
-        <configuration>
-          <encoding>${project.build.sourceEncoding}</encoding>
-        </configuration>
-      </plugin>
-
-      <!-- WAR 플러그인 (Servlet 3+ 환경에서 web.xml 없어도 빌드) -->
+      <!-- WAR 패키징 (packaging이 war일 때) -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-war-plugin</artifactId>
         <version>3.4.0</version>
         <configuration>
-          <failOnMissingWebXml>${failOnMissingWebXml}</failOnMissingWebXml>
-          <!-- 기본 webapp 디렉터리: src/main/webapp -->
+          <failOnMissingWebXml>false</failOnMissingWebXml>
+          <!-- 기존 webapps를 webapp 루트로 쓰고 싶으면 경로 조정 -->
+          <!-- <warSourceDirectory>${basedir}/src/main/webapp</warSourceDirectory> -->
         </configuration>
       </plugin>
 
@@ -161,8 +79,6 @@
           <threshold>Low</threshold>
           <includeTests>true</includeTests>
           <failOnError>false</failOnError>
-          <!-- Jenkins 에이전트에서 인코딩 문제 방지용 -->
-          <jvmArgs>-Dfile.encoding=${project.build.sourceEncoding}</jvmArgs>
         </configuration>
         <executions>
           <execution>
@@ -174,6 +90,38 @@
         </executions>
       </plugin>
 
-      <!-- PMD (룰셋 명시 + CPD) -->
+      <!-- PMD + CPD -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-pmd-plugin</artifactId>
+        <version>3.27.0</version>
+        <configuration>
+          <rulesets>
+            <ruleset>category/java/bestpractices.xml</ruleset>
+            <ruleset>category/java/codestyle.xml</ruleset>
+            <ruleset>category/java/design.xml</ruleset>
+            <ruleset>category/java/documentation.xml</ruleset>
+            <ruleset>category/java/errorprone.xml</ruleset>
+            <ruleset>category/java/performance.xml</ruleset>
+            <ruleset>category/java/security.xml</ruleset>
+            <ruleset>category/java/multithreading.xml</ruleset>
+          </rulesets>
+          <includeTests>true</includeTests>
+          <linkXRef>false</linkXRef>
+          <failOnViolation>false</failOnViolation>
+          <printFailingErrors>true</printFailingErrors>
+        </configuration>
+        <executions>
+          <execution>
+            <phase>verify</phase>
+            <goals>
+              <goal>pmd</goal>
+              <goal>cpd</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+
+    </plugins>
+  </build>
+</project>
