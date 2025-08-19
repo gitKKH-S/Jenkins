@@ -1,0 +1,1035 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "/WEB-INF/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="lawifSql">
+	<!-- lawkorea Insert -->
+	<insert id="setInsertLaw" parameterType="HashMap">
+		INSERT INTO TB_LM_LAWKOREA
+		(
+			LAWSID,PLAWSID,REVCHA, STATECD, LAWNAME, LAWID, PROMULDT, PROMULNO, REVCD, DEPTCODE, DEPT, LAWGBN, STARTDT, OTHERLAWYN, LAWURL, INSERTDT, LAWBON
+		)
+		VALUES
+		(
+			#{lawsid},#{lawsid},'0', #{statecd}, #{lawname}, #{lawid}, #{promuldt}, #{promulno}, #{revcd}, 
+			#{deptcode}, #{dept}, #{lawgbn}, #{startdt}, #{otherlawyn}, #{lawurl}, to_char(sysdate,'YYYY-MM-DD'), #{lawbon}
+		)
+	</insert>
+	
+	<insert id="setInsertByLaw" parameterType="HashMap">
+		INSERT INTO TB_LM_BYLAWKOREA
+           (BYLAWID
+		   ,PBYLAWID
+		   ,REVCHA
+           ,BYLAWNO
+           ,BYLAWNAME
+           ,BYLAWCD
+           ,APPOINTDT
+           ,APPOINTNO
+           ,BYLAWDEPT
+           ,STATECD
+           ,REVCDCODE
+           ,REVCD
+           ,BYLAWURL
+           ,STARTDT
+           ,NEWDT
+           ,BYLAWBON
+           ,INSERTDT)
+     VALUES
+           (#{bylawid}
+		   ,#{pbylawid}
+		   ,#{revcha}
+           ,#{bylawno}
+           ,#{bylawname}
+           ,#{bylawcd}
+           ,#{appointdt}
+           ,#{appointno}
+           ,#{bylawdept}
+           ,#{statecd}
+           ,#{revcdcode}
+           ,#{revcd}
+           ,#{bylawurl}
+           ,#{startdt}
+           ,#{newdt}
+           ,#{bylawbon}
+           ,to_char(sysdate,'YYYY-MM-DD'))
+	</insert>
+	
+	<insert id="setInsertLawFile" parameterType="HashMap">
+		INSERT INTO TB_LM_LAWKOREAFILE
+		(
+			LAWSID,LAWID,BYULKEY, NUM,SUBNUM,BYULTITLE,BYULGBN,FILECONTENT,SFILENAME
+		)
+		VALUES
+		(
+			#{lawsid},#{lawid},#{byulkey}, #{num}, #{subnum}, #{byultitle}, #{byulgbn}, #{filecontent}, #{sfilenm}
+		)
+
+	</insert>
+	
+	<insert id="setInsertByLawFile" parameterType="HashMap">
+		INSERT INTO TB_LM_BYLAWKOREAFILE
+		(
+			BYLAWID,BYLAWNO,BYULKEY, NUM,SUBNUM,BYULTITLE,BYULGBN,FILECONTENT,SFILENAME
+		)
+		VALUES
+		(
+			#{bylawid},#{bylawno},#{byulkey}, #{num}, #{subnum}, #{byultitle}, #{byulgbn}, #{filecontent}, #{sfilenm}
+		)
+
+	</insert>
+	
+	<select id="selectLawFile" resultType="HashMap">
+		select * from TB_LM_LAWKOREAFILE where lawsid=#{lawsid} and byulkey=#{byulkey} 
+	</select>
+	
+	<!-- 법령리스트 가져오기 -->
+	<select id="getLawList"  resultType="HashMap">
+		SELECT b.* FROM    
+		(       
+		    SELECT a.* , ceil(ROWNUM/#{pagesize})  PAGE ,ROWNUM AS ROWNUMBER FROM        
+		    (           
+		        SELECT LAWSID,LAWNAME,LAWID,PROMULDT,PROMULNO,REVCD,DEPTCODE,DEPT,LAWGBN,STARTDT
+				FROM  TB_LM_LAWKOREA 	
+				<trim prefix="WHERE" prefixOverrides="AND |OR ">
+					<if test="Schtxt != null and Schtxt != ''">
+					(
+						<trim prefix="" prefixOverrides="AND |OR ">
+							<if test='stitle == "Y"'>
+								or LAWNAME LIKE '%'||#{Schtxt}||'%' 
+							</if>
+							<if test='sdept == "Y"'>
+								or dept LIKE '%'||#{Schtxt}||'%' 
+							</if>
+						</trim>
+					)
+					</if>
+				</trim>
+				
+				<if test="orderby != ''">
+					${orderby}
+				</if> 
+				<if test="orderby == '' or orderby == null ">
+					ORDER BY PROMULDT DESC
+				</if> 
+		    ) a   
+		) b 
+		<trim prefix="WHERE" prefixOverrides="AND |OR ">
+			<if test="pageno != ''">
+				page = #{pageno}
+			</if> 
+		</trim> 
+	</select>
+	
+	<select id="getLawListCnt"  resultType="int">
+		SELECT count(*)
+		FROM  TB_LM_LAWKOREA 	
+		<trim prefix="WHERE" prefixOverrides="AND |OR ">
+			<if test="Schtxt != null and Schtxt != ''">
+			(
+				<trim prefix="" prefixOverrides="AND |OR ">
+					<if test='stitle == "Y"'>
+						or LAWNAME LIKE '%'||#{Schtxt}||'%' 
+					</if>
+					<if test='sdept == "Y"'>
+						or dept LIKE '%'||#{Schtxt}||'%' 
+					</if>
+				</trim>
+			)
+			</if>
+		</trim>
+	</select>
+	
+	<!-- 법령리스트 가져오기 -->
+	<select id="getByLawList"  resultType="HashMap">
+		SELECT b.* FROM    
+		(       
+		    SELECT a.* , ceil(ROWNUM/#{pagesize})  page ,ROWNUM AS ROWNUMBER FROM        
+		    (           
+		        SELECT BYLAWID, PBYLAWID, REVCHA, BYLAWNO, BYLAWNAME, BYLAWCD, APPOINTDT, APPOINTNO, BYLAWDEPT, STATECD, REVCDCODE, REVCD, BYLAWURL, STARTDT, NEWDT
+				FROM  TB_LM_BYLAWKOREA 	
+				<trim prefix="WHERE" prefixOverrides="AND |OR ">
+					<if test="Schtxt != null and Schtxt != ''">
+					(
+						<trim prefix="" prefixOverrides="AND |OR ">
+							<if test='stitle == "Y"'>
+								or BYLAWNAME LIKE '%'||#{Schtxt}||'%' 
+							</if>
+							<if test='sdept == "Y"'>
+								or BYLAWDEPT LIKE '%'||#{Schtxt}||'%' 
+							</if>
+						</trim>
+					)
+					</if>
+				</trim>
+				<if test="orderby != ''">
+					${orderby}
+				</if> 
+				<if test="orderby == '' or orderby == null ">
+					ORDER BY STARTDT DESC
+				</if> 
+		    ) a   
+		) b 
+		<trim prefix="WHERE" prefixOverrides="AND |OR ">
+			<if test="pageno != ''">
+				page = #{pageno}
+			</if> 
+		</trim> 
+	</select>
+	
+	<select id="getByLawListCnt"  resultType="int">
+		SELECT count(*)
+		FROM  TB_LM_BYLAWKOREA 	
+		<trim prefix="WHERE" prefixOverrides="AND |OR ">
+			<if test="Schtxt != null and Schtxt != ''">
+			(
+				<trim prefix="" prefixOverrides="AND |OR ">
+					<if test='stitle == "Y"'>
+						or BYLAWNAME LIKE '%'||#{Schtxt}||'%' 
+					</if>
+					<if test='sdept == "Y"'>
+						or BYLAWDEPT LIKE '%'||#{Schtxt}||'%' 
+					</if>
+				</trim>
+			)
+			</if>
+		</trim>
+	</select>
+	
+	<resultMap type="HashMap" id="lawinfodata">
+        <result property="LAWBON" column="LAWBON" jdbcType="CLOB" javaType="java.lang.String" />
+        <result property="BYLAWBON" column="BYLAWBON" jdbcType="CLOB" javaType="java.lang.String" />
+    </resultMap>
+    
+	<select id="getLawBon" resultType="HashMap">
+		select * from TB_LM_LAWKOREA where lawid=#{LAWID}
+	</select>
+	
+	<select id="getByLawBon" resultType="HashMap">
+		select * from TB_LM_BYLAWKOREA where BYLAWID=#{BYLAWID}
+	</select>
+	
+	
+	<!-- 법령관리 정보수정 -->
+	<update id="setUpdateLaw" parameterType="HashMap" >
+		UPDATE TB_LM_LAWKOREA SET
+			SYNONYM2=#{synonym2}
+		WHERE ID=#{id}	
+	</update>
+	
+	<!-- 현행법령 업데이트를 위한 select -->
+	<select id="getSelectId"  resultType="HashMap">
+		SELECT LAWSID,LAWNAME,LAWID
+		FROM  TB_LM_LAWKOREA 	
+	</select>
+	
+	<!-- 현행법령 업데이트를 위한 select -->
+	<select id="getSelectId2"  resultType="HashMap">
+		SELECT BYLAWID,BYLAWNAME,BYLAWNO
+		FROM  TB_LM_BYLAWKOREA 	
+	</select>
+	
+	<!-- 현행법령 업데이트를 위한 update -->
+	<update id="setUpdate" parameterType="HashMap" >
+		UPDATE TB_LM_LAWKOREA SET
+			LAWNAME=#{lawname}, CS7=#{cs7}, PROMULDT=#{promuldt}, PROMULNO=#{promulno}, LAWNUM=#{lawnum}
+		WHERE ID=#{id}	
+	</update>
+	
+	<!-- 현행법령 업데이트를 위한 delete -->
+	<delete id="setDelete"  parameterType="HashMap">
+		DELETE FROM  TB_LM_LAWKOREA 
+		WHERE LAWSID=#{LAWSID} and LAWID = #{LAWID}	
+	</delete>
+	
+	<!-- 현행법령 업데이트를 위한 delete -->
+	<delete id="setDelete2"  parameterType="HashMap">
+		DELETE FROM  TB_LM_LAWKOREAFILE 
+		WHERE LAWSID=#{LAWSID} and LAWID = #{LAWID}	
+	</delete>
+	
+	
+	<!-- 행정규칙 업데이트를 위한 delete -->
+	<delete id="setBylawDelete"  parameterType="HashMap">
+		DELETE FROM  TB_LM_BYLAWKOREA 
+		WHERE BYLAWID=#{BYLAWID} and BYLAWNO = #{BYLAWNO}	
+	</delete>
+	
+	<!-- 행정규칙 업데이트를 위한 delete -->
+	<delete id="setBylawDelete2"  parameterType="HashMap">
+		DELETE FROM  TB_LM_BYLAWKOREAFILE 
+		WHERE BYLAWID=#{BYLAWID} and BYLAWNO = #{BYLAWNO}	
+	</delete>
+	
+	<!-- 사용자화면에 보여줄 현행법령 리스트  -->
+	<select id="getBbsList" resultType="HashMap">
+		SELECT * 
+		FROM (
+        		SELECT a.* , ceil(ROWNUM/#{pagesize})  page  
+        		FROM ( 
+               			 select  lawname, id, cs7, promuldt, promulno, lawnum, synonym2  from  TB_LM_LAWKOREA 
+               			 <trim prefix="WHERE" prefixOverrides="AND |OR ">
+               			 	<if test="schtxt != null and schtxt != ''">
+               			 		LAWNAME LIKE '%'||#{schtxt}||'%'
+               			 	</if>
+						 </trim>
+						 order by 1 
+               			 
+             		 ) a
+    		  )  		
+		<trim prefix="WHERE" prefixOverrides="AND |OR ">
+			<if test="pageno != null and pageno != ''">
+				page = #{pageno}
+			</if>
+		</trim>
+	</select>
+	
+	<!-- 사용자화면에 보여줄 현행법령 리스트 건수 -->
+	<select id="getTotal"  resultType="int">
+		SELECT COUNT(*) 
+		FROM  TB_LM_LAWKOREA 	
+		<trim prefix="WHERE" prefixOverrides="AND |OR ">
+			<if test="schtxt != null and schtxt != ''">
+			LAWNAME LIKE '%'||#{schtxt}||'%' 
+			</if>
+		</trim>
+	</select>
+	
+	<!-- 사용자화면에 보여줄 현행법령 URL -->
+	<select id="getUrl"  resultType="String">
+		SELECT CS7 
+		FROM  TB_LM_LAWKOREA 	
+		WHERE ID=#{id}
+	</select>
+	
+	<!-- 씽크페어에 보낼 리스트 작성 -->
+	<select id="getThinkLaw" resultType="HashMap">
+		SELECT b.* FROM    
+		(       
+		    SELECT a.* , ceil(ROWNUM/#{pagesize})  PAGE  FROM        
+		    (
+			SELECT * FROM TB_LM_LAWKOREAXML
+			<trim prefix="WHERE" prefixOverrides="AND |OR ">
+			<if test="schtxt != null and schtxt != ''">
+			LAWNAME LIKE '%'||#{schtxt}||'%' 
+			</if>
+			</trim>
+			ORDER BY LAWNAME
+			
+			) a
+		) b
+		<trim prefix="WHERE" prefixOverrides="AND |OR ">
+			<if test="pageno != null and pageno != ''">
+				page = #{pageno}
+			</if>
+		</trim>
+	</select>
+	
+	<!-- 씽크페어에 보낼 법령 리스트 건수 -->
+	<select id="getLawTotal"  resultType="int">
+		SELECT COUNT(LAWID) 
+		FROM  TB_LM_LAWKOREAXML 	
+		<trim prefix="WHERE" prefixOverrides="AND |OR ">
+		  <if test="schtxt != null and schtxt != ''">
+			LAWNAME LIKE '%'||#{schtxt}||'%' 
+		  </if>
+		</trim>
+	</select>
+	
+<!-- law_cont Insert -->
+<!-- 
+Biz_key 생성시
+
+규정 ‘RULE’+’’RULE’+
+
+소송결과  ‘CASE’+’’CASE’+
+
+보고서 ‘REPO’+’’REPO’+
+
+소소발생 ‘CONS’+’’CONS’+
+
+
+
+ -->
+	<insert id="getTest" parameterType="HashMap">
+		<selectKey keyProperty="biz_key" resultType="String" order="BEFORE">
+			SELECT
+			#{id}||'-'||#{gbn}||to_char(krserial.next_value, 'FM0000000000000000') FROM DUAL
+		</selectKey>
+		INSERT INTO kllaw_aprv_ift
+        (
+            BIZ_KEY, FORM_NAME, SND_DEPT_CD, SND_EMP_CD, SEND_DT, TITLE_VALUE, DATA_VALUE, 
+            DATA_CONT, aprv_status, eai_received
+        )
+        VALUES
+        (
+            #{biz_key},#{formname}, #{snddeptcd}, #{sndempcd}, current_date, #{titlevalue}, #{datavalue}, #{datacont}, 
+            #{aprvstatus}, #{eaireceived} 
+        )
+	</insert>
+	
+	<select id="getTest2"  resultType="String">
+		SELECT eai_received 
+		FROM  kllaw_aprv_ift 	
+		WHERE BIZ_KEY = #{biz_key}
+	</select>
+	
+	<!-- lawkorea Insert -->
+	<insert id="setLawInfoA">
+		INSERT INTO TB_LM_LAWINFO
+		(
+			LAWKEY,LAWTITLE,LAWGBN,LAWDATE,UPDT
+		)
+		VALUES
+		(
+			#{lawkey},#{lawtitle},#{lawgbn},#{lawdate},CONVERT(char(10), GetDate(),126)
+		)
+	</insert>
+	
+	<delete id="setLawInfoDelete">
+		delete tb_lm_lawinfo where lawkey=#{lawkey}
+	</delete>
+	
+	<select id="getLawInfoAList" resultType="HashMap">
+		SELECT b.* FROM    
+		(       
+		    SELECT a.* , ceil(ROWNUM/15)  PAGE  FROM        
+		    (
+			SELECT * FROM TB_LM_LAWINFO
+			<trim prefix="WHERE" prefixOverrides="AND |OR ">
+				<if test="schtxt != null and schtxt != ''">
+					LAWTITLE LIKE '%'||#{schtxt}||'%'	
+				</if>
+			</trim>
+			ORDER BY UPDT
+			
+			) a
+		) b
+		<trim prefix="WHERE" prefixOverrides="AND |OR ">
+			<if test="pageno != null and pageno != ''">
+				page = #{pageno}
+			</if>
+		</trim>
+	</select>
+	<select id="getLawInfoAListCnt" resultType="HashMap">
+		SELECT COUNT(LAWKEY) AS TOTAL FROM TB_LM_LAWINFO
+			<trim prefix="WHERE" prefixOverrides="AND |OR ">
+				<if test="schtxt != null and schtxt != ''">
+					LAWTITLE LIKE '%'||#{schtxt}||'%'
+				</if>
+			</trim>
+		ORDER BY UPDT
+	</select>
+	<!-- 
+	<insert id="test">
+		insert  into xx (pw,a,b,c)
+		values (#pw#,#a#,#b#,#c#)
+	</insert>
+	<resultMap class="kw.law.bylaw.ComModel" id="aa">
+		<result  property="pw" column="pw" typeHandler="jcf.dao.ibatis.typehandler.DBsc"/>
+		<result  property="a" column="a"/>
+		<result  property="b" column="b"/>
+		<result  property="c" column="c"/>
+	</resultMap>
+	<select id="test2" resultMap="aa">
+		select * from xx where a='1'
+	</select>
+	 -->
+	<select id="lawList" resultType="HashMap">
+		select lawsid,LAWID,plawsid,revcd,lawname,promuldt from tb_lm_lawkorea where statecd='현행'
+		<if test="schtxt != null and schtxt != ''">
+				and lawname like '%'||#{schtxt}||'%'
+		</if>
+		<choose>
+			<when test="orderby != null and orderby != ''">
+				order by ${orderby}
+			</when>
+			<otherwise>
+				order by promuldt desc
+			</otherwise>
+		</choose>
+	</select>
+	
+	<select id="lawList2" resultType="HashMap">
+		select a.lawsid,LAWID,a.plawsid,revcd,lawname,promuldt from tb_lm_lawkorea a inner join tb_lm_lawmap b on a.LAWID=b.plawsid 
+		where statecd='현행' and MENU_MNG_NO = #{MENU_MNG_NO}
+		order by promuldt desc
+	</select>
+	
+	<select id="bylawList" resultType="HashMap">
+		select bylawid,BYLAWNO,pbylawid,bylawname,startdt,bylawcd from tb_lm_bylawkorea where statecd='현행'
+		<if test="schtxt != null and schtxt != ''">
+			and bylawname like '%'||#{schtxt}||'%'
+		</if>
+		order by bylawname
+	</select>
+	
+	<select id="ruleList" resultType="HashMap">
+		select bookid,obookid,bookcode,a.title,startdt,revcd from tb_lm_rulehistory a,tb_lm_rulecat b where a.catid=b.catid and  a.statecd='5000'
+		<if test="schtxt != null and schtxt != ''">
+			and a.title like '%'||#{schtxt}||'%'
+		</if>
+		order by a.title
+	</select>
+	
+	<select id="bylawList2" resultType="HashMap">
+		select bylawid,BYLAWNO,pbylawid,bylawname,startdt,bylawcd from tb_lm_bylawkorea a inner join tb_lm_lawmap b on a.BYLAWNO=b.PLAWSID
+		where statecd='현행'  and MENU_MNG_NO = #{MENU_MNG_NO}
+	</select>
+	
+	<insert id="insertMapping">
+    	MERGE INTO 
+			TB_LM_LAWMAP a
+		USING 
+			(SELECT #{plawsid} AS plawsid,#{MENU_MNG_NO} as MENU_MNG_NO) b
+		ON (a.plawsid = b.plawsid and a.MENU_MNG_NO=b.MENU_MNG_NO)
+		WHEN MATCHED THEN
+			UPDATE SET a.gbn = a.gbn
+		WHEN NOT MATCHED THEN
+			INSERT 
+	           (MAPPINGID
+	           ,MENU_MNG_NO
+	           ,PLAWSID
+	           ,GBN)
+	     	VALUES
+	           (#{mappingid}
+	           ,#{MENU_MNG_NO}
+	           ,#{plawsid}
+	           ,#{gbn})
+	</insert>
+	
+	<delete id="deleteMapping">
+		delete from TB_LM_LAWMAP where MENU_MNG_NO = #{MENU_MNG_NO} and plawsid =#{plawsid}
+	</delete>
+	
+	<update id="updateMapping">
+		update TB_LM_LAWMAP set ord=#{ord} where mappingid=#{mappingid}
+	</update>
+	
+	<select id="getWebLawList" resultType="HashMap">
+		select lw.*
+		     <!-- , b.MENU_MNG_NO -->
+		     , B.MENUID
+		     , b.MAPPINGID,b.ORD from (
+			select to_char(lawid) as LAWID,to_char(lawsid) as LAWSID,PLAWSID,LAWNAME,LAWGBN,DEPT,REVCD,
+            	PROMULDT ,LAWURL,'LAW' as GBN,LAWURL AS URLINFO
+ 			from tb_lm_lawkorea
+ 			where statecd='현행'
+            union all
+            select to_char(bylawid),BYLAWNO,pbylawid,bylawname,bylawcd,bylawdept,revcd,startdt,bylawurl,'BYLAW',BYLAWURL
+ 			from TB_LM_BYLAWKOREA
+		) lw inner join tb_lm_lawmap b on lw.lawid = b.plawsid
+		<if test="MENU_MNG_NO != null and MENU_MNG_NO != ''">
+			inner join TB_COM_MENU c on b.MENU_MNG_NO =c.MENU_MNG_NO
+		</if>
+		where 1=1
+		<if test="MENU_MNG_NO != null and MENU_MNG_NO != ''">
+			and c.MENU_MNG_NO in
+		     (
+				select MENU_MNG_NO from TB_COM_MENU start with MENU_MNG_NO = #{MENU_MNG_NO}
+				connect by prior MENU_MNG_NO=menuparid
+		     )
+		</if>
+		<if test="Schtxt != null and Schtxt != ''">
+		and (
+			<trim prefix="" prefixOverrides="AND |OR ">
+				<if test='stitle == "Y"'>
+					or lawname LIKE '%'||#{Schtxt}||'%' 
+				</if>
+				<if test='sdept == "Y"'>
+					or dept LIKE '%'||#{Schtxt}||'%' 
+				</if>
+			</trim>
+		)
+		</if>
+		<if test="query != null and query != ''">
+				and lw.lawname like '%'||#{query}||'%'
+		</if>
+		order by lawname,promuldt
+	</select>
+	
+	<select id="getfavLawList" resultType="HashMap">
+		select lw.* from (
+			select to_char(lawid) AS LAWID,to_char(lawsid) as LAWSID,PLAWSID,LAWNAME,LAWGBN,DEPT,REVCD,
+            	PROMULDT ,LAWURL,'LAW' as GBN
+ 			from tb_lm_lawkorea
+ 			where statecd='현행'
+            union all
+            select to_char(bylawid),BYLAWNO,pbylawid,bylawname,bylawcd,bylawdept,revcd,startdt,bylawurl,'BYLAW'
+ 			from TB_LM_BYLAWKOREA
+		) lw 
+		where 
+		lawid in (select obookid from tb_lm_fav where memberid =#{writerid} and docgbn in ('LAW','BYLAW'))
+		<if test="Schtxt != null and Schtxt != ''">
+		and (
+			<trim prefix="" prefixOverrides="AND |OR ">
+				<if test='stitle == "Y"'>
+					or lawname LIKE '%'||#{Schtxt}||'%' 
+				</if>
+				<if test='sdept == "Y"'>
+					or dept LIKE '%'||#{Schtxt}||'%' 
+				</if>
+			</trim>
+		)
+		</if>
+	</select>
+	
+	<select id="getWebLawListTotal" resultType="String">
+		select count(lw.lawsid) from (
+			select lawsid,lawid,plawsid,lawname,lawgbn,dept,revcd,
+			TO_CHAR(TO_DATE(promuldt, 'YYYY-MM-DD'), 'YYYY-MM-DD') promuldt
+			,lawurl,'law' as gbn from tb_lm_lawkorea where statecd='현행'
+			union all
+			select bylawid,BYLAWNO,pbylawid,bylawname,bylawcd,bylawdept,revcd,startdt,bylawurl,'bylaw' from TB_LM_BYLAWKOREA where statecd='현행'
+		) lw inner join tb_lm_lawmap b on lw.lawid = b.plawsid
+		<if test="MENU_MNG_NO != null and MENU_MNG_NO != ''">
+			inner join TB_COM_MENU c on b.MENU_MNG_NO =c.MENU_MNG_NO
+		</if>
+		where 1=1
+		<if test="MENU_MNG_NO != null and MENU_MNG_NO != ''">
+			and c.MENU_MNG_NO in
+		     (
+				select MENU_MNG_NO from TB_COM_MENU start with MENU_MNG_NO = #{MENU_MNG_NO}
+				connect by prior MENU_MNG_NO=menuparid
+		     )
+		</if>
+		
+		<if test="query != null and query != ''">
+			<if test="search == '1'">
+				and lw.lawname like '%'||#{query}||'%'
+			</if>
+			<if test="search == '2'">
+				and lw.lawbon like '%'||#{query}||'%'
+			</if>
+		</if>
+		order by lawname,promuldt
+	</select>
+	
+	<select id="getWebLawList2" resultType="HashMap">
+		select lw.* from (
+			select lawsid,lawid,plawsid,lawname,lawgbn,dept,revcd,
+			TO_CHAR(TO_DATE(promuldt, 'YYYY-MM-DD'), 'YYYY-MM-DD') promuldt
+			,lawurl,'law' as gbn from tb_lm_lawkorea where statecd='현행'
+			union all
+			select bylawid,BYLAWNO,pbylawid,bylawname,bylawcd,bylawdept,revcd,startdt,bylawurl,'bylaw' from TB_LM_BYLAWKOREA where statecd='현행'
+		) lw
+		where 1=1
+		<if test="query != null and query != ''">
+				and lw.lawname like '%'||#{query}||'%'
+		</if>
+		order by lawname,promuldt
+	</select>
+
+	<select id="getWebLawListTotal2" resultType="String">
+		select count(lw.lawsid) from (
+			select lawsid,lawid,plawsid,lawname,lawgbn,dept,revcd,
+			TO_CHAR(TO_DATE(promuldt, 'YYYY-MM-DD'), 'YYYY-MM-DD') promuldt
+			,lawurl,'law' as gbn from tb_lm_lawkorea where statecd='현행'
+			union all
+			select bylawid,BYLAWNO,pbylawid,bylawname,bylawcd,bylawdept,revcd,startdt,bylawurl,'bylaw' from TB_LM_BYLAWKOREA where statecd='현행'
+		) lw
+		where 1=1
+		<if test="query != null and query != ''">
+				and lw.lawname like '%'||#{query}||'%'
+		</if>
+		order by lawname,promuldt
+	</select>
+		
+	<select id="lawDBAll" resultType="HashMap">
+			select lawsid,lawid,plawsid,lawname,lawgbn,dept,revcd,promuldt,lawurl,'law' as gbn from tb_lm_lawkorea where statecd='현행'
+			<if test="query != null and query != ''">
+				and lawname like '%'||#{query}||'%'
+			</if>
+			order by promuldt desc
+	</select>
+	
+	<select id="bylawDBAll" resultType="HashMap">
+			select bylawid as lawsid,
+				BYLAWNO as lawid,
+				pbylawid as plawsid,
+				bylawname as lawname,
+				bylawcd as lawgbn,
+				bylawdept as dept,
+				revcd,
+				startdt as promuldt,
+				bylawurl as lawurl,
+				'bylaw' as gbn 
+			from tb_lm_bylawkorea where statecd='현행'
+			<if test="query != null and query != ''">
+				and bylawname like '%'||#{query}||'%'
+			</if>
+			order by startdt desc
+	</select>
+	
+	<insert id="insertICBYL">
+		INSERT INTO TB_LM_LAWLICBYL
+	           (LICBYLID
+	           ,LAWNO
+	           ,LAWID
+	           ,TITLE
+	           ,LAWTITLE
+	           ,BYLNO
+	           ,BYLCD
+	           ,DEPTNAME
+	           ,PROMULDT
+	           ,PROMULNO
+	           ,REVCD
+	           ,LAWCD
+	           ,BYLURL
+	           ,LAWURL
+	           ,INSERTDT)
+	     VALUES
+	           (#{licbylid}
+	           ,#{lawno}
+	           ,#{lawid}
+	           ,#{title}
+	           ,#{lawtitle}
+	           ,#{bylno}
+	           ,#{bylcd}
+	           ,#{deptname}
+	           ,#{promuldt}
+	           ,#{promulno}
+	           ,#{revcd}
+	           ,#{lawcd}
+	           ,#{bylurl}
+	           ,#{lawurl}
+	           ,CONVERT(char(10), GetDate(),126))
+	</insert>
+	
+	<insert id="insertORDIN">
+		INSERT INTO TB_LM_LAWORDIN
+	           (ORDINNO
+	           ,TITLE
+	           ,ORDINID
+	           ,PROMULDT
+	           ,PROMULNO
+	           ,REVCD
+	           ,DEPTNAME
+	           ,ORDINCD
+	           ,STARTDT
+	           ,ORDINURL
+	           ,ORDINCN
+	           ,REDATAGBN
+	           ,INSERTDT)
+	     VALUES
+	           (#{ordinno}
+	           ,#{title}
+	           ,#{ordinid}
+	           ,#{promuldt}
+	           ,#{promulno}
+	           ,#{revcd}
+	           ,#{deptname}
+	           ,#{ordincd}
+	           ,#{startdt}
+	           ,#{ordinurl}
+	           ,#{ordincn}
+	           ,#{redatagbn}
+	           ,CONVERT(char(10), GetDate(),126))
+	</insert>
+	
+	<insert id="insertPREC">
+		INSERT INTO TB_LM_LAWPREC
+		   (PRECID
+		   ,TITLE
+		   ,PRECNO
+		   ,LASTDT
+		   ,COURTNAME
+		   ,COURTCD
+		   ,CASEGBN
+		   ,CASECODE
+		   ,PANGBN
+		   ,SENTENCE
+		   ,PRECURL
+	       ,INSERTDT)
+	     VALUES
+		   (#{precid}
+		   ,#{title}
+		   ,#{precno}
+		   ,#{lastdt}
+		   ,#{courtname}
+		   ,#{courtcd}
+		   ,#{casegbn}
+		   ,#{casecode}
+		   ,#{pangbn}
+		   ,#{sentence}
+		   ,#{precurl}
+		   ,CONVERT(char(10), GetDate(),126))
+	</insert>
+	
+	<insert id="insertEXPC">
+		INSERT INTO TB_LM_LAWEXPC
+	           (EXPCID
+	           ,TITLE
+	           ,TITLENO
+	           ,QDEPTNAME
+	           ,QDEPTCD
+	           ,RDEPTNAME
+	           ,RDEPTCD
+	           ,RDT
+	           ,EXPCCD
+	           ,EXPCURL
+	           ,INSERTDT)
+	     VALUES
+	           (#{expcid}
+	           ,#{title}
+	           ,#{titleno}
+	           ,#{qdeptname}
+	           ,#{qdeptcd}
+	           ,#{rdeptname}
+	           ,#{rdeptcd}
+	           ,#{rdt}
+	           ,#{expccd}
+	           ,#{expcurl}
+	           ,CONVERT(char(10), GetDate(),126))
+	</insert>
+	
+	<insert id="insertDETC">
+		INSERT INTO TB_LM_LAWDETC
+	           (DETCID
+	           ,LASTDT
+	           ,CASENO
+	           ,TITLE
+	           ,DETCURL
+	           ,INSERTDT)
+	     VALUES
+	           (#{detcid}
+	           ,#{lastdt}
+	           ,#{caseno}
+	           ,#{title}
+	           ,#{detcurl}
+	           ,CONVERT(char(10), GetDate(),126))
+	</insert>
+	
+	<insert id="insertDECC">
+		INSERT INTO TB_LM_LAWDECC
+	           (DECCID
+	           ,TITLE
+	           ,CASENO
+	           ,SELLDT
+	           ,RDT
+	           ,SELLDEPT
+	           ,RDEPT
+	           ,RGBN
+	           ,RGBNCODE
+	           ,DECCURL
+	           ,INSERTDT)
+	     VALUES
+	           (#{deccid}
+	           ,#{title}
+	           ,#{caseno}
+	           ,#{selldt}
+	           ,#{rdt}
+	           ,#{selldept}
+	           ,#{rdept}
+	           ,#{rgbn}
+	           ,#{rgbncode}
+	           ,#{deccurl}
+	           ,CONVERT(char(10), GetDate(),126))
+	</insert>
+	
+	<insert id="insertTRTY">
+		INSERT INTO TB_LM_LAWTRTY
+	           (TRTYID
+	           ,TITLE
+	           ,TRTYGBNCODE
+	           ,TRTYGBN
+	           ,STDT
+	           ,SDT
+	           ,GDT
+	           ,TRTYNO
+	           ,NATIONCODE
+	           ,TRTYURL
+	           ,INSERTDT)
+	     VALUES
+	           (#{trtyid}
+	           ,#{title}
+	           ,#{trtygbncode}
+	           ,#{trtygbn}
+	           ,#{stdt}
+	           ,#{sdt}
+	           ,#{gdt}
+	           ,#{trtyno}
+	           ,#{nationcode}
+	           ,#{trtyurl}
+	           ,CONVERT(char(10), GetDate(),126))
+	</insert>
+	
+	<select id="selectICBYL" resultType="HashMap">
+		select * from TB_LM_LAWLICBYL
+		where 1=1
+		<if test="query != ''">
+			and TITLE like '%'||#{query}||'%'
+		</if>
+	</select>
+	<select id="selectORDIN" resultType="HashMap">
+		select * from TB_LM_LAWORDIN
+		where 1=1
+		<if test="query != ''">
+			and TITLE like '%'||#{query}||'%'
+		</if>
+	</select>
+	<select id="selectPREC" resultType="HashMap">
+		select * from TB_LM_LAWPREC
+		where 1=1
+		<if test="query != ''">
+			and TITLE like '%'||#{query}||'%'
+		</if>
+	</select>
+	<select id="selectEXPC" resultType="HashMap">
+		select * from TB_LM_LAWEXPC
+		where 1=1
+		<if test="query != ''">
+			and TITLE like '%'||#{query}||'%'
+		</if>
+	</select>
+	<select id="selectDETC" resultType="HashMap">
+		select * from TB_LM_LAWDETC
+		where 1=1
+		<if test="query != ''">
+			and TITLE like '%'||#{query}||'%'
+		</if>
+	</select>
+	<select id="selectDECC" resultType="HashMap">
+		select * from TB_LM_LAWDECC
+		where 1=1
+		<if test="query != ''">
+			and TITLE like '%'||#{query}||'%'
+		</if>
+	</select>
+	<select id="selectTRTY" resultType="HashMap">
+		select * from TB_LM_LAWTRTY
+		where 1=1
+		<if test="query != ''">
+			and TITLE like '%'||#{query}||'%'
+		</if>
+	</select>
+	
+	<select id="selectLAW" resultType="HashMap">
+		select LAWSID
+			,PLAWSID
+			,REVCHA
+			,STATECD
+			,LAWNAME
+			,LAWID
+			,PROMULDT
+			,PROMULNO
+			,REVCD
+			,DEPTCODE
+			,DEPT
+			,LAWGBN
+			,STARTDT
+			,OTHERLAWYN
+			,LAWURL
+			,INSERTDT
+		from TB_LM_LAWKOREA
+		where 1=1
+		<if test="query != ''">
+			and LAWNAME like '%'||#{query}||'%'
+		</if>
+	</select>
+	
+	<select id="selectBYLAW" resultType="HashMap">
+		select BYLAWID
+			,PBYLAWID
+			,REVCHA
+			,BYLAWNO
+			,BYLAWNAME
+			,BYLAWCD
+			,APPOINTDT
+			,APPOINTNO
+			,BYLAWDEPT
+			,STATECD
+			,REVCDCODE
+			,REVCD
+			,BYLAWURL
+			,STARTDT
+			,NEWDT
+			,INSERTDT 
+		from TB_LM_BYLAWKOREA
+		where 1=1
+		<if test="query != ''">
+			and BYLAWNAME like '%'||#{query}||'%' 
+		</if>
+	</select>
+	
+	<insert id="insertRSS1">
+		INSERT INTO TB_LM_LAWRSS1
+           (TITLE
+           ,DESCRIPTION
+           ,LINK
+           ,LINK2
+           ,WDATE
+           ,INSERTDT)
+     	VALUES
+           (#{title}
+           ,#{description}
+           ,#{link}
+           ,#{link2}
+           ,#{wdate}
+           ,CONVERT(char(10), GetDate(),126))
+	</insert>
+	
+	<insert id="insertRSS2">
+		INSERT INTO TB_LM_LAWRSS2
+           (TITLE
+           ,DESCRIPTION
+           ,LINK
+           ,LINK2
+           ,WDATE
+           ,INSERTDT)
+     	VALUES
+           (#{title}
+           ,#{description}
+           ,#{link}
+           ,#{link2}
+           ,#{wdate}
+           ,CONVERT(char(10), GetDate(),126))
+	</insert>
+	
+	<insert id="insertRSS3">
+		INSERT INTO TB_LM_LAWRSS3
+           (TITLE
+           ,DESCRIPTION
+           ,LINK
+           ,LINK2
+           ,WDATE
+           ,INSERTDT)
+     	VALUES
+           (#{title}
+           ,#{description}
+           ,#{link}
+           ,#{link2}
+           ,#{wdate}
+           ,CONVERT(char(10), GetDate(),126))
+	</insert>
+	
+	<select id="selectRSS1" resultType="HashMap">
+		select * from TB_LM_LAWRSS1 where title like '%철도%'
+	</select>
+	
+	<select id="selectRSS2" resultType="HashMap">
+		select * from TB_LM_LAWRSS2 where title like '%철도%'
+	</select>
+	
+	<select id="selectRSS3" resultType="HashMap">
+		select * from TB_LM_LAWRSS3 where title like '%철도%'
+	</select>
+	
+	<select id="getFileByte" parameterType="HashMap" resultType="HashMap" >
+		SELECT filecontent , byultitle
+		FROM ${tablenm}
+		WHERE ${tkey} = #{tkeyval} and byulkey = #{keyval} and byulgbn = #{gbn}
+	</select>
+	
+	<select id="lawifSql.schlawList" resultType="HashMap" >
+		select t.* from (
+			select 'LAW' as gbn,lawid,promuldt,lawname,lawgbn,dept from tb_lm_lawkorea
+			union all
+			select 'BYLAW' as gbn,to_char(bylawid),startdt,bylawname,bylawcd,bylawdept from tb_lm_bylawkorea
+		) t where lawname like '%'||#{schtxt}||'%'
+		order by LAWNAME
+	</select>
+	
+	<select id="lawifSql.getLaw3List" resultType="HashMap">
+		select * from tb_lm_lawkorea where replace(lawname,' ','')  like #{lawname}||'%' order by lawid
+	</select>
+	
+</mapper>

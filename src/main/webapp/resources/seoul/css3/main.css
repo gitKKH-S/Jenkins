@@ -1,0 +1,753 @@
+/* 내용 */
+/* 내용 240914 수정 */
+.mainVisW{
+    overflow: hidden;
+    font-size: 40px;
+    padding-top:40px;
+    color:#000;
+    /*
+    background: rgb(104,67,226);
+    background: linear-gradient(90deg, rgba(104,67,226,1) 0%, rgba(197,168,247,1) 100%);
+    */
+    /*height: 200px;*/
+    height: 230px;
+    letter-spacing: -3px;
+    border-radius: 10px;
+    box-shadow: 2px 2px 5px 3px #E6E8F2;
+    position: relative;
+    
+    /*임시*/
+    
+    background:url(../images/list.png) no-repeat;
+    
+    background-color: #8089ff;
+    background-position: center;
+}
+/* 
+.mainVisW::before{
+    content: "";
+    position: absolute;
+    background:url('../images/vis_2.png') no-repeat 98% 30px;
+    background-size: 200px auto;
+    width: 100%;
+    height: 100%;
+    bottom:0;
+    right: 0;
+}
+.mainVisW::after{
+    content: "";
+    position: absolute;
+    background:url('../images/vis_1.png') no-repeat 2% 30px;
+    background-size: 200px auto;
+    width: 100%;
+    height: 100%;
+    bottom:0;
+    right: 0;
+}
+ */
+.mainVisW p{
+    text-align: center;
+    color:#fff;
+}
+.mainVisW p strong{
+    font-weight: bold;
+    letter-spacing: -3px;
+}
+
+@media (max-width: 1200px) {
+    /* 내용
+    .mainVisW{
+        height: 200px;
+        padding-top:45px;
+        font-size: 35px;
+        background:#fff url('../images/m_vis.png') no-repeat 50%;
+    }
+    .mainVisW p{
+        padding: 0 0 0 45px;
+    } */
+}
+/*메인 내용*/
+.mainInfoW{
+    overflow: hidden;
+    padding-top: 15px;
+}
+
+/*달력*/
+.calendarW{
+    width:20%;
+    float: left;
+    background: #fff;
+    border-radius: 10px;
+    text-align: center;
+    margin-bottom: 20px;
+    margin-top:10px;
+    box-shadow: 2px 2px 5px 3px #E6E8F2;
+}
+.cal_calW{
+    padding: 20px;
+    padding-top:20px;
+    height: 188px;
+}
+.cal_calW .calC thead{
+    font-weight: bold;
+}
+.cal_calW .calC thead th:nth-child(1){
+    color:#FF000A;
+}
+.cal_calW .calC thead th:nth-child(7){
+    color:#4373ce;
+}
+.cal_calW .calC tbody td{
+    padding: 3px 0;
+    position: relative;
+    z-index: 0;
+}
+
+.cal_calW .calC tbody td:nth-child(1){
+    color:#FF000A;
+}
+.cal_calW .calC tbody td:nth-child(7){
+    color:#4373ce;
+}
+/*
+.cal_calW .calC tbody td.active::after{
+    content: "";
+    display: block;
+    background: #f0f0f0;
+    width:21px;
+    height: 21px;
+    border-radius: 10px;
+    position: absolute;
+    top:50%;
+    left:50%;
+    margin-top:-10px;
+    margin-left: -10px;
+    z-index: -1;
+}
+*/
+/*달력-상세*/
+.calW{
+    /*border-top:1px solid #ddd;*/
+    position: relative;
+    overflow: hidden;
+}
+.calW.active{
+    background: #f8f8f8;
+}
+.calW.active::before{
+    content: "";
+    width:2px;
+    height: 112px;
+    background: #6843e2;
+    position: absolute;
+    top:0;
+    left:0;
+    display: block;
+}
+.calW strong{
+    display: block;
+    float: left;
+    width: 25%;
+    font-size: 30px;
+    /* position: relative; */
+    position: absolute;
+    top:20%;
+    font-weight: bold;
+    color:#333333;
+    /* padding-top:15px; */
+    /* padding-top:3%; */
+}
+.calW strong span{
+    font-size: 16px;
+    display: block;
+}
+/*
+.calW strong::after{
+    content: "";
+    position: absolute;
+    width: 1px;
+    height: 60px;
+    background: #ddd;
+    top:50%;
+    right: 0;
+    margin-top:-15px;
+    margin-top:-25px;
+}
+*/
+.calW .calC{
+    float: right;
+    width:75%;
+    text-align: left;
+    font-size: 16px;
+    
+    border-left:1px solid #ddd;
+    
+    display: flex;
+    align-items: center;
+}
+.calW .calC ul{
+    /* margin: 25px 15px; */
+    margin: 10px 15px;
+}
+.calW .calC ul li{
+    color:#333;
+    line-height: 30px;
+    width:100%;
+    text-overflow: ellipsis;
+    -o-text-overflow: ellipsis;
+    white-space:nowrap;
+    overflow:hidden;
+    word-wrap:normal;
+    
+}
+.calW .calC p{
+    color:#999;
+    height: 112px;
+    line-height: 112px;
+    padding-left: 15px;
+    width:100%;
+    text-overflow: ellipsis;
+    -o-text-overflow: ellipsis;
+    white-space:nowrap;
+    overflow:hidden;
+    word-wrap:normal;
+}
+.cal_ttW{
+    padding: 25px 0 5px 0;
+}
+.cal_ttW .cal_btnW{
+    display: inline-block;
+    text-indent: -9999px;
+    width: 26px;
+    height: 26px;
+    margin-top: 4px;
+}
+.cal_ttW .cal_btnW.before{
+    background:url('../images/btn_before.png') no-repeat;
+	margin-right:10px;
+}
+.cal_ttW .cal_btnW.next{
+    background:url('../images/btn_next.png') no-repeat;
+	margin-left:10px;
+}
+.cal_ttW strong{
+    font-size: 24px;
+    font-weight: bold;
+	line-height:32px;
+}
+.calendarA{
+    height: 230px;
+    overflow-y: scroll;
+    scrollbar-width:none;
+}
+
+.mainBtn {
+	display: inline-block;
+	text-indent: -9999px;
+	width: 26px;
+	height: 26px;
+	margin-top: 130px;
+	margin-left:7px;
+	border-radius:15px;
+	border: 1px solid;
+}
+
+.mainBtn.before {
+	background:url('../images/btn_before.png') no-repeat;
+	margin-right:10px;
+}
+
+.mainBtn.next {
+	background:url('../images/btn_next.png') no-repeat;
+	margin-left:10px;
+}
+
+
+
+@media (max-width: 1200px) {
+	/**
+    .calendarW{
+        overflow: hidden;
+        width: 100%;
+        float: none;
+    }
+    .calendarC{
+        float: left;
+        width: 30%;
+        border-right: 1px solid #ddd;
+    }
+    .calendarA{
+        float: right;
+        width: 70%;
+        height: 240px;
+        overflow: auto;
+    }
+    .calW{
+        padding: 10px;
+    }
+    .calW strong{
+        width: 25%;
+        font-size: 20px;
+        position: relative;
+        font-weight: bold;
+        color:#333333;
+        padding-top:0;
+    }
+    .calW strong span{
+        font-size: 16px;
+        display: block;
+    }
+    .calW strong::after{
+        content: "";
+        position: absolute;
+        width: 1px;
+        height: 60px;
+        background: #ddd;
+        top:50%;
+        right: 0;
+        margin-top:-15px;
+    }
+    .calW .calC ul{
+        margin: auto;
+        padding-left: 15px;
+    }
+    .calW .calC ul li{
+        color:#333;
+        line-height: 30px;
+        width:100%;
+        text-overflow: ellipsis;
+        -o-text-overflow: ellipsis;
+        white-space:nowrap;
+        overflow:hidden;
+        word-wrap:normal;
+    }
+    .calW .calC p{
+        color:#999;
+        height: auto;
+        line-height: normal;
+        padding-left: 15px;
+    }
+    **/
+}
+
+/*오른쪽 내용*/
+.mainInfoC{
+    width:80%;
+    padding-left: 20px;
+    float: right;
+}
+@media (max-width: 1200px) {
+	/**
+    .mainInfoC{
+        width: 100%;
+        padding: 0;
+        float: none;
+    }
+    **/
+}
+/*카운트*/
+.countW{
+    margin-right:-20px;
+    overflow: hidden;
+    padding: 10px 0;
+    
+    border-bottom: 1px solid #ddd;
+}
+.countC{
+    float: left;
+    width:25%;
+    padding-right:20px;
+}
+.countA{
+    border-radius: 10px;
+    color:#fff;
+    /*padding:10px 20px 15px 20px;*/
+    padding:5px;
+    overflow: hidden;
+    box-shadow: 2px 2px 5px 3px #E6E8F2;
+    
+    text-align: center;
+    font-size: 14px;
+}
+.countA dt{
+    display: inline-block;
+    font-size: 20px;
+    padding-top:16px;
+    font-weight: bold;
+}
+.countA dd{
+    float: right;
+    text-align: right;
+    display: inline-block;
+    font-size: 38px;
+    font-weight: bold;
+    padding-top: 2px;
+}
+.countA dd span{
+    display: none;
+    font-size: 16px;
+    padding-top:10px;
+    padding-right:10px;
+    font-weight: normal;
+}
+.countA.type1{background:#379FFF;}
+.countA.type2{background:#FD9A3D;}
+.countA.type3{background:#89C63D;}
+.countA.type4{background:#FFD243;}
+
+@media (max-width: 1200px) {
+	/**
+    .countA{
+        padding:10px 15px 15px 15px;
+    }
+    .countA dt{
+        display: block;
+        padding-top: 5px;
+    }
+    .countA dd{
+        display: block;
+        float: none;
+        font-size: 32px;
+        padding: 0;
+    }
+    **/
+}
+/*게시판*/
+.boardW{
+    clear: both;
+    margin-top:15px;
+    background: #fff;
+    border-radius: 10px;
+    overflow: hidden;
+}
+.boardW.type1{
+    display: none;
+}
+.boardW.type2{
+    display: none;
+}
+
+/*일반 4종*/
+.boardPW{
+    overflow:hidden;
+    margin-right:-20px;
+    padding: 10px 0;
+}
+.boardPC{
+    float: left;
+    width:25%;
+    padding-right:20px;
+}
+.boardPA{
+    border-radius: 10px;
+    background: #fff;
+    overflow: hidden;
+    box-shadow: 2px 2px 5px 3px #E6E8F2;
+}
+
+.boardTT{
+    display: block;
+    padding:10px;
+    font-size: 22px;
+    font-weight: bold;
+    color:#333;
+    padding: 15px 20px 10px 20px;
+}
+.boardTabW{
+    padding: 0 25px;
+}
+.boardTabW ul li{
+    float: left;
+}
+.boardTabW ul li a{
+    display: block;
+    padding: 10px 20px;
+    font-size: 18px;
+    font-weight: bold;
+}
+.boardTabW ul li a.active{
+    border-bottom: 2px solid #DD6F60;
+    color:#DD6F60;
+}
+.boardC{
+    clear: both;
+    /*padding: 15px 25px;*/
+    padding: 10px 15px;
+    border-top:1px solid #ddd;
+    /* height:323px; */
+    height:320px;
+}
+.boardC ul li{
+    /*font-size: 16px;*/
+    font-size: 18px;
+    position: relative;
+    padding: 0 8px;
+    margin-top:-1px;
+    height: 30px;
+}
+.boardC ul li p{
+    width:99.9%;
+    /*float: left;*/
+    color:#333;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space:nowrap;
+    /*display: -webkit-box;*/
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    cursor:pointer;
+    
+    padding:10px 0px 10px 0px;
+    border-bottom:1.5px solid #d3d3d366;
+}
+.boardC ul li span{
+    width: 30%;
+    float: right;
+    display: block;
+    text-align: right;
+    color:#a7a7a7;
+}
+/*
+.boardC ul li::before{
+    content: "";
+    width:2px;
+    height: 2px;
+    background:#6843e2;
+    position: absolute;
+    top:10px;
+    left:0;
+}
+*/
+@media (max-width: 1200px) {
+	/**
+    .boardPW{
+        display: none;
+    }
+    .boardW.type1{
+        display: block;
+    }
+    .boardW.type2{
+        display: block;
+    }
+    **/
+}
+/*배너*/
+.m_bannerW{
+    overflow: hidden;
+    /*margin-top:20px;*/
+    background: #fff;
+    border-radius: 10px;
+    
+    height: 50px;
+    
+    box-shadow:2px 2px 5px 3px #E6E8F2;
+}
+
+
+.m_bannerW strong{
+    display: block;
+    float: left;
+    width: 15%;
+    /*height: 80px;*/
+    height: 50px;
+    line-height: 50px;
+    background: url('../images/icon_link.png') no-repeat 120px 50%;
+    padding-left: 30px;
+    color:#000;
+    font-weight: 600;
+    font-size: 17px;
+}
+.m_bannerW ul{
+    float: right;
+    /*width: 85%;*/
+    width: 75%;
+    overflow: hidden;
+}
+
+.m_bannerW ul li{
+    float: left;
+    /* width:20%; */
+    width:33%;
+    text-align: center;
+    padding-top: 8px;
+    height: 50px;
+    /*
+    padding-top: 23px;
+    height: 80px;
+    */
+    position: relative;
+    border-left:1px solid #ddd;
+}
+.m_bannerW ul li a{
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+/*메인 배너*/
+.mainBannerW{
+    margin-top:20px;
+    overflow: hidden;
+}
+.mainBannerW ul{
+    margin-left:-20px;
+}
+.mainBannerW ul li{
+    width:16.6666666%;
+    float: left;
+    text-align: center;
+}
+.mainBannerW ul li a{
+    display: block;
+    /*color:#78808c;*/
+    color:white;
+    margin-left: 20px;
+    padding: 20px 0 15px 0;
+    font-size: 14px;
+    border-bottom: 2px solid #cccccc;
+    background: #fff;
+    border-radius: 5px;
+}
+.mainBannerW ul li a:hover{
+    /*
+    background: #0073b4;
+    border-bottom: 2px solid #0b49a5;
+    */
+    background: white;
+    border-bottom: 2px solid #6843e2;
+    color:#78808c;
+}
+.mainBannerW ul li a .m_icon{
+    width: 60px;
+    height: 46px;
+    margin: 0 auto 7px auto;
+    text-indent: -9999px;
+}
+.mainBannerW ul li a:hover .m_icon.type1{background: url('../images/m_icon_1.png') no-repeat 50% 0;}
+.mainBannerW ul li a .m_icon.type1{background: url('../images/m_icon_1.png') no-repeat 50% -46px;}
+
+.mainBannerW ul li a:hover .m_icon.type2{background: url('../images/m_icon_2.png') no-repeat 50% 0;}
+.mainBannerW ul li a .m_icon.type2{background: url('../images/m_icon_2.png') no-repeat 50% -46px;}
+
+.mainBannerW ul li a:hover .m_icon.type3{background: url('../images/m_icon_3.png') no-repeat 50% 0;}
+.mainBannerW ul li a .m_icon.type3{background: url('../images/m_icon_3.png') no-repeat 50% -46px;}
+
+.mainBannerW ul li a:hover .m_icon.type4{background: url('../images/m_icon_4.png') no-repeat 50% 0;}
+.mainBannerW ul li a .m_icon.type4{background: url('../images/m_icon_4.png') no-repeat 50% -46px;}
+
+.mainBannerW ul li a:hover .m_icon.type5{background: url('../images/m_icon_5.png') no-repeat 50% 0;}
+.mainBannerW ul li a .m_icon.type5{background: url('../images/m_icon_5.png') no-repeat 50% -46px;}
+
+.mainBannerW ul li a:hover .m_icon.type6{background: url('../images/m_icon_6.png') no-repeat 50% 0;}
+.mainBannerW ul li a .m_icon.type6{background: url('../images/m_icon_6.png') no-repeat 50% -46px;}
+/*
+.mainBannerW ul li a .m_icon.type1{background: url('../images/m_icon_1.png') no-repeat 50% 0;}
+.mainBannerW ul li a:hover .m_icon.type1{background: url('../images/m_icon_1.png') no-repeat 50% -46px;}
+.mainBannerW ul li a .m_icon.type2{background: url('../images/m_icon_2.png') no-repeat 50% 0;}
+.mainBannerW ul li a:hover .m_icon.type2{background: url('../images/m_icon_2.png') no-repeat 50% -46px;}
+.mainBannerW ul li a .m_icon.type3{background: url('../images/m_icon_3.png') no-repeat 50% 0;}
+.mainBannerW ul li a:hover .m_icon.type3{background: url('../images/m_icon_3.png') no-repeat 50% -46px;}
+.mainBannerW ul li a .m_icon.type4{background: url('../images/m_icon_4.png') no-repeat 50% 0;}
+.mainBannerW ul li a:hover .m_icon.type4{background: url('../images/m_icon_4.png') no-repeat 50% -46px;}
+.mainBannerW ul li a .m_icon.type5{background: url('../images/m_icon_5.png') no-repeat 50% 0;}
+.mainBannerW ul li a:hover .m_icon.type5{background: url('../images/m_icon_5.png') no-repeat 50% -46px;}
+.mainBannerW ul li a .m_icon.type6{background: url('../images/m_icon_6.png') no-repeat 50% 0;}
+.mainBannerW ul li a:hover .m_icon.type6{background: url('../images/m_icon_6.png') no-repeat 50% -46px;}
+*/
+.mainBoardW{
+    margin-top: 20px;
+    overflow: hidden;
+    margin-left: -20px;
+}
+
+.mainBoardC{
+    width:33.33333333333%;
+    float: left;
+}
+
+.mainBoardA{
+    margin-left: 20px;
+    background: #fff;
+    overflow: hidden;
+    height: 320px;
+    border-radius: 5px;
+}
+.mainBoardA .titleW{
+    position: relative;
+    padding: 30px 0 0 35px;
+}
+.mainBoardA .titleW strong{
+    font-size: 20px;
+    font-weight: bold;
+    color:#000;
+    display: inline-block;
+}
+.mainBoardA .titleW strong::after{
+    content:"";
+    display: block;
+    /*     241023_psy 수정_시작 */
+/*     width: 40px; */
+    width: 100%;
+/*     241023_psy 수정_끝 */    
+    height: 2px;
+    background:#06529c;
+    margin-top: 20px;
+}
+.mainBoardA .titleW .moreBtn{
+    position: absolute;
+    top:30px;
+    right:35px;
+    border-radius: 5px;
+    width: 45px;
+    height: 45px;
+    font-weight: 100;
+    font-size: 40px;
+    line-height: 35px;
+    text-align: center;
+    border:1px solid #dddddd;
+    display: block;
+    color:#888;
+}
+.mainBoardA .boardA{
+    padding: 25px 35px;
+}
+.mainBoardA .boardA ul li{
+    overflow: hidden;
+    font-size: 14px;
+    padding: 6px 0 6px 8px;
+    position: relative;
+}
+.mainBoardA .boardA ul li strong{
+    float: left;
+    display: inline-block;
+    color: #222;
+    width:70%;
+    text-overflow: ellipsis;
+    -o-text-overflow: ellipsis;
+    white-space:nowrap;
+    overflow:hidden;
+    word-wrap:normal;
+}
+.mainBoardA .boardA ul li span{
+    float: right;
+    display: inline-block;
+    color:#888;
+    
+    /*     241023_psy 수정_시작 */
+    width: 30%;
+    white-space: nowrap;
+    text-align: right;
+    /*     241023_psy 수정_끝 */
+    
+}
+.mainBoardA .boardA ul li::after{
+  content: "";
+  display: block;
+  width:2px;
+  height: 3px;
+  position: absolute;
+  left:0;
+  top:50%;
+  margin-top:-1px;
+  background:#006baf;
+}

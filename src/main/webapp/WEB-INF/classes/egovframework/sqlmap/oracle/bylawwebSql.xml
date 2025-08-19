@@ -1,0 +1,334 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "/WEB-INF/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="bylawwebSql">
+	<!-- 카테고리 정보 가져오기 -->
+	<select id="getTreeNode" parameterType="HashMap" resultType="HashMap">
+		SELECT LC.CATID, LC.TITLE, LC.CATCD, LC.USEYN, LC.ORD, 
+		NVL(LB.BOOKID,0) BOOKID ,NVL(LS.STATECD,'') STATECD,LS.STATEID, NVL(LB.NOFORMYN,'') NOFORMYN, 
+		NVL(LB.OBOOKID,0) OBOOKID, NVL(LB.REVCHA,-1) REVCHA,
+		LB.PROMULDT, LB.STARTDT, LB.ENDDT, LB.REVCD, LB.DEPTNAME,
+		LB.DEPT
+		,(SELECT MAX(STATEHISTORYID) FROM TB_LM_STATEHISTORY WHERE BOOKID = LB.BOOKID AND STATEID = LB.STATECD) AS STATEHISTORYID,LB.BOOKCD
+		FROM TB_LM_RULECAT lc, TB_LM_RULEHISTORY lb,TB_LM_STATE ls 
+		WHERE lc.pcatid = #{node} and lb.statecd=ls.stateid(+)  AND lc.delyn='N' AND lc.catid = lb.catid(+) 
+			<if test="statecd!='ALL'">
+			and (lb.statecd = (select stateid from TB_LM_STATE where statecd = #{statecd} ) or lc.catcd='folder' )
+			</if>
+		ORDER BY lc.ord
+	</select>
+	
+	<select id="getDeptNode" parameterType="HashMap" resultType="HashMap">
+		select T.DEPTNAME AS TITLE,NVL(T.DEPT,'111') AS ID ,'folder' as CLS from (
+			select distinct(nvl(deptname,'부서미지정')) as deptname,dept from tb_lm_rulehistory a,tb_lm_statehistory b
+			where a.statecd=b.stateid and a.bookid=b.bookid and a.statecd in ('5000')
+		) t 
+		order by t.deptname
+	</select>
+	
+	<select id="getDocNode" parameterType="HashMap" resultType="HashMap">
+		select A.BOOKID AS ID,OBOOKID,CATID,TITLE,REVCD,STATECD,REVCHA,'file' AS CLS,STATEHISTORYID,NOFORMYN from tb_lm_rulehistory a,tb_lm_statehistory b
+		where a.statecd=b.stateid and a.bookid=b.bookid and a.statecd in ('5000') 
+		<if test="mtype=='fav'">
+			and obookid in (select obookid from tb_lm_fav where memberid =#{memberid} and docgbn='RULE')
+		</if>
+		<if test="mtype=='dtree'">
+			and nvl(dept,'111') = #{node}
+		</if>
+		<if test="mtype=='dtree' or mtype=='fav'">
+			order by title
+		</if>
+		<if test="mtype=='recent'">
+			order by startdt desc
+		</if>
+	</select>
+	
+	<select id="getByLawList"  resultType="HashMap">
+	<!-- 
+	WITH tree_query AS (
+		SELECT catid, TITLE, ORD, LPAD('',(LEVEL-1)*2,'')||SYS_CONNECT_BY_PATH(ORD,'>')AS sort
+		FROM TB_LM_rulecat T
+		WHERE catcd='folder'
+		START WITH T.pcatid=0
+		CONNECT BY PRIOR T.catid=T.pcatid 
+	)
+	 -->
+	SELECT b.*
+	FROM (
+	    SELECT a.*,
+	           ceil(ROWNUM/#{pagesize}) page,
+	           ROWNUM AS ROWNUMBER
+	    FROM (
+	        SELECT A.BOOKID, OBOOKID, A.CATID, BOOKCODE, BOOKCD, A.TITLE, A.REVCD, A.REVCHA,
+	               A.STATECD, A.PROMULDT, A.STARTDT, REPLACE(DEPTNAME,'*','') AS DEPTNAME,
+	               A.NOFORMYN, C.STATEHISTORYID, D.SORT, B.ORD,
+	               (
+	                CASE WHEN BOOKCD='원규' THEN '1'
+	                     WHEN BOOKCD='준원규' THEN '2'
+	                     WHEN BOOKCD='매뉴얼' THEN '3'
+	                END
+	               ) AS BOOCDORD
+	        FROM TB_LM_RULEHISTORY A, TB_LM_RULECAT B, TB_LM_STATEHISTORY C, <!-- TREE_QUERY D -->
+	             (
+	              SELECT catid, TITLE, ORD, LPAD('',(LEVEL-1)*2,'')||SYS_CONNECT_BY_PATH(ORD,'>')AS sort
+	              FROM TB_LM_rulecat T
+	              WHERE catcd='folder'
+	              START WITH T.pcatid=0
+	              CONNECT BY PRIOR T.catid=T.pcatid 
+	             ) D
+	        WHERE A.CATID=B.CATID
+	          AND A.BOOKID=C.BOOKID
+	          AND A.STATECD=C.STATEID
+	          AND B.PCATID=D.CATID
+	        <if test="mtype == 'htree'">
+			<!-- 20240128 변경 부분 -->
+	          AND CASE WHEN a.statecd = '6000' AND replace(a.startdt, '-', '') > TO_CHAR(SYSDATE, 'YYYYMMDD') THEN '5000'
+	                   ELSE  a.statecd
+	          END = '5000'
+	        </if>
+	        <if test="mtype == 'ctree'">
+			<!-- 20240128 변경 부분 -->
+	        <![CDATA[
+	          AND CASE WHEN a.statecd = '6000' AND replace(a.startdt, '-', '') <= TO_CHAR(SYSDATE, 'YYYYMMDD') THEN '5000'
+	                   ELSE  a.statecd
+	          END = '6000'
+	        ]]>
+	        </if>
+	        <if test="mtype == 'htree' or mtype == 'ctree'">
+	          <if test="gbnid != null and gbnid != ''">
+	          and (b.PCATID = #{gbnid} or b.PCATID in ( 
+	                   SELECT catid
+	                   FROM TB_LM_rulecat T
+	                   WHERE catcd='folder'
+	                   START WITH T.pcatid=#{gbnid}
+	                   CONNECT BY PRIOR T.catid=T.pcatid
+	              )
+	          )
+	          </if>
+	        </if>
+	        <if test="mtype == 'fav'">
+	          and obookid in (select obookid from tb_lm_fav where memberid =#{memberid} and docgbn='RULE')
+	        </if>
+	        <if test="mtype == 'dtree' or mtype == 'fav' or mtype == 'recent'">
+	          and a.statecd in ('5000','6000')
+	          <if test="mtype == 'dtree' and gbnid != ''">
+	          and a.dept =#{gbnid}
+	          </if>
+	          <if test="mtype == 'dtree'">
+	          and a.statecd in ('5000')
+	          </if>
+	        </if>
+	        <if test="Schtxt != null and Schtxt != ''">
+	          AND (
+	          <trim prefix="" prefixOverrides="AND |OR ">
+	            <if test='stitle == "Y"'>
+	              and a.TITLE LIKE '%'||#{Schtxt}||'%'
+	            </if>
+	            <if test='scontent == "Y"'>
+	              or a.xmlschtxt LIKE '%'||#{Schtxt}||'%'
+	            </if>
+	            <if test='gbn == "T"'>
+	              and a.TITLE LIKE '%'||#{Schtxt}||'%'
+	            </if>
+	            <if test='gbn == "C"'>
+	              or a.xmlschtxt LIKE '%'||#{Schtxt}||'%'
+	            </if>
+	            <if test='gbn == "TC"'>
+	              and (a.TITLE LIKE '%'||#{Schtxt}||'%' or a.xmlschtxt LIKE '%'||#{Schtxt}||'%')
+	            </if>
+	          </trim>
+	          )
+	        </if>
+	        <if test="deptsch != null and deptsch != ''">
+	          and a.deptname LIKE '%'||#{deptsch}||'%'
+	        </if>
+	        <if test="startdt != null and startdt != ''">
+	          and #{startdt} > a.startdt
+	        </if>
+	        <if test="enddt != null and enddt != ''">
+	          and  a.startdt > #{enddt}
+	        </if>
+	    <choose>
+	      <when test="orderby == null or orderby == ''">
+	        ORDER BY d.sort,b.ORD
+	      </when>
+	      <otherwise>
+	        ${orderby}
+	      </otherwise>
+	    </choose>
+	    ) a
+	) b
+	<trim prefix="WHERE" prefixOverrides="AND |OR ">
+		<if test="pageno != ''">
+			page = #{pageno}
+		</if>
+	</trim>
+     </select>
+	
+	<select id="getByLawListCnt"  resultType="int">
+		SELECT count(*)
+        FROM TB_LM_RULEHISTORY A ,TB_LM_RULECAT B ,TB_LM_STATEHISTORY C
+		WHERE A.CATID=B.CATID AND A.BOOKID=C.BOOKID AND A.STATECD=C.STATEID
+		<if test="mtype == 'htree'">
+			and a.statecd = '5000'
+		</if>
+		<if test="mtype == 'ctree'">
+			and a.statecd = '6000'
+		</if>  
+		<if test="mtype == 'htree' or mtype == 'ctree'">
+			<if test="gbnid != null and gbnid != ''">
+				and ( 
+						b.PCATID = #{gbnid} or b.PCATID in ( 
+																SELECT catid FROM TB_LM_rulecat T WHERE catcd='folder'
+													             START WITH T.pcatid=#{gbnid}
+													             CONNECT BY PRIOR T.catid=T.pcatid																	
+															)
+					)
+			</if>
+		</if>
+		<if test="mtype == 'fav'">
+			and obookid in ( 
+								select obookid from tb_lm_fav where memberid =#{memberid} and docgbn='RULE'
+							)
+		</if>
+		<if test="mtype == 'dtree' or mtype == 'fav' or mtype == 'recent'">
+			and a.statecd in ('5000','6000')
+			<if test="mtype == 'dtree' and gbnid != ''">
+				and a.dept =#{gbnid}
+			</if> 
+			<if test="mtype == 'dtree'">
+				and a.statecd in ('5000')
+			</if> 
+		</if>
+		<if test="Schtxt != null and Schtxt != ''">
+		AND (
+			<trim prefix="" prefixOverrides="AND |OR ">
+				<if test='stitle == "Y"'>
+					and a.TITLE LIKE '%'||#{Schtxt}||'%'
+				</if>
+				<if test='scontent == "Y"'>
+					or a.xmlschtxt LIKE '%'||#{Schtxt}||'%' 
+				</if>
+				<if test='gbn == "T"'>
+					and a.TITLE LIKE '%'||#{Schtxt}||'%'
+				</if>
+				<if test='gbn == "C"'>
+					or a.xmlschtxt LIKE '%'||#{Schtxt}||'%' 
+				</if>
+				<if test='gbn == "TC"'>
+					and (a.TITLE LIKE '%'||#{Schtxt}||'%' or a.xmlschtxt LIKE '%'||#{Schtxt}||'%') 
+				</if>
+			</trim>
+		)
+		</if>
+		<if test="deptsch != null and deptsch != ''">
+			and a.deptname LIKE '%'||#{deptsch}||'%'
+		</if>
+		<if test="startdt != null and startdt != ''">
+			and   #{startdt} > a.startdt 
+		</if>
+		
+		<if test="enddt != null and enddt != ''">
+			and  a.startdt > #{enddt} 
+		</if>
+	</select>
+	
+	<select id="getDocpath" resultType="String">
+		SELECT (select statecd from tb_lm_state where stateid = #{statecd})||'규정'||LPAD('',(LEVEL-1)*2,'')||SYS_CONNECT_BY_PATH(TITLE,'>')AS TITLE
+	        FROM TB_LM_RULECAT WHERE CATID = 
+	        (
+	            SELECT CATID FROM TB_LM_RULEHISTORY 
+	            WHERE OBOOKID=#{obookid} AND STATECD=#{statecd}
+	        )
+	        START WITH CATID=
+	        (
+	            SELECT PCATID FROM TB_LM_RULECAT WHERE CATID=
+	            (
+	                SELECT CATID FROM TB_LM_RULEHISTORY 
+	                WHERE OBOOKID=#{obookid} AND STATECD=#{statecd}
+	            )
+	        ) 
+        CONNECT BY PRIOR CATID = PCATID
+	</select>
+	
+	<resultMap type="HashMap" id="webdocinfodata">
+        <result property="XMLOLDNEWREVISION" column="XMLOLDNEWREVISION" jdbcType="CLOB" javaType="java.lang.String" />
+        <result property="XMLDATALINK" column="XMLDATALINK" jdbcType="CLOB" javaType="java.lang.String" />
+        <result property="XMLDATA" column="XMLDATA" jdbcType="CLOB" javaType="java.lang.String" />
+        <result property="JENMUN" column="JENMUN" jdbcType="CLOB" javaType="java.lang.String" />
+    </resultMap>
+    
+	<select id="getBookInfo" resultType="HashMap">
+		SELECT A.BOOKID,CATID,OBOOKID,ORD,BOOKCODE,REVCD ,REVCHA ,PROMULDT ,PROMULNO ,ABOLISHDT ,STARTDT,ENDDT ,BOOKCD 
+			,TITLE ,A.UPDT ,USEYN ,DELYN ,OTHERLAW ,LEGISLATOR ,OPENYN ,WORKSTATECD,NOFORMYN ,DEPTNAME ,LINKURL 
+			,B.XMLOLDNEWREVISION, XMLDATALINK,A.GRADE,
+			(SELECT STATECD FROM TB_LM_RULEHISTORY WHERE BOOKID=
+			    (SELECT BOOKID FROM TB_LM_RULEHISTORY WHERE OBOOKID=
+			        (SELECT OBOOKID FROM TB_LM_RULEHISTORY WHERE BOOKID=#{bookid}) AND STATECD IN ('5000','6000')
+			    )
+			 ) AS STATECD,USERNAME,PHONE,B.STATEHISTORYID,A.STATECD AS STATEID  
+			 <![CDATA[
+			 ,replace(JENMUN,'</br>','\n') as JENMUN
+			 ]]>
+		 FROM TB_LM_RULEHISTORY A,TB_LM_STATEHISTORY B 
+		 WHERE A.BOOKID=#{bookid} AND A.BOOKID=B.BOOKID(+)
+		 AND B.STATEHISTORYID = (SELECT MAX(STATEHISTORYID) FROM TB_LM_STATEHISTORY WHERE BOOKID = A.BOOKID) 
+	</select>
+	
+	<select id="getFav" resultType="String">
+		select count(*) from tb_lm_fav where memberid=#{writerid} and obookid=#{obookid} and docgbn=#{docgbn}
+	</select>
+	
+	<insert id="insertFav" parameterType="HashMap">
+		<selectKey keyProperty="favid" resultType="String" order="BEFORE">
+			SELECT KEYID.NEXTVAL FROM DUAL
+		</selectKey>
+		INSERT INTO TB_LM_FAV 
+			(FAVID, MEMBERID, DOCGBN, OBOOKID)
+		VALUES
+		(
+			#{favid}, #{writerid}, #{docgbn}, #{obookid}
+		)
+	</insert>
+	
+	<delete id="deleteFav" parameterType="HashMap">
+		DELETE TB_LM_FAV WHERE MEMBERID=#{writerid} AND OBOOKID=#{obookid} 
+		<if test="docgbn != null">
+			and docgbn=#{docgbn}
+		</if>
+	</delete>
+	
+	<!-- 단수 확인 -->
+	<select id="getDanList" resultType="HashMap">
+		SELECT A.DAN,A.OBOOKID,A.ORD,B.BOOKID,B.TITLE ,(select xmldatalink from tb_lm_statehistory where statehistoryid=(select max(statehistoryid) from tb_lm_statehistory where bookid=b.bookid)) as xmldatalink 
+		FROM TB_LM_RULESAMDAN A,TB_LM_RULEHISTORY B
+		WHERE A.OBOOKID=B.OBOOKID AND B.STATECD=(select stateid from tb_lm_state where statecd = #{statecd}) AND FSTOBOOKID = 
+			(SELECT FSTOBOOKID FROM TB_LM_RULESAMDAN WHERE OBOOKID= #{obookid})
+		ORDER BY A.DAN ASC,A.ORD ASC
+	</select>
+	
+	<!-- 단수 확인 -->
+	<select id="getDan" resultType="String">
+		SELECT MAX(DAN) AS DAN FROM TB_LM_RULESAMDAN 
+		WHERE FSTOBOOKID = 
+		(SELECT FSTOBOOKID FROM TB_LM_RULESAMDAN WHERE OBOOKID= #{obookid})
+	</select>
+	
+	<select id="getXMLDATASTATEHISTORY" resultType="HashMap">
+		select XMLDATA,(select title from tb_lm_rulehistory where bookid = a.bookid) as TITLE from tb_lm_statehistory a where statehistoryid=#{STATEHISTORYID}
+	</select>
+	
+	<select id="chkRuleTree" resultType="HashMap">
+		SELECT  count(*) as CNT , MDOCID
+        FROM TB_LM_RULETREE 
+        WHERE  mdocid=#{obookid}
+        GROUP BY mdocid
+	</select>
+	
+	<select id="getBookInfo2" resultType="HashMap">
+		select BOOKID,NOFORMYN from tb_lm_rulehistory where obookid =#{OBOOKID} and statecd in ('5000','6000')
+	</select>
+	
+	<select id="joFileList" resultType="HashMap">
+		select FILEID,PCFILENAME,SERVERFILE,PDFFILE from tb_lm_rulefile where contid=#{contid} and filecd='CONT' ORDER BY PDFFILE
+	</select>
+</mapper>

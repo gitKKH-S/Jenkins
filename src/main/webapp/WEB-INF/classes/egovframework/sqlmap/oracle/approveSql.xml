@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "/WEB-INF/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="approveSql">
+	<insert id="insertTB_COM_INF_APLN" parameterType="HashMap" >
+		<selectKey keyProperty="APLN_MNG_NO" resultType="int" order="BEFORE">
+			SELECT KEYID.NEXTVAL FROM DUAL 
+		</selectKey>
+		INSERT INTO TB_COM_INF_APLN (
+			APLN_MNG_NO, APLN_NO, ATRZ_SE_NM, ATRZ_SEQ,ATRZ_TYPE_NM, APRVR_NM, APRVR_NO,ATRZ_DMND_EMP_NM, ATRZ_DMND_EMP_NO, APLN_REG_DT
+		) 
+		VALUES (
+			#{APLN_MNG_NO}, 
+			<if test="APLN_NO == null or APLN_NO == ''">
+			#{APLN_MNG_NO}, 
+			</if>
+			<if test="APLN_NO != null or APLN_NO == !''">
+			#{APLN_NO}, 
+			</if>
+			#{ATRZ_SE_NM}, #{ATRZ_SEQ},#{ATRZ_TYPE_NM}, #{APRVR_NM}, #{APRVR_NO}, #{ATRZ_DMND_EMP_NM}, #{ATRZ_DMND_EMP_NO}, sysdate
+		)
+	</insert>
+	
+	<insert id="insertTB_COM_INF_ATRZ_INFO" parameterType="HashMap" >
+		<selectKey keyProperty="ATRZ_MNG_NO" resultType="int" order="BEFORE">
+			SELECT KEYID.NEXTVAL FROM DUAL 
+		</selectKey>
+		INSERT INTO TB_COM_INF_ATRZ_INFO (
+			ATRZ_MNG_NO, ATRZ_DMND_PST_MNG_NO, ATRZ_CMPTN_YN, ATRZ_SE_NM, ATRZ_TYPE_NM, ATRZ_STTS_NM, ATRZ_RJCT_RSN, APRVR_NM, APRVR_NO, ATRZ_DMND_EMP_NM, ATRZ_DMND_EMP_NO, ATRZ_DMND_DEPT_NM, ATRZ_DMND_DEPT_NO, ATRZ_CMPTN_DT, ATRZ_DMND_DT
+		) 
+		VALUES (
+			#{ATRZ_MNG_NO}, #{ATRZ_DMND_PST_MNG_NO}, 'N', #{ATRZ_SE_NM}, #{ATRZ_TYPE_NM}, '결재중', '', #{APRVR_NM}, #{APRVR_NO}, #{ATRZ_DMND_EMP_NM}, #{ATRZ_DMND_EMP_NO}, #{ATRZ_DMND_DEPT_NM}, #{ATRZ_DMND_DEPT_NO}, '', sysdate
+		)
+	</insert>
+	
+	<insert id="insertTB_COM_INF_ATRZ_STTS" parameterType="HashMap" >
+		<selectKey keyProperty="ATRZ_APRV_MNG_NO" resultType="int" order="BEFORE">
+			SELECT KEYID.NEXTVAL FROM DUAL 
+		</selectKey>
+		INSERT INTO TB_COM_INF_ATRZ_STTS (
+			ATRZ_APRV_MNG_NO, ATRZ_MNG_NO, APRVR_NM, APRVR_NO, APRVR_DEPT_NM, APRVR_DEPT_NO, ATRZ_YN, ATRZ_SEQ, ATRZ_DT
+		) 
+		VALUES (
+			#{ATRZ_APRV_MNG_NO}, #{ATRZ_MNG_NO}, #{APRVR_NM}, #{APRVR_NO}, #{APRVR_DEPT_NM}, #{APRVR_DEPT_NO}, #{ATRZ_YN}, #{ATRZ_SEQ}, 
+			<if test='ATRZ_YN != null and ATRZ_YN == "Y"'>
+				sysdate
+			</if>
+			<if test='ATRZ_YN != null and ATRZ_YN == "N"'>
+				''
+			</if>
+		)
+	</insert>
+	
+	<select id="selectTB_COM_INF_APLN" resultType="HashMap">
+		select A.*,B.DEPT_NO,C.DEPT_NM from TB_COM_INF_APLN A , TB_COM_HRIS B , TB_COM_ORGCHT C 
+		where A.APRVR_NO=B.EMP_NO AND B.DEPT_NO=C.DEPT_NO 
+			AND APLN_NO = (SELECT MAX(APLN_NO) FROM TB_COM_INF_APLN WHERE ATRZ_SE_NM=#{ATRZ_SE_NM} and ATRZ_TYPE_NM=#{ATRZ_TYPE_NM} and ATRZ_DMND_EMP_NO = #{WRTR_EMP_NO})
+		order by ATRZ_SEQ asc
+	</select>
+	
+	<select id="setGianForm" resultType="HashMap">
+		SELECT A.ATRZ_MNG_NO,B.ATRZ_APRV_MNG_NO,B.ATRZ_MNG_NO,B.APRVR_NM,B.APRVR_NO,B.APRVR_DEPT_NM,B.APRVR_DEPT_NO,B.ATRZ_YN,B.ATRZ_SEQ,B.ATRZ_DT,A.APRVR_NO as CAPRVR_NO,ATRZ_DMND_EMP_NO
+		FROM TB_COM_INF_ATRZ_INFO A ,TB_COM_INF_ATRZ_STTS B
+		WHERE A.ATRZ_MNG_NO=B.ATRZ_MNG_NO AND ATRZ_DMND_PST_MNG_NO=#{ATRZ_DMND_PST_MNG_NO} AND ATRZ_SE_NM=#{ATRZ_SE_NM} AND ATRZ_TYPE_NM=#{ATRZ_TYPE_NM} AND ATRZ_CMPTN_YN='N' 
+		ORDER BY B.ATRZ_SEQ ASC
+	</select>
+	
+	<update id="setTableSate">
+		<if test='ATRZ_SE_NM != null and ATRZ_SE_NM == "CONSULT"'>
+			UPDATE TB_CNSTN_MNG SET PRGRS_STTS_SE_NM = #{STATE} WHERE CNSTN_MNG_NO = #{ATRZ_DMND_PST_MNG_NO}  
+		</if>
+		<if test='ATRZ_SE_NM != null and ATRZ_SE_NM == "AGREE"'>
+			''
+		</if>
+	</update>
+	
+	<update id="updateTB_COM_INF_ATRZ_INFO">
+		UPDATE TB_COM_INF_ATRZ_INFO SET 
+			ATRZ_CMPTN_YN = #{ATRZ_CMPTN_YN}, 
+			ATRZ_STTS_NM = #{ATRZ_STTS_NM},
+			ATRZ_RJCT_RSN = #{ATRZ_RJCT_RSN},
+			APRVR_NM=#{APRVR_NM},
+			APRVR_NO=#{APRVR_NO}
+			<if test='ATRZ_CMPTN_YN != null and ATRZ_CMPTN_YN == "Y"'>
+				, ATRZ_CMPTN_DT = sysdate
+			</if>
+			
+		WHERE ATRZ_MNG_NO = #{ATRZ_MNG_NO}  
+	</update>
+	
+	<update id="updateTB_COM_INF_ATRZ_STTS">
+		UPDATE TB_COM_INF_ATRZ_STTS SET 
+			ATRZ_YN = #{ATRZ_YN},
+			ATRZ_DT = sysdate
+		WHERE ATRZ_MNG_NO = #{ATRZ_MNG_NO} AND APRVR_NO = #{APRVR_NO}
+	</update>
+	
+	<select id="selectChkApprove" resultType="HashMap">
+		SELECT *
+		FROM TB_COM_INF_ATRZ_STTS
+		WHERE ATRZ_APRV_MNG_NO IN (
+		    SELECT MIN(ATRZ_APRV_MNG_NO)
+		    FROM TB_COM_INF_ATRZ_STTS
+		    WHERE ATRZ_MNG_NO = #{ATRZ_MNG_NO} AND ATRZ_YN='N'
+		)
+	</select>
+	
+	<select id="showGianList" resultType="HashMap">
+		SELECT 
+			ATRZ_MNG_NO, ATRZ_DMND_PST_MNG_NO, ATRZ_CMPTN_YN, ATRZ_SE_NM, ATRZ_TYPE_NM, ATRZ_STTS_NM, ATRZ_RJCT_RSN, APRVR_NM, 
+			APRVR_NO, ATRZ_DMND_EMP_NM, ATRZ_DMND_EMP_NO, ATRZ_DMND_DEPT_NM, ATRZ_DMND_DEPT_NO, 
+			nvl(to_char(ATRZ_CMPTN_DT,'YYYY-MM-DD HH:mm:ss'), '결재중') as ATRZ_CMPTN_DT, to_char(ATRZ_DMND_DT,'YYYY-MM-DD HH:mm:ss') as ATRZ_DMND_DT
+		FROM TB_COM_INF_ATRZ_INFO WHERE ATRZ_DMND_PST_MNG_NO=#{ATRZ_DMND_PST_MNG_NO} ORDER BY ATRZ_MNG_NO
+	</select>
+	
+	<select id="showGianList2" resultType="HashMap">
+		SELECT  
+			ATRZ_APRV_MNG_NO, ATRZ_MNG_NO, APRVR_NM, APRVR_NO, APRVR_DEPT_NM, APRVR_DEPT_NO, ATRZ_YN, ATRZ_SEQ, to_char(ATRZ_DT,'YYYY-MM-DD HH:mm:ss') as ATRZ_DT
+		FROM TB_COM_INF_ATRZ_STTS WHERE ATRZ_MNG_NO IN (SELECT ATRZ_MNG_NO FROM TB_COM_INF_ATRZ_INFO WHERE ATRZ_DMND_PST_MNG_NO=#{ATRZ_DMND_PST_MNG_NO}) ORDER BY ATRZ_MNG_NO, ATRZ_MNG_NO
+	</select>
+	
+	<select id="selectAlertUser" resultType="HashMap">
+		SELECT MBL_TELNO, EMP_PK_NO
+		FROM TB_COM_HRIS WHERE EMP_NO = #{APRVR_NO}
+	</select>
+	
+	
+	<select id="getApproveList" resultType="HashMap">
+		SELECT ATRZ_SE_NM
+		     , CASE WHEN ATRZ_SE_NM = 'PDS'     THEN (SELECT Z.MENU_MNG_NO FROM TB_BBS_MNG Z WHERE Z.PST_MNG_NO = ATRZ_DMND_PST_MNG_NO)
+		            WHEN ATRZ_SE_NM = 'CONSULT' THEN (SELECT Z.MENU_MNG_NO FROM TB_CNSTN_MNG Z WHERE Z.CNSTN_MNG_NO = ATRZ_DMND_PST_MNG_NO)
+		            WHEN ATRZ_SE_NM = 'AGREE'   THEN (SELECT Z.MENU_MNG_NO FROM TB_CVTN_MNG Z WHERE Z.CVTN_MNG_NO = ATRZ_DMND_PST_MNG_NO)
+		            ELSE '기타'
+		       END DOC_GBN
+		     , CASE WHEN ATRZ_SE_NM = 'PDS'     THEN (SELECT Z.PST_TTL FROM TB_BBS_MNG Z WHERE Z.PST_MNG_NO = ATRZ_DMND_PST_MNG_NO)
+		            WHEN ATRZ_SE_NM = 'CONSULT' THEN (SELECT '('||Z.CNSTN_DOC_NO||') '||Z.CNSTN_TTL FROM TB_CNSTN_MNG Z WHERE Z.CNSTN_MNG_NO = ATRZ_DMND_PST_MNG_NO)
+		            WHEN ATRZ_SE_NM = 'AGREE'   THEN (SELECT '('||Z.CVTN_DOC_NO||') '||Z.CVTN_TTL FROM TB_CVTN_MNG Z WHERE Z.CVTN_MNG_NO = ATRZ_DMND_PST_MNG_NO)
+		            ELSE '기타'
+		       END DOC_NM
+		     , ATRZ_DMND_PST_MNG_NO
+		     , to_char(ATRZ_DMND_DT,'YYYY-MM-DD HH:mm:ss') as ATRZ_DMND_DT
+		FROM TB_COM_INF_ATRZ_INFO
+		WHERE APRVR_NO = #{USERID}
+		  AND ATRZ_STTS_NM = '결재중'
+	</select>
+</mapper>
+    

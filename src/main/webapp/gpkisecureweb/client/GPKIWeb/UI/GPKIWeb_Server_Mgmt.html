@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="format-detection" content="telephone=no">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no" />
+
+<script type="text/javascript">
+var certData = {};
+$(document).ready(function () {
+
+	funDetailProcInit();
+	initDetailEventHandler();
+	
+	$('#ML_window_detail').focus();
+});
+
+function funDetailProcInit() {
+	_createDetailWindow();
+}
+
+function _createDetailWindow(){
+	var os_ver = GPKISecureWebApi.getProperty("os");
+	var popup = 350;
+	
+	$('#ML_window_detail').MLjquiWindow({
+		title: $.i18n.prop("TS100"),
+		resizable: false,
+		position: 'center',
+		closeButtonSize: 35,
+		draggable:true,
+		showCloseButton:false,
+		isModal: true,
+		modalOpacity: 0.3,
+		modalZIndex: 9996,
+		modalBackgroundZIndex: 9996,
+		showCollapseButton: false, 
+		keyboardCloseKey: 0,
+		maxHeight: 430, 
+		minHeight: 200, minWidth: 200, 
+		height: 400, width: 430,
+		initContent: function(){
+		}
+	});
+}
+
+function initDetailEventHandler(){
+
+	$("#btn_detail_confirm").unbind().click(function(){
+		removeIframe("server_iframe", "#server_info_area");
+		
+		$('#ML_window_detail').MLjquiWindow('destroy');
+		$("#stg_web").click();
+	});
+	
+	$("#text_confirm").text($.i18n.prop("TS014"));
+	
+	$("#svr1_h").text($.i18n.prop("TS101"));
+	$("#svr1_c").text($.i18n.prop("TS102"));
+	$("#svr2_h").text($.i18n.prop("TS103"));
+	$("#svr2_c").text($.i18n.prop("TS104"));
+	$("#svr3_h").text($.i18n.prop("TS105"));
+	$("#svr3_c").text($.i18n.prop("TS106"));
+
+}
+
+function makeIframe(idString, configString, parentString){
+	//iframe 생성 
+	var innerHtmlText = '<iframe id="' 
+		+ idString 
+		+ '" name="' 
+		+ idString 
+		+ '"src="' 
+		+ configString
+		+ '" style="width: 398px; height: 398px; border: 0px;"></iframe>';
+	var parent = document.getElementById(parentString);
+	parent.innerHTML = innerHtmlText;
+}
+
+function removeIframe(idString, parentString){
+	//iframe 삭제
+	if(document.getElementById(idString)){
+		$(parentString).html("");
+	}
+}
+
+function svr1Click(){
+	GPKISecureWebUI.blockUI();
+	removeIframe("server_iframe", "#server_info_area");
+	makeIframe("server_iframe", ConfigObject.IframeServer, "server_info_area");
+	
+	$('#server_iframe').load(function(){
+		//가져오기
+		var iframe = document.getElementById('server_iframe').contentWindow;
+		var jsonString = {gotoServer : 'getCert', url: location.origin};
+		iframe.postMessage(JSON.stringify(jsonString) , '*');
+     	GPKISecureWebUI.unblockUI();
+		DSAlert.openAlert("server_check", "getCert", null);
+	});
+	
+}
+
+function svr2Click(){
+	GPKISecureWebUI.blockUI();
+	removeIframe("server_iframe", "#server_info_area");
+	makeIframe("server_iframe", ConfigObject.IframeServer, "server_info_area");
+	
+	$('#server_iframe').load(function(){
+		//저장하기
+		var getLocalInfo = localStorage.getItem('GPKIWebCert');
+		var crypto_api = GPKISecureWebApi.getCryptoApi();
+		
+		var localeString = null;
+		
+		if(getLocalInfo == null || getLocalInfo == undefined){
+			getLocalInfo = "";
+		}else{
+			localeString = JSON.parse(crypto_api.getDecryptedCert(getLocalInfo));
+			if(localeString.certBaglist == "[]" || localeString.certBaglist == '[]'){
+				getLocalInfo = "";
+			}
+		}
+		
+		var iframe = document.getElementById('server_iframe').contentWindow;
+		var jsonString = {gotoServer : 'saveCert', GPKIWebCert : getLocalInfo, url: location.origin};
+		iframe.postMessage(JSON.stringify(jsonString) , '*');
+     	GPKISecureWebUI.unblockUI();
+		DSAlert.openAlert("server_check", "saveCert", null);
+	});
+}
+
+function svr3Click(){
+	GPKISecureWebUI.blockUI();
+	removeIframe("server_iframe", "#server_info_area");
+	makeIframe("server_iframe", ConfigObject.IframeServer, "server_info_area");
+	
+	$('#server_iframe').load(function(){
+		//삭제하기
+		var iframe = document.getElementById('server_iframe').contentWindow;
+		var jsonString = {gotoServer : 'removeCert', url: location.origin};
+		iframe.postMessage(JSON.stringify(jsonString) , '*');
+     	GPKISecureWebUI.unblockUI();
+		DSAlert.openAlert("server_check", "removeCert", null);
+	});
+	
+
+}
+
+</script>
+</head>
+<body>
+
+<div id="ML_window_detail">
+	<div class="ML_container">
+        <div class="br-modal-body">
+        	<div class="br_con_box">
+        		<div class="cert_box" id="svr1" onClick="svr1Click();">
+                      <a href="#">
+                          <span class="cert_icon01"></span>                                   
+                          <div class="cert_txt_box">
+                          	<span id="svr1_h"></span>
+							<span id="svr1_c"></span>
+                          </div>
+                      </a>
+                  </div>
+                  <div class="cert_box" id="svr2" onClick="svr2Click();">
+                      <a href="#">
+                          <span class="cert_icon02"></span>  
+                          <div class="cert_txt_box">
+                              <span id="svr2_h"></span>
+                              <span id="svr2_c"></span>
+                          </div>
+                      </a>
+                  </div>
+                  <div class="cert_box" id="svr3" onClick="svr3Click();">
+                      <a href="#">
+                          <span class="cert_icon03"></span>  
+                          <div class="cert_txt_box">
+                              <span id="svr3_h"></span>
+                              <span id="svr3_c"></span>
+                          </div>
+                      </a>
+                  </div>
+              </div>
+          </div>
+          <div class="br-modal-footer">
+        	 	<button id="btn_detail_confirm" class="log-btn-cancle br_blu_line_btn" type="button"><span id="text_confirm"></span></button>             
+         </div>
+     </div>
+     </div>    
+
+</body>
+
+
+
+</html>

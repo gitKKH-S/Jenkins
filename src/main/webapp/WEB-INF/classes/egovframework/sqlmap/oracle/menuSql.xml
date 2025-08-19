@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "/WEB-INF/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="menuSql">
+	<!-- 메뉴트리 불러오기 -->
+	<select id="getMenu" parameterType="HashMap" resultType="HashMap">
+		SELECT T.MENU_MNG_NO, UP_MENU_MNG_NO, MENU_TTL, USE_YN, MENU_RLS_YN, MENU_SE_NM, URL_INFO_CN, MENU_SORT_SEQ, FLDR_SE,ROW_NUMBER() OVER(ORDER BY MENU_SORT_SEQ,MENU_TTL) AS IDX,PATH
+        	,nvl(MENU_IMG_NM,'doc') as MENU_IMG_NM, RLS_SCP_NM
+        FROM TB_COM_MENU T, ( SELECT MENU_MNG_NO,'HOME' || LPAD('',(LEVEL-1)*2,'')||SYS_CONNECT_BY_PATH(REPLACE(MENU_TTL,' > ',''),' > ')AS PATH   
+                                FROM TB_COM_MENU  
+                             START WITH 
+                             UP_MENU_MNG_NO = 0
+                             CONNECT BY PRIOR MENU_MNG_NO = UP_MENU_MNG_NO) S
+        WHERE UP_MENU_MNG_NO = #{node} AND T.MENU_MNG_NO=S.MENU_MNG_NO
+          AND T.USE_YN = 'Y'
+        <if test='webyn == "Y"'>
+        	and MENU_RLS_YN = 'Y' and USE_YN='Y'
+        	<if test='RLS_SCP_NM=="Y"'> 
+	    	AND RLS_SCP_NM IN ('Y','P')
+	    	</if>
+	    	<if test='RLS_SCP_NM=="N"'>
+	    	AND RLS_SCP_NM IN ('P')
+	    	</if>
+        </if>
+        ORDER BY MENU_SORT_SEQ, MENU_TTL
+	</select>
+	<!-- 루트메뉴 MENU_SE_NM 가져오기 -->
+	<select id="getMenuCd" resultType="HashMap">
+		SELECT MENU_SE_NM 
+		FROM TB_COM_MENU
+		WHERE UP_MENU_MNG_NO = 0
+	</select>
+	<!-- 메뉴생성 -->
+	<insert id="createMenu" parameterType="HashMap">
+		<selectKey keyProperty="MENU_MNG_NO" resultType="int" order="BEFORE">
+			SELECT KEYID.NEXTVAL FROM DUAL
+		</selectKey>
+		INSERT INTO TB_COM_MENU(MENU_MNG_NO, UP_MENU_MNG_NO, MENU_TTL, USE_YN, MENU_RLS_YN, MENU_SE_NM, URL_INFO_CN, MENU_SORT_SEQ, FLDR_SE, MDFCN_PSBLTY_YN,UP_MENU_YN,RLS_SCP_NM)
+		VALUES (#{MENU_MNG_NO},#{UP_MENU_MNG_NO},#{MENU_TTL},#{USE_YN},#{MENU_RLS_YN},#{MENU_SE_NM},#{URL_INFO_CN},nvl((select max(MENU_SORT_SEQ)+1 from TB_COM_MENU where UP_MENU_MNG_NO=#{UP_MENU_MNG_NO}),0),#{FLDR_SE}, #{MDFCN_PSBLTY_YN},#{UP_MENU_YN},#{RLS_SCP_NM})
+	</insert>
+	<!-- 메뉴삭제 -->
+	<delete id="deleteMenu" parameterType="HashMap">
+		DELETE FROM TB_COM_MENU
+		WHERE MENU_MNG_NO=#{MENU_MNG_NO}
+	</delete>
+	<!-- 메뉴사이즈 구하기 -->
+	<select id="getMenuSize" parameterType="HashMap" resultType="int">
+		SELECT COUNT(MENU_MNG_NO)
+		FROM TB_COM_MENU
+		WHERE UP_MENU_MNG_NO = #{MENU_MNG_NO}
+	</select>
+	<!-- 메뉴정보 업데이트 -->
+	<update id="updateMenu" parameterType="HashMap">
+		UPDATE TB_COM_MENU
+		SET MENU_TTL=#{MENU_TTL}, URL_INFO_CN=#{URL_INFO_CN}, USE_YN=#{USE_YN}, MENU_RLS_YN=#{MENU_RLS_YN}
+		WHERE MENU_MNG_NO = #{MENU_MNG_NO}
+	</update>
+	
+	<!-- DD이동시 부모메뉴코드/구분코드 업데이트 -->
+	<update id="updateNode">
+		UPDATE TB_COM_MENU
+		SET UP_MENU_MNG_NO = #{UP_MENU_MNG_NO},MENU_SORT_SEQ=#{MENU_SORT_SEQ}
+		WHERE MENU_MNG_NO = #{MENU_MNG_NO}
+	</update>
+	
+	<update id="updateNodeAll">
+		UPDATE TB_COM_MENU
+		SET MENU_SORT_SEQ = MENU_SORT_SEQ+1
+		WHERE UP_MENU_MNG_NO = #{UP_MENU_MNG_NO} and 
+			MENU_MNG_NO in (
+				select t.MENU_MNG_NO from(
+		            SELECT MENU_MNG_NO,MENU_SORT_SEQ,row_number() over(order by MENU_SORT_SEQ,MENU_TTL) as idx
+		            FROM TB_COM_MENU
+		            WHERE UP_MENU_MNG_NO = #{UP_MENU_MNG_NO}
+		        )t where t.idx>=#{MENU_SORT_SEQ}
+			)
+	</update>
+	
+	<!-- 폴더 이동시 폴더내부메뉴들 구분코드 업데이트 -->
+	<update id="updateMenuCd" parameterType="HashMap">
+		UPDATE TB_COM_MENU
+		SET MENU_SE_NM = #{MENU_SE_NM}
+		WHERE MENU_MNG_NO IN 
+		<foreach item="item" index="index" collection="MENU_MNG_NOs" open="( " close=" )" separator="," >
+			#{item}
+		</foreach>			
+	</update>
+	<!-- 해당아이디에 해당하는 MENU_SE_NM  -->
+	<select id="getMenuCdById" parameterType="HashMap" resultType="String">
+		SELECT MENU_SE_NM
+		FROM TB_COM_MENU
+		WHERE MENU_MNG_NO = #{MENU_MNG_NO}
+	</select>
+	<!-- 해당아이디에 해당하는 하위 nodeList -->
+	<select id="getSubMenuList" parameterType="HashMap" resultType="HashMap">
+		SELECT MENU_MNG_NO
+		FROM TB_COM_MENU
+		START WITH UP_MENU_MNG_NO = #{UP_MENU_MNG_NO}
+		CONNECT BY PRIOR MENU_MNG_NO = UP_MENU_MNG_NO
+		ORDER BY MENU_MNG_NO
+	</select>
+	<!-- url info 가져오기 -->
+	<select id="getUrlList" resultType="HashMap">
+		select MENU_MNG_NO,UP_MENU_MNG_NO,MENU_TTL,MENU_SE_NM,URL_INFO_CN from TB_COM_MENU where nvl(UP_MENU_YN,'N') != 'Y' order by UP_MENU_MNG_NO,MENU_MNG_NO
+	</select>
+	<!-- 최대 ord값 가져오기 -->
+	<select id="getMaxOrd" parameterType="HashMap" resultType="int">
+		SELECT NVL(MAX(MENU_SORT_SEQ),0)
+		FROM TB_COM_MENU
+		WHERE UP_MENU_MNG_NO = #{UP_MENU_MNG_NO}
+	</select>
+	<!-- ord값 정리 -->
+	<update id="reorder" parameterType="HashMap">
+		UPDATE TB_COM_MENU
+		SET MENU_SORT_SEQ = MENU_SORT_SEQ+1
+		WHERE UP_MENU_MNG_NO = #{UP_MENU_MNG_NO} AND MENU_SORT_SEQ>=#{MENU_SORT_SEQ}
+	</update>
+	
+	<!-- 하위폴더 정보 수정 -->
+	<update id="modSubFolder" parameterType="HashMap">
+		UPDATE TB_COM_MENU
+		SET MENU_TTL = #{MENU_TTL}, USE_YN = #{USE_YN}
+		, MENU_RLS_YN = #{MENU_RLS_YN}
+		, MDFCN_PSBLTY_YN = #{MDFCN_PSBLTY_YN}
+		, UP_MENU_YN = #{UP_MENU_YN}
+		, RLS_SCP_NM = #{RLS_SCP_NM}
+		WHERE MENU_MNG_NO = #{MENU_MNG_NO}
+	</update>
+</mapper>

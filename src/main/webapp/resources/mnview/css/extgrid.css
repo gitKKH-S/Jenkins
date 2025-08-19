@@ -1,0 +1,71 @@
+.x-grid3-hd-inner  .x-column-header-text {
+    white-space: normal;
+}
+ 
+.x-grid3-hd-inner  {
+    line-height: normal;
+    padding-top: 3px !important;
+    padding-bottom: 3px !important;
+    text-align: center;
+    top: 20%;
+    height:34px;
+    font-size : 12pt; 
+    color : black;
+    line-height: 27px;
+}
+.x-grid3-body  {
+    color : black;
+}
+#hkk .x-grid3-cell-inner {
+  font-size : 12pt;
+  height:38px;
+  vertical-align:middle;
+  line-height: 27px;
+}
+
+#hkk2 .x-grid3-cell-inner {
+  font-size : 12pt;
+  height:32px;
+  vertical-align:middle;
+  line-height: 27px;
+}
+
+#hkk3 .x-grid3-cell-inner {
+  font-size : 12pt;
+  height:34px;
+  vertical-align:middle;
+  line-height: 27px;
+}
+
+#hkk4 .x-grid3-cell-inner {
+  font-size : 11pt;
+/*   height:30px; */
+  vertical-align:middle;
+  line-height: 27px;
+}
+
+#hkk4 .x-grid3-row td{
+  vertical-align:middle;
+}
+
+#byul .x-grid3-cell-inner {
+  font-size : 12pt;
+  height:34px;
+  vertical-align:middle;
+  line-height: 27px;
+}
+
+.x-tree-node{
+    font-size: 14px;
+    font-family : dotum;
+}
+.x-grid-empty{
+	text-align:center;
+	font-size : 20pt;
+	padding-top : 50px;
+	padding-bottom : 50px;
+}
+.x-panel-bbar table{
+	width:auto;
+	vertical-align:baseline;
+}

@@ -1,0 +1,3103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "/WEB-INF/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="consultSql">
+	<select id="getConsultList" resultType="HashMap"  parameterType="HashMap">
+		/* consultSql_getConsultList_자문목록조회 */
+		SELECT A.*
+		FROM (
+		    SELECT Z.*
+		         , CEIL(ROWNUM/#{pagesize}) PAGE
+		    FROM (
+                SELECT 
+					 A.CNSTN_MNG_NO 
+	                , A.MENU_MNG_NO         /* 메뉴ID */
+	                , A.PRGRS_STTS_SE_NM         /* 진행상태 */ 
+	                , A.CNSTN_TTL          /* 자문제목 */
+	                , A.CNSTN_RQST_DEPT_NO   /* 요청부서코드 */
+	                , A.CNSTN_RQST_DEPT_NM   /* 요청부서명 */ 
+	                , A.CNSTN_RQST_EMP_NO    /* 요청자사번 */
+	                , A.CNSTN_RQST_EMP_NM    /* 요청자명 */
+	                , TO_CHAR(TO_DATE(A.CNSTN_HOPE_RPLY_YMD, 'YYYYMMDD'), 'YYYY-MM-DD') AS CNSTN_HOPE_RPLY_YMD         /* 자문회신희망일자 */
+	                <!-- 
+	                 , CASE WHEN A.PRGRS_STTS_SE_NM = '작성중' AND #{grpcd} = 'P' THEN (CASE WHEN A.CNSTN_RQST_DEPT_NO = #{WRT_DEPT_NO} THEN 'Y' ELSE 'N' END)
+	                        ELSE 'Y'
+	                   END OPENYN
+	                 -->
+	                 <if test="grpcd != null and grpcd != ''">
+	                   <if test='grpcd == "P"'>
+	                 , CASE WHEN A.RLS_YN = 'Y' AND A.CNSTN_RQST_DEPT_NO = #{WRT_DEPT_NO} THEN 'Y'
+	                        WHEN A.RLS_YN = 'N' AND A.CNSTN_RQST_EMP_NO = #{WRTR_EMP_NO}  THEN 'Y'
+	                        ELSE 'N'
+	                   END OPENYN
+	                   </if>
+	                   <if test='grpcd != "P"'>
+	                 , 'Y' AS OPENYN
+	                   </if>
+	                 </if>
+	                 <if test="grpcd == null or grpcd == ''">
+	                 , 'N' AS OPENYN
+	                 </if>
+                    , A.CNSTN_TKCG_EMP_NO       /* 자문담당자사번 */
+                    , A.CNSTN_TKCG_EMP_NM      /* 자문담당자명 */ 
+                    , A.INSD_OTSD_TASK_SE       /* 내/외부 구분 */ 
+                    , CASE 
+                       WHEN A.INSD_OTSD_TASK_SE = 'I' THEN '내부'
+                       WHEN A.INSD_OTSD_TASK_SE = 'O' THEN '외부'
+                       ELSE ''
+	                end    AS INOUTHAN   /* 내/외부 구분 한글명 */
+                    , CASE 
+                       WHEN A.INSD_OTSD_TASK_SE = 'I' THEN A.CNSTN_TKCG_EMP_NM
+                       WHEN A.INSD_OTSD_TASK_SE = 'O' THEN B.RVW_TKCG_EMP_NM      /* 자문인명 */ 
+                       ELSE '미지정'
+	                end    AS INOUT_RVW_TKCG_EMP_NM   /* 내/외부에 따른 검토자 */
+                    , TO_CHAR(TO_DATE(A.CNSTN_RQST_YMD, 'YYYYMMDD'), 'YYYY-MM-DD') AS CNSTN_RQST_YMD           /* 자문요청일자 */
+                    , TO_CHAR(TO_DATE(A.CNSTN_RPLY_YMD, 'YYYYMMDD'), 'YYYY-MM-DD') AS CNSTN_RPLY_YMD          /* 자문회신일자 */
+                    , A.CNSTN_DOC_NO      /* 자문관리번호 */ 
+                    , TO_CHAR(TO_DATE(A.WRT_YMD, 'YYYYMMDD'), 'YYYY-MM-DD') AS WRT_YMD        /* 작성일 */
+                    , TO_CHAR(TO_DATE(A.MDFCN_YMD, 'YYYYMMDD'), 'YYYY-MM-DD') AS MDFCN_YMD      /* 수정일자 */ 
+                    , TO_CHAR(TO_DATE(A.CNSTN_RCPT_YMD, 'YYYYMMDD'), 'YYYY-MM-DD') AS CNSTN_RCPT_YMD	/* 접수일자 */ 
+                    , A.RLS_YN		/* 공개여부 */
+                    , A.CNSTN_SE_NM	/* 자문구분(일반,국제) */ 
+                    , B.RVW_TKCG_EMP_NM      /* 자문인명 */ 
+					, B.JDAF_CORP_EMP_NMS AS JDAF_CORP_NMS
+					, B.JDAF_CORP_EMP_NMS2
+					, D.MANAGER_DEPT_NM /* 부서 실국명 */
+                FROM TB_CNSTN_MNG A LEFT OUTER JOIN 
+	                (
+						SELECT 
+							L.CNSTN_MNG_NO 
+							, LISTAGG(LTRIM(NVL(C2.JDAF_CORP_NM, '') || ' ' || L.RVW_TKCG_EMP_NM), ',') WITHIN GROUP (ORDER BY C2.JDAF_CORP_NM, L.RVW_TKCG_EMP_NM) AS JDAF_CORP_EMP_NMS
+							, LISTAGG(LTRIM((
+							     CASE WHEN SUBSTR(C2.JDAF_CORP_NM, 0, 4) = '법무법인' THEN SUBSTR(C2.JDAF_CORP_NM, 0, 4) || RPAD('*', LENGTH(C2.JDAF_CORP_NM)-1, '*')
+							          WHEN SUBSTR(C2.JDAF_CORP_NM, 0, 4) != '법무법인' THEN SUBSTR(C2.JDAF_CORP_NM, 0, 1) || RPAD('*', LENGTH(C2.JDAF_CORP_NM)-1, '*')
+							     END
+							    ) || ' ' ||
+							    (SUBSTR(L.RVW_TKCG_EMP_NM, 1, 1) || RPAD('*', LENGTH(L.RVW_TKCG_EMP_NM)-1, '*'))), ',') WITHIN GROUP (ORDER BY C2.JDAF_CORP_NM, L.RVW_TKCG_EMP_NM) AS JDAF_CORP_EMP_NMS2
+							, LISTAGG(L.RVW_TKCG_EMP_NM, ',') WITHIN GROUP (ORDER BY L.RVW_TKCG_EMP_NM) AS RVW_TKCG_EMP_NM
+						FROM TB_CNSTN_RVW_PIC L 
+						 LEFT JOIN TB_COM_LWYR C1 ON L.RVW_TKCG_EMP_NO = C1.LWYR_MNG_NO -- L.검토담당직원번호 = C1.변호사관리번호
+						 LEFT JOIN TB_COM_JDAF_CORP C2 ON C1.JDAF_CORP_MNG_NO = C2.JDAF_CORP_MNG_NO -- C1.법무법인관리번호 = C2.법무법인관리번호
+						GROUP BY L.CNSTN_MNG_NO 
+	                ) B ON A.CNSTN_MNG_NO = B.CNSTN_MNG_NO 
+	                LEFT OUTER JOIN TB_COM_ORGCHT D ON D.DEPT_NO = A.CNSTN_RQST_DEPT_NO
+		        WHERE A.MENU_MNG_NO = #{MENU_MNG_NO} 
+	       		AND (A.INSD_OTSD_TASK_SE IS NULL OR A.INSD_OTSD_TASK_SE != 'V')
+		        <if test="grpcd != null and grpcd != ''">
+	              <if test='grpcd != "Y"'>
+	                AND (
+	                    A.PRGRS_STTS_SE_NM != '작성중' OR
+	                    (A.RLS_YN = 'Y' AND A.CNSTN_RQST_DEPT_NO = #{WRT_DEPT_NO}) OR
+	                    (A.RLS_YN = 'N' AND A.CNSTN_RQST_EMP_NO = #{WRTR_EMP_NO})
+	                )
+	              </if>
+	            </if>
+		        <if test="schreqdt1 != null and schreqdt1 != ''">
+	          		AND A.WRT_YMD >= REPLACE(#{schreqdt1}, '-', '')
+		        </if>
+		        <if test="schreqdt2 != null and schreqdt2 != ''">
+	          		AND REPLACE(#{schreqdt2}, '-', '') >= A.WRT_YMD
+		        </if>
+		        <if test="sch_insd_otsd_task_se != null and sch_insd_otsd_task_se != ''">
+	          		AND A.INSD_OTSD_TASK_SE LIKE '%'||#{sch_insd_otsd_task_se}||'%'
+		        </if>
+		        <if test="srch_kywd_cn != null and srch_kywd_cn != ''">
+	          		AND A.PRVT_SRCH_KYWD_CN LIKE '%'||#{srch_kywd_cn}||'%'
+		        </if>
+		        <if test="sch_rqst_dept_nm != null and sch_rqst_dept_nm != ''">
+	          		AND A.CNSTN_RQST_DEPT_NM LIKE '%'||#{sch_rqst_dept_nm}||'%'
+		        </if>
+		        <if test="sch_rqst_emp_nm != null and sch_rqst_emp_nm != ''">
+	         		AND A.CNSTN_RQST_EMP_NM = #{sch_rqst_emp_nm}
+		        </if>
+		        <if test="sch_tkcg_emp_nm != null and sch_tkcg_emp_nm != ''">
+	          		AND A.CNSTN_TKCG_EMP_NM = #{sch_tkcg_emp_nm}
+		        </if>
+		        <if test="cnstn_ttl != null and cnstn_ttl != ''">
+	          		AND A.CNSTN_TTL LIKE '%'||#{cnstn_ttl}||'%'
+		        </if>
+				<if test='schGbn == "1"'>
+					AND A.PRGRS_STTS_SE_NM != '완료'
+				</if>
+				<!-- 문서관리번호 -->
+				<if test="cnstn_doc_no != null and cnstn_doc_no != ''">
+	          		AND A.CNSTN_DOC_NO LIKE '%'||#{cnstn_doc_no}||'%'
+		        </if>
+		        <!-- 답변일 -->
+  		        <if test="schreqdt3 != null and schreqdt3 != ''">		
+					AND A.CNSTN_RPLY_YMD >= REPLACE(#{schreqdt3}, '-', '')
+		        </if>
+		        <if test="schreqdt4 != null and schreqdt4 != ''">
+	          		AND REPLACE(#{schreqdt4}, '-', '') >= A.CNSTN_RPLY_YMD
+		        </if>
+				<!-- 담당고문변호사?(답변자) -->
+				<if test="sch_answer != null and sch_answer != ''">
+	          		AND B.RVW_TKCG_EMP_NM LIKE '%'||#{sch_answer}||'%'
+		        </if>
+				<!-- 자문구분 -->
+				<if test="sch_cnstn_se_nm != null and sch_cnstn_se_nm != ''">
+					AND A.CNSTN_SE_NM LIKE '%'||#{sch_cnstn_se_nm}||'%'
+		        </if>
+				<!-- 진행상태 -->
+				<if test="prgrs_stts_se_nm != null and prgrs_stts_se_nm != ''">
+<!-- 	          	AND A.PRGRS_STTS_SE_NM LIKE '%'||#{prgrs_stts_se_nm}||'%' -->
+					<choose>
+						<when test="prgrs_stts_se_nm == '결재중'">
+							AND A.PRGRS_STTS_SE_NM IN ('팀장결재중', '과장결재중')
+						</when>
+						<when test="prgrs_stts_se_nm == '진행중'">
+							AND A.PRGRS_STTS_SE_NM NOT IN ('작성중', '접수대기', '완료', '철회')
+						</when>
+						<otherwise>
+							AND A.PRGRS_STTS_SE_NM = #{prgrs_stts_se_nm}
+						</otherwise>
+					</choose>
+		        </if>
+				<!-- 내용(의뢰내용, 의뢰요지내용, 비고내용, 메모내용) -->
+				<if test="all_cn != null and all_cn != ''">
+					AND 
+					(
+						A.CNSTN_RQST_CN LIKE '%'||#{all_cn}||'%'
+						OR A.CNSTN_RQST_SUBST_CN LIKE '%'||#{all_cn}||'%'
+						OR A.RMRK_CN LIKE '%'||#{all_cn}||'%'
+						OR EXISTS (
+				                SELECT 1 
+				                FROM TB_CNSTN_MEMO C 
+				                WHERE C.CNSTN_MNG_NO = A.CNSTN_MNG_NO
+				                  AND C.MEMO_CN LIKE '%' ||#{all_cn}|| '%'
+				                  )
+					)
+		        </if>
+		        
+		        <choose>
+		          <when test="orderby == null or orderby == ''">
+		        ORDER BY 
+<!-- 		        A.CNSTN_RQST_YMD, A.CNSTN_RQST_REG_YMD DESC -->
+<!-- 					A.CNSTN_DOC_NO DESC, CNSTN_MNG_NO DESC -->
+					A.CNSTN_RCPT_YMD DESC NULLS FIRST, CNSTN_MNG_NO DESC NULLS FIRST
+		          </when>
+		          <otherwise>
+		        	<include refid="commonSql.orderbysql"></include>
+		          </otherwise>
+		        </choose>
+		    ) Z
+		    <!-- WHERE Z.OPENYN = 'Y' -->
+		) A
+		<trim prefix="WHERE" prefixOverrides="AND |OR ">
+			<if test="pageno != null and pageno != ''">
+				page = #{pageno}
+			</if>
+		</trim>
+	</select>
+	
+	<select id="getConsultTotal" resultType="int" parameterType="java.util.Map">
+		/* consultSql_getConsultTotal_자문목록건수조회 */
+		SELECT COUNT(*)
+	    FROM (
+               SELECT A.CNSTN_MNG_NO 
+                     , A.MENU_MNG_NO         /* 메뉴ID */
+                     , A.PRGRS_STTS_SE_NM         /* 진행상태 */ 
+                     , A.CNSTN_TTL          /* 자문제목 */
+                     , A.CNSTN_RQST_DEPT_NO   /* 요청부서코드 */
+                     , A.CNSTN_RQST_DEPT_NM   /* 요청부서명 */ 
+                     , A.CNSTN_RQST_EMP_NO    /* 요청자사번 */
+                     , A.CNSTN_RQST_EMP_NM    /* 요청자명 */
+                     , A.CNSTN_HOPE_RPLY_YMD         /* 자문회신희망일자 */ 
+		             <!-- 
+	                 , CASE WHEN A.PRGRS_STTS_SE_NM = '작성중' AND #{grpcd} = 'P' THEN (CASE WHEN A.CNSTN_RQST_DEPT_NO = #{WRT_DEPT_NO} THEN 'Y' ELSE 'N' END)
+	                        ELSE 'Y'
+	                   END OPENYN
+	                 -->
+	                 <if test="grpcd != null and grpcd != ''">
+	                   <if test='grpcd == "P"'>
+	                 , CASE WHEN A.RLS_YN = 'Y' AND A.CNSTN_RQST_DEPT_NO = #{WRT_DEPT_NO} THEN 'Y'
+	                        WHEN A.RLS_YN = 'N' AND A.CNSTN_RQST_EMP_NO = #{WRTR_EMP_NO}  THEN 'Y'
+	                        ELSE 'N'
+	                   END OPENYN
+	                   </if>
+	                   <if test='grpcd != "P"'>
+	                 , 'Y' AS OPENYN
+	                   </if>
+	                 </if>
+	                 <if test="grpcd == null or grpcd == ''">
+	                 , 'N' AS OPENYN
+	                 </if>
+                    , A.CNSTN_TKCG_EMP_NO       /* 자문담당자사번 */
+                    , A.CNSTN_TKCG_EMP_NM      /* 자문담당자명 */ 
+                    , A.INSD_OTSD_TASK_SE       /* 내/외부 구분 */ 
+                    , CASE 
+                       WHEN A.INSD_OTSD_TASK_SE = 'I' THEN '내부검토'
+                       WHEN A.INSD_OTSD_TASK_SE = 'O' THEN '외부자문'
+                       ELSE ''
+	                end    AS INOUTHAN   /* 내/외부 구분 한글명 */
+                    , A.CNSTN_RQST_YMD           /* 자문요청일자 */
+                    , A.CNSTN_RPLY_YMD          /* 자문회신일자 */
+                    , A.CNSTN_DOC_NO      /* 자문관리번호 */ 
+                    , A.WRT_YMD        /* 작성일 */
+                    , A.MDFCN_YMD      /* 수정일자 */ 
+                    , A.CNSTN_RCPT_YMD	/* 접수일자 */ 
+                    , B.RVW_TKCG_EMP_NM      /* 자문인명 */ 
+					, B.JDAF_CORP_EMP_NMS AS JDAF_CORP_NMS
+                FROM TB_CNSTN_MNG A LEFT OUTER JOIN (
+                    SELECT 
+                    	L.CNSTN_MNG_NO
+						, LISTAGG(NVL(C2.JDAF_CORP_NM, '') || ' ' || L.RVW_TKCG_EMP_NM, ',') WITHIN GROUP (ORDER BY C2.JDAF_CORP_NM, L.RVW_TKCG_EMP_NM) AS JDAF_CORP_EMP_NMS
+						, LISTAGG(L.RVW_TKCG_EMP_NM, ',') WITHIN GROUP (ORDER BY L.RVW_TKCG_EMP_NM) AS RVW_TKCG_EMP_NM
+                    FROM TB_CNSTN_RVW_PIC L 
+	                    LEFT JOIN TB_COM_LWYR C1 ON L.RVW_TKCG_MNG_NO = C1.LWYR_MNG_NO
+	                    LEFT JOIN TB_COM_JDAF_CORP C2 ON C1.JDAF_CORP_MNG_NO = C2.JDAF_CORP_MNG_NO
+                    GROUP BY L.CNSTN_MNG_NO 
+                ) B ON A.CNSTN_MNG_NO = B.CNSTN_MNG_NO 
+		        WHERE A.MENU_MNG_NO = #{MENU_MNG_NO}
+		        AND (A.INSD_OTSD_TASK_SE IS NULL OR A.INSD_OTSD_TASK_SE != 'V')
+		    <if test="grpcd != null and grpcd != ''">
+	          <if test='grpcd != "Y"'>
+	            AND (
+	                A.PRGRS_STTS_SE_NM != '작성중' OR
+	                (A.RLS_YN = 'Y' AND A.CNSTN_RQST_DEPT_NO = #{WRT_DEPT_NO}) OR
+	                (A.RLS_YN = 'N' AND A.CNSTN_RQST_EMP_NO = #{WRTR_EMP_NO})
+	            )
+	          </if>
+	        </if>
+	        <if test="schreqdt1 != null and schreqdt1 != ''">
+	          AND A.WRT_YMD >= REPLACE(#{schreqdt1}, '-', '')
+	        </if>
+	        <if test="schreqdt2 != null and schreqdt2 != ''">
+	          AND REPLACE(#{schreqdt2}, '-', '') >= A.WRT_YMD
+	        </if>
+	        <if test="sch_insd_otsd_task_se != null and sch_insd_otsd_task_se != ''">
+	          AND A.INSD_OTSD_TASK_SE LIKE '%'||#{sch_insd_otsd_task_se}||'%'
+	        </if>
+	        <if test="srch_kywd_cn != null and srch_kywd_cn != ''">
+	          AND A.PRVT_SRCH_KYWD_CN LIKE '%'||#{srch_kywd_cn}||'%'
+	        </if>
+	        <if test="sch_rqst_dept_nm != null and sch_rqst_dept_nm != ''">
+	          AND A.CNSTN_RQST_DEPT_NM LIKE '%'||#{sch_rqst_dept_nm}||'%'
+	        </if>
+	        <if test="sch_rqst_emp_nm != null and sch_rqst_emp_nm != ''">
+	          AND A.CNSTN_RQST_EMP_NM = #{sch_rqst_emp_nm}
+	        </if>
+	        <if test="sch_tkcg_emp_nm != null and sch_tkcg_emp_nm != ''">
+	          AND A.CNSTN_TKCG_EMP_NM = #{sch_tkcg_emp_nm}
+	        </if>
+	        <if test="cnstn_ttl != null and cnstn_ttl != ''">
+	          AND A.CNSTN_TTL LIKE '%'||#{cnstn_ttl}||'%'
+	        </if>
+			<if test='schGbn == "1"'>
+				AND A.PRGRS_STTS_SE_NM != '완료'
+			</if>
+			<!-- 문서관리번호 -->
+			<if test="cnstn_doc_no != null and cnstn_doc_no != ''">
+	          AND A.CNSTN_DOC_NO LIKE '%'||#{cnstn_doc_no}||'%'
+	        </if>
+	        <!-- 답변일 -->
+			        <if test="schreqdt3 != null and schreqdt3 != ''">		
+	          AND A.CNSTN_RPLY_YMD >= REPLACE(#{schreqdt3}, '-', '')
+	        </if>
+	        <if test="schreqdt4 != null and schreqdt4 != ''">
+	          AND REPLACE(#{schreqdt4}, '-', '') >= A.CNSTN_RPLY_YMD
+	        </if>
+			<!-- 담당고문변호사?(답변자) -->
+			<if test="sch_answer != null and sch_answer != ''">
+	          AND B.RVW_TKCG_EMP_NM LIKE '%'||#{sch_answer}||'%'
+	        </if>
+			<!-- 자문구분 -->
+			<if test="sch_cnstn_se_nm != null and sch_cnstn_se_nm != ''">
+	          AND A.CNSTN_SE_NM LIKE '%'||#{sch_cnstn_se_nm}||'%'
+	        </if>
+			<!-- 진행상태 -->
+			<if test="prgrs_stts_se_nm != null and prgrs_stts_se_nm != ''">
+<!-- 	          AND A.PRGRS_STTS_SE_NM LIKE '%'||#{prgrs_stts_se_nm}||'%' -->
+				<choose>
+					<when test="prgrs_stts_se_nm == '결재중'">
+						AND A.PRGRS_STTS_SE_NM IN ('팀장결재중', '과장결재중')
+					</when>
+					<when test="prgrs_stts_se_nm == '진행중'">
+							AND A.PRGRS_STTS_SE_NM NOT IN ('작성중', '접수대기', '완료', '철회')
+						</when>
+					<otherwise>
+						AND A.PRGRS_STTS_SE_NM = #{prgrs_stts_se_nm}
+					</otherwise>
+				</choose>
+	        </if>
+			<!-- 내용(의뢰내용, 의뢰요지내용, 비고내용, 메모내용) -->
+			<if test="all_cn != null and all_cn != ''">
+	          AND 
+	          	(
+	          		A.CNSTN_RQST_CN LIKE '%'||#{all_cn}||'%'
+	          		OR A.CNSTN_RQST_SUBST_CN LIKE '%'||#{all_cn}||'%'
+	          		OR A.RMRK_CN LIKE '%'||#{all_cn}||'%'
+	          		OR EXISTS (
+	                          SELECT 1 
+	                          FROM TB_CNSTN_MEMO C 
+	                          WHERE C.CNSTN_MNG_NO = A.CNSTN_MNG_NO
+	                            AND C.MEMO_CN LIKE '%' ||#{all_cn}|| '%'
+	                            )
+	          	)
+	        </if>
+	    ) A
+	    <!-- WHERE A.OPENYN = 'Y' -->
+	</select>
+	
+	<select id="consultSql.getConsult" resultType="HashMap">
+		/* consultSql_getConsult_자문상세조회 */
+		SELECT 
+			A.CNSTN_MNG_NO		/* 자문관리번호 */
+			, A.MENU_MNG_NO		/* 메뉴관리번호 */
+			, A.CNSTN_DOC_NO		/* 자문문서번호 */
+			, A.PRGRS_STTS_SE_NM		/* 진행상태구분명 */
+			, A.RLS_YN		/* 공개여부 */
+			, A.INSD_OTSD_TASK_SE		/* 내부외부업무구분 */
+			, A.OTSD_RQST_RSN		/* 외부의뢰사유 */
+			, A.CNSTN_TTL		/* 자문제목 */
+			, A.CNSTN_RQST_EMP_NO		/* 자문의뢰직원번호 */
+			, A.CNSTN_RQST_EMP_NM		/* 자문의뢰직원명 */
+			, A.CNSTN_RQST_DEPT_NO		/* 자문의뢰부서번호 */
+			, A.CNSTN_RQST_DEPT_NM		/* 자문의뢰부서명 */
+			, A.CNSTN_RQST_DEPT_TMLDR_EMP_NO		/* 자문의뢰부서팀장직원번호 */
+			, A.CNSTN_RQST_DEPT_TMLDR_NM		/* 자문의뢰부서팀장명 */
+			, A.RQST_DEPT_LAST_APRVR_JBPS_NM		/* 의뢰부서최종결재자직위명 */
+			, TO_CHAR(TO_DATE(A.CNSTN_RQST_REG_YMD, 'YYYYMMDD'), 'YYYY-MM-DD') AS CNSTN_RQST_REG_YMD		/* 자문의뢰등록일자 */
+			, TO_CHAR(TO_DATE(A.CNSTN_RQST_YMD, 'YYYYMMDD'), 'YYYY-MM-DD') AS CNSTN_RQST_YMD		/* 자문의뢰일자 */
+			, A.CNSTN_RQST_CN		/* 자문의뢰내용 */
+			, A.CNSTN_RQST_SUBST_CN		/* 자문의뢰요지내용 */
+			, A.RMRK_CN		/* 비고내용 */
+			, TO_CHAR(TO_DATE(A.CNSTN_HOPE_RPLY_YMD, 'YYYYMMDD'), 'YYYY-MM-DD') AS CNSTN_HOPE_RPLY_YMD		/* 자문희망회신일자 */
+			, TO_CHAR(TO_DATE(A.CNSTN_RCPT_YMD, 'YYYYMMDD'), 'YYYY-MM-DD') AS CNSTN_RCPT_YMD		/* 자문접수일자 */
+			, A.CNSTN_TKCG_EMP_NO		/* 자문담당직원번호 */
+			, A.CNSTN_TKCG_EMP_NM		/* 자문담당직원명 */
+			, TO_CHAR(TO_DATE(A.CNSTN_RPLY_YMD, 'YYYYMMDD'), 'YYYY-MM-DD') AS CNSTN_RPLY_YMD		/* 자문회신일자 */
+			, TO_CHAR(TO_DATE(A.CNSTN_CMPTN_YMD, 'YYYYMMDD'), 'YYYY-MM-DD') AS CNSTN_CMPTN_YMD		/* 자문완료일자 */
+			, A.PRVT_SRCH_KYWD_CN		/* 비공개검색키워드내용 */
+			, A.EMRG_YN		/* 긴급여부 */
+			, A.DEL_YN		/* 삭제여부 */
+			, A.WRTR_EMP_NM		/* 작성직원명 */
+			, A.WRTR_EMP_NO		/* 작성직원번호 */
+			, TO_CHAR(TO_DATE(A.WRT_YMD, 'YYYYMMDD'), 'YYYY-MM-DD') AS WRT_YMD		/* 작성일자 */
+			, A.WRT_DEPT_NM		/* 작성부서명 */
+			, A.WRT_DEPT_NO		/* 작성부서번호 */
+			, A.MDFCN_EMP_NM		/* 수정직원명 */
+			, A.MDFCN_EMP_NO		/* 수정직원번호 */
+			, TO_CHAR(TO_DATE(A.MDFCN_YMD, 'YYYYMMDD'), 'YYYY-MM-DD') AS MDFCN_YMD		/* 수정일자 */
+			, A.MDFCN_DEPT_NM		/* 수정부서명 */
+			, A.MDFCN_DEPT_NO		/* 수정부서번호 */
+			, A.DSCSN_TYPE_NM		/* 상담유형(구두자문) */
+			, A.EXCL_DMND_JDAF_CORP_NM		/* 제외요청법무법인명 */
+			, A.CNSTN_SE_NM		/* 자문구분명(일반,국제) */
+			, A.CNSTN_ANS_RVW_OPNN_CN		/* 자문답변검토의견내용 */
+			, TO_CHAR(TO_DATE(RVW_OPNN_REG_YMD, 'YYYYMMDD'), 'YYYY-MM-DD') AS RVW_OPNN_REG_YMD  /* 검토의견등록일자 */
+<!-- 			, A.CSTTYPECD      /* 주제분류 */ -->
+<!-- 			, (SELECT Z.CODE FROM TB_LM_RULECODE Z WHERE Z.CODEID = A.CSTTYPECD) AS CSTTYPENM /* 주제분류명 */ -->
+<!-- 			, A.TAPPYN         /* 부장승인여부 */ -->
+<!-- 			, A.MAPPYN         /* 팀장승인여부 */ -->
+<!-- 			, A.OLDCONSULTNO   /* 과거자문관리번호 */ -->
+<!-- 			, A.OUTREQDT       /* 외부의뢰일 */ -->
+			, A.CNSTN_RQST_DH_EMP_NO /* 의뢰부서장직원번호 */
+			, A.CNSTN_RQST_DH_NM		/* 의뢰부서장명 */
+			, A.CNSTN_RQST_DH_JBPS_NM	/* 의뢰부서장직위명 */
+			, A.CNSTN_RQST_DEPT_TMLDR_TELNO	/* 자문의뢰부서팀장전화번호 */
+			, A.CNSTN_RQST_DEPT_TMLDR_JBPS_NM	/* 자문의뢰부서팀장직위명 */
+			, A.CNSTN_TKCG_EMP_TELNO	/* 자문담당직원전화번호 */
+			, A.CNSTN_INTL_DOC_NO	/* 자문국제문서번호 */
+			, A.EMRG_RSN		/* 긴급사유 */
+			
+			, A.DGSTFN_RSPNS_YN
+		FROM TB_CNSTN_MNG A
+		WHERE A.CNSTN_MNG_NO = #{consultid}
+	</select>
+	
+	<insert id="insertConsult" parameterType="HashMap">
+		<selectKey keyProperty="cnstn_mng_no" resultType="String" order="BEFORE">
+			SELECT KEYID.NEXTVAL FROM DUAL
+		</selectKey>	
+		/* consultSql_insertConsult_자문정보등록 */
+		INSERT INTO TB_CNSTN_MNG (
+			  CNSTN_MNG_NO    /* 자문관리번호 */
+			, MENU_MNG_NO       /* 메뉴관리번호 */
+			, PRGRS_STTS_SE_NM       /* 진행상태구분명 */
+			, RLS_YN       /* 공개여부 */
+			, INSD_OTSD_TASK_SE     /* 내부외부업무구분 */
+			, OTSD_RQST_RSN     /* 외부의뢰사유 */
+			, CNSTN_TTL        /* 자문제목 */
+			, CNSTN_RQST_EMP_NO  /* 자문의뢰직원번호 */
+			, CNSTN_RQST_EMP_NM  /* 자문의뢰직원명 */
+			, CNSTN_RQST_DEPT_NO /* 자문의뢰부서번호 */
+			, CNSTN_RQST_DEPT_NM /* 자문의뢰부서명 */
+			, CNSTN_RQST_DEPT_TMLDR_EMP_NO /* 자문의뢰부서팀장직원번호 */
+			, CNSTN_RQST_DEPT_TMLDR_NM /* 자문의뢰부서팀장명 */
+			, RQST_DEPT_LAST_APRVR_JBPS_NM /* 의뢰부서최종결재자직위명 */
+			, CNSTN_RQST_REG_YMD      /* 자문의뢰등록일자 */
+			, CNSTN_RQST_CN     /* 자문 요청 내용 */
+			, CNSTN_RQST_SUBST_CN     /* 자문의뢰요지내용 */
+			, RMRK_CN     /* 비고내용 */
+			, CNSTN_HOPE_RPLY_YMD       /* 자문희망회신일자 */
+<!-- 			, TAPPYN       /* 부장승인여부 */ 이거 여쭤보기 -->
+<!-- 			, MAPPYN       /* 팀장승인여부 */ 이거 여쭤보기 -->
+			, PRVT_SRCH_KYWD_CN		/* 비공개검색키워드내용 */
+			, EMRG_YN		/* 긴급여부 */
+			, DEL_YN		/* 삭제여부 */
+			, WRTR_EMP_NM		/* 작성직원명 */
+			, WRTR_EMP_NO		/* 작성직원번호 */
+			, WRT_YMD		/* 작성일자 */
+			, WRT_DEPT_NM		/* 작성부서명 */
+			, WRT_DEPT_NO		/* 작성부서번호 */
+			, MDFCN_EMP_NM		/* 수정직원명 */
+			, MDFCN_EMP_NO		/* 수정직원번호 */
+			, MDFCN_YMD		/* 수정일자 */
+			, MDFCN_DEPT_NM		/* 수정부서명 */
+			, MDFCN_DEPT_NO		/* 수정부서번호 */
+			, EXCL_DMND_JDAF_CORP_NM		/* 제외요청법무법인명 */
+			, EMRG_RSN		/* 긴급사유 */
+			, CNSTN_SE_NM		/* 자문구분명(일반,국제) */
+			
+			, CNSTN_RQST_DH_EMP_NO /* 의뢰부서장직원번호 */
+			, CNSTN_RQST_DH_NM		/* 의뢰부서장명 */
+			, CNSTN_RQST_DH_JBPS_NM	/* 의뢰부서장직위명 */
+			, CNSTN_RQST_DEPT_TMLDR_TELNO	/* 자문의뢰부서팀장전화번호 */
+			, CNSTN_RQST_DEPT_TMLDR_JBPS_NM	/* 자문의뢰부서담당팀장직위명 */
+			
+			
+			, DGSTFN_RSPNS_YN
+		) VALUES (
+			  #{cnstn_mng_no}
+			, #{MENU_MNG_NO}
+			, '작성중'
+			, 'Y'
+			, #{insd_otsd_task_se}
+			, #{otsd_rqst_rsn}
+			, #{cnstn_ttl}
+			, #{cnstn_rqst_emp_no}
+			, #{cnstn_rqst_emp_nm}
+			, #{cnstn_rqst_dept_no}
+			, #{cnstn_rqst_dept_nm}
+			, #{cnstn_rqst_dept_tmldr_emp_no}
+			, #{cnstn_rqst_dept_tmldr_nm}
+			, #{rqst_dept_last_aprvr_jbps_nm}
+			, to_char(sysdate, 'YYYYMMDD')
+			, #{cnstn_rqst_cn}
+			, #{cnstn_rqst_subst_cn}
+			, #{rmrk_cn}
+			, (REPLACE(#{cnstn_hope_rply_ymd}, '-', ''))
+<!-- 			, 'N' -->
+<!-- 			, 'N' -->
+			, #{prvt_srch_kywd_cn}
+			, #{emrg_yn}
+			, 'N'
+			, #{wrtr_emp_nm}
+			, #{wrtr_emp_no}
+			, to_char(sysdate, 'YYYYMMDD')
+			, #{wrt_dept_nm}
+			, #{wrt_dept_no}
+			, #{wrtr_emp_nm}
+			, #{wrtr_emp_no}
+			, to_char(sysdate, 'YYYYMMDD')
+			, #{wrt_dept_nm}
+			, #{wrt_dept_no}
+			, #{excl_dmnd_jdaf_corp_nm}
+			, #{emrg_rsn}
+			, #{cnstn_se_nm}
+			
+			, #{cnstn_rqst_dh_emp_no}
+			, #{cnstn_rqst_dh_nm}
+			, #{cnstn_rqst_dh_jbps_nm}
+			, #{cnstn_rqst_dept_tmldr_telno}
+			, #{cnstn_rqst_dept_tmldr_jbps_nm}
+			, 'N'
+		)
+	</insert>
+	
+	<select id="createConsultno" resultType="String">
+	/* consultSql_createConsultno_자문 문서관리번호 생성 */
+		SELECT CASE WHEN A.CNT = 0 THEN (SELECT TO_CHAR(SYSDATE, 'YYYY') FROM DUAL)||'-0001'
+		            ELSE (
+		                  SELECT D.TODAY2||'-'||LPAD(MAX(TO_NUMBER(REPLACE(C.CNSTN_DOC_NO, D.TODAY2||'-')))+1, 4, '0')
+		                  FROM TB_CNSTN_MNG C,
+		                       (
+		                        SELECT TO_CHAR(SYSDATE, '%YYYY') AS TODAY1,
+		                               TO_CHAR(SYSDATE, 'YYYY') AS TODAY2
+		                        FROM DUAL
+		                       ) D
+		                  WHERE C.CNSTN_DOC_NO LIKE D.TODAY1||'%'
+		                 )
+		       END AS CONSULTNO
+		FROM (
+		    SELECT COUNT(C.CNSTN_DOC_NO) AS CNT
+		    FROM TB_CNSTN_MNG C, 
+		         (SELECT TO_CHAR(SYSDATE, '%YYYY') AS TODAY FROM DUAL) D
+		    WHERE CNSTN_DOC_NO LIKE TODAY||'%'
+		) A
+	</select>
+	
+	<select id="createConsultno2" resultType="String">
+	/* consultSql_createConsultno2_국제자문 문서관리번호 생성 */
+		SELECT CASE WHEN A.CNT = 0 THEN '국제-'||(SELECT TO_CHAR(SYSDATE, 'YYYY') FROM DUAL)||'-0001'
+		            ELSE (
+		                SELECT '국제-'||D.TODAY2||'-'||LPAD(MAX(TO_NUMBER(REPLACE(C.CNSTN_INTL_DOC_NO, D.TODAY2||'-')))+1, 4, '0')
+		                FROM TB_CNSTN_MNG C,
+		                     (
+		                      SELECT TO_CHAR(SYSDATE, '%YYYY') AS TODAY1,
+		                             TO_CHAR(SYSDATE, 'YYYY') AS TODAY2
+		                      FROM DUAL
+		                     ) D
+		                WHERE C.CNSTN_INTL_DOC_NO LIKE D.TODAY1||'%'
+		                  AND C.CNSTN_SE_NM = '국제'
+		            )
+		        END AS CNSTN_DOC_NO
+		FROM (
+		    SELECT COUNT(L.CNSTN_MNG_NO) AS CNT
+		    FROM TB_CNSTN_MNG L,
+		         (SELECT TO_CHAR(SYSDATE, '%YYYY') AS TODAY FROM DUAL) D
+		    WHERE L.CNSTN_INTL_DOC_NO LIKE TODAY||'%'
+		      AND L.CNSTN_SE_NM = '국제'
+		) A
+	</select>
+	
+	<select id="selectFileList" resultType="HashMap" parameterType="java.util.Map">
+		/* consultSql_selectFileList_자문파일목록조회 */
+		SELECT 
+			FILE_MNG_NO		/* 파일관리번호 */
+			, CNSTN_MNG_NO		/* 자문관리번호 */
+			, TRGT_PST_MNG_NO		/* 대상게시물관리번호 */
+			, FILE_SE_NM		/* 파일구분 */
+			, DWNLD_FILE_NM		/* 다운로드파일명 */
+			, SRVR_FILE_NM		/* 서버파일명 */
+			, PHYS_FILE_NM		/* 물리파일명 */
+			, FILE_EXTN_NM		/* 파일확장자명 */
+			, FILE_SZ
+			, CASE WHEN FILE_SZ = 0 THEN '0B' ELSE TO_CHAR(ROUND(FILE_SZ/POWER(1024, FLOOR(LOG(1024, FILE_SZ))), 2)) || DECODE(FLOOR(LOG(1024, FILE_SZ)), 0, 'B', 1, 'KB', 2, 'MB', 3, 'GB') END VIEW_SZ
+			, TRGT_PST_TBL_NM		/* 대상게시물테이블명 */
+			, SORT_SEQ		/* 정렬순서 */
+			, DOC_FORM_MNG_NO		/* 문서양식관리번호 */
+			, DEL_YN		/* 삭제여부 */
+			, WRTR_EMP_NM		/* 작성직원명 */
+			, WRTR_EMP_NO		/* 작성직원번호 */
+			, WRT_YMD		/* 작성일자 */
+			, WRT_DEPT_NM		/* 작성부서명 */
+			, WRT_DEPT_NO		/* 작성부서번호 */
+			, MDFCN_EMP_NM		/* 수정직원명 */
+			, MDFCN_EMP_NO		/* 수정직원번호 */
+			, MDFCN_YMD		/* 수정일자 */
+			, MDFCN_DEPT_NM		/* 수정부서명 */
+			, MDFCN_DEPT_NO		/* 수정부서번호 */
+		FROM TB_CNSTN_FILE
+		WHERE CNSTN_MNG_NO = #{consultid}
+		<if  test="filegbn != null and filegbn != ''">
+			AND FILE_SE_NM = #{filegbn}
+		</if>
+		ORDER BY FILE_SE_NM, PHYS_FILE_NM
+	</select>
+	
+	<insert id="consultSql.insertFile">
+		INSERT INTO TB_CNSTN_FILE(
+			FILE_MNG_NO		/* 파일관리번호 */
+			, CNSTN_MNG_NO		/* 자문관리번호 */
+			, TRGT_PST_MNG_NO		/* 대상게시물관리번호 */
+			, FILE_SE_NM		/* 파일구분 */
+			, DWNLD_FILE_NM		/* 다운로드파일명 */
+			, SRVR_FILE_NM		/* 서버파일명 */
+			, PHYS_FILE_NM		/* 물리파일명 */
+			, FILE_EXTN_NM		/* 파일확장자명 */
+			, FILE_SZ
+<!-- 			, TRGT_PST_TBL_NM		/* 대상게시물테이블명 */ -->
+<!-- 			, SORT_SEQ		/* 정렬순서 */ -->
+<!-- 			, DOC_FORM_MNG_NO		/* 문서양식관리번호 */ -->
+			, DEL_YN		/* 삭제여부 */
+			, WRTR_EMP_NM		/* 작성직원명 */
+			, WRTR_EMP_NO		/* 작성직원번호 */
+			, WRT_YMD		/* 작성일자 */
+			, WRT_DEPT_NM		/* 작성부서명 */
+			, WRT_DEPT_NO		/* 작성부서번호 */
+			, MDFCN_EMP_NM		/* 수정직원명 */
+			, MDFCN_EMP_NO		/* 수정직원번호 */
+			, MDFCN_YMD		/* 수정일자 */
+			, MDFCN_DEPT_NM		/* 수정부서명 */
+			, MDFCN_DEPT_NO		/* 수정부서번호 */
+			)VALUES(
+			  #{fileid}
+			, #{CNSTN_MNG_NO}
+			, #{TRGT_PST_MNG_NO}
+			, #{filegbn}
+			, #{downfilenm}
+			, #{serverfilenm}
+			, #{viewfilenm}
+			, #{ext}
+			, #{FILE_SZ}
+<!-- 			, #{ord}  -->
+			, 'N'
+			, #{WRTR_EMP_NM}
+			, #{WRTR_EMP_NO}
+			, to_char(sysdate, 'YYYYMMDD')
+			, #{WRT_DEPT_NM}
+			, #{WRT_DEPT_NO}
+			, #{WRTR_EMP_NM}
+			, #{WRTR_EMP_NO}
+			, to_char(sysdate, 'YYYYMMDD')
+			, #{WRT_DEPT_NM}
+			, #{WRT_DEPT_NO}
+			)
+	</insert>
+	
+	<delete id="deleteFile">
+	/* consultSql.deleteFile_자문 파일 삭제 */
+		DELETE
+		  FROM TB_CNSTN_FILE
+		 WHERE CNSTN_MNG_NO = #{CNSTN_MNG_NO}
+		 <if  test="fileid != null and fileid != ''">
+			AND FILE_MNG_NO = #{fileid}
+		</if>
+		 <if  test="TRGT_PST_MNG_NO != null and TRGT_PST_MNG_NO != ''">
+			AND TRGT_PST_MNG_NO = #{TRGT_PST_MNG_NO}
+		</if>
+	</delete>
+
+	<update id="updateConsultOpenyn" parameterType="HashMap">
+		/* consultSql_updateConsultOpenyn_자문 공개여부 수정 */
+		UPDATE TB_CNSTN_MNG
+		SET RLS_YN = #{openyn}
+		WHERE CNSTN_MNG_NO = #{consultid}
+	</update>
+	
+	<resultMap type="HashMap" id="consultinfodata">
+		<result property="RVW_OPNN_CN"  column="RVW_OPNN_CN"  jdbcType="CLOB" javaType="java.lang.String" />
+		<result property="RMRK_CN" column="RMRK_CN" jdbcType="CLOB" javaType="java.lang.String" />
+	</resultMap>
+	
+	<select id="selectConsultLawyerList" resultType="HashMap" parameterType="HashMap">
+		/* consultSql_selectConsultLawyerList_자문 검토담당자 목록 조회 */
+		SELECT 
+<!-- 			A.CONSULTLAWYERID -->
+<!-- 			, A.CONSULTID -->
+<!-- 			, A.CHCKID -->
+<!-- 			, A.INOUTCON -->
+<!-- 			, A.ADVISORID -->
+<!-- 			, A.ADVISORNM -->
+<!-- 			, B.PHONE -->
+<!-- 			, B.EMAIL -->
+<!-- 			, C.OFFICE -->
+			A.RVW_TKCG_MNG_NO				/* 검토담당관리번호 */
+			, A.CNSTN_MNG_NO				/* 자문관리번호 */
+			, A.RVW_OPNN_MNG_NO				/* 검토의견관리번호 */
+			, A.INSD_OTSD_TASK_SE				/* 내부외부업무구분 */
+			, A.RVW_TKCG_EMP_NO				/* 검토담당직원번호 */
+			, A.RVW_TKCG_EMP_NM				/* 검토담당직원명 */
+			, A.DEL_YN				/* 삭제여부 */
+			, A.WRTR_EMP_NM				/* 작성직원명 */
+			, A.WRTR_EMP_NO				/* 작성직원번호 */
+			, A.WRT_YMD				/* 작성일자 */
+			, A.WRT_DEPT_NM				/* 작성부서명 */
+			, A.WRT_DEPT_NO				/* 작성부서번호 */
+			, A.MDFCN_EMP_NM				/* 수정직원명 */
+			, A.MDFCN_EMP_NO				/* 수정직원번호 */
+			, A.MDFCN_YMD				/* 수정일자 */
+			, A.MDFCN_DEPT_NM				/* 수정부서명 */
+			, A.MDFCN_DEPT_NO				/* 수정부서번호 */
+			, B.OFC_TELNO			/* 사무실전화번호 */
+			, B.EML_ADDR			/* 이메일주소 */
+			, C.JDAF_CORP_NM			/* 법무법인명 */
+			, A.RCPT_YN
+			, A.RFSL_RSN
+		FROM TB_CNSTN_RVW_PIC A LEFT OUTER JOIN TB_COM_LWYR B ON A.RVW_TKCG_EMP_NO = B.LWYR_MNG_NO
+		                            LEFT OUTER JOIN TB_COM_JDAF_CORP C ON B.JDAF_CORP_MNG_NO = C.JDAF_CORP_MNG_NO
+		WHERE 1=1
+			<if  test="consultid != null and consultid != ''">
+				AND A.CNSTN_MNG_NO = #{consultid}
+			</if>
+			<if  test="CNSTN_MNG_NO != null and CNSTN_MNG_NO != ''">
+				AND A.CNSTN_MNG_NO = #{CNSTN_MNG_NO}
+			</if>
+			<if test="gbn != null and gbn != ''">
+			  AND A.RCPT_YN != 'N'
+			</if>
+	</select>
+	
+	<select id="selectAnswerBoard" resultType="HashMap" parameterType="HashMap">
+		/* consultSql.selectAnswerBoard_자문 답변내용 조회 */
+		SELECT A.RVW_OPNN_MNG_NO			/*  검토의견관리번호  */
+			, A.CNSTN_MNG_NO			/*  자문관리번호  */
+			, A.RVW_TKCG_MNG_NO			/*  검토담당관리번호  */
+			, TO_CHAR(TO_DATE(A.RVW_OPNN_REG_YMD, 'YYYYMMDD'), 'YYYY-MM-DD') AS RVW_OPNN_REG_YMD	/*  검토의견등록일  */
+			, TO_CHAR(TO_DATE(A.RVW_OPNN_CMPTN_YMD, 'YYYYMMDD'), 'YYYY-MM-DD') AS RVW_OPNN_CMPTN_YMD	/*  검토의견완료일  */
+			, A.RVW_OPNN_CMPTN_YN			/*  검토의견완료여부  */
+			, A.RVW_OPNN_CN			/*  검토의견  */
+			, A.RMRK_CN			/*  비고내용  */
+			, A.DEL_YN			/*  삭제여부  */
+			, A.WRTR_EMP_NM			/*  작성직원명  */
+			, A.WRTR_EMP_NO			/*  작성직원번호  */
+			, A.WRT_YMD			/*  작성일자  */
+			, A.WRT_DEPT_NM			/*  작성부서명  */
+			, A.WRT_DEPT_NO			/*  작성부서번호  */
+			, A.MDFCN_EMP_NM			/*  수정직원명  */
+			, A.MDFCN_EMP_NO			/*  수정직원번호  */
+			, A.MDFCN_YMD			/*  수정일자  */
+			, A.MDFCN_DEPT_NM			/*  수정부서명  */
+			, A.MDFCN_DEPT_NO			/*  수정부서번호  */
+			, B.RVW_TKCG_MNG_NO				/* 검토담당관리번호 */
+			, B.RVW_TKCG_EMP_NO				/* 검토담당직원번호 */
+			, B.RVW_TKCG_EMP_NM				/* 검토담당직원명 */
+			, C.CNSTN_CST_MNG_NO
+			, C.CNSTN_MNG_NO
+			, C.BACNT_MNG_NO
+			, TRIM(TO_CHAR( C.CNSTN_CST_AMT , '999,999,999,999,999')) AS CNSTN_CST_AMT
+			, C.CST_PRGRS_STTS_SE
+			, CASE WHEN C.CST_PRGRS_STTS_SE IS NULL OR C.CST_PRGRS_STTS_SE = 'R' THEN '검토중'
+			       WHEN C.CST_PRGRS_STTS_SE = 'A' THEN '비용승인'
+			       WHEN C.CST_PRGRS_STTS_SE = 'C' THEN '비용지급'
+			       WHEN C.CST_PRGRS_STTS_SE = 'E' THEN '완료'
+			  END CST_PRGRS_STTS_NM
+			
+			, TO_CHAR(TO_DATE(C.CST_CLM_YMD, 'YYYY-MM-DD'), 'YYYY-MM-DD') AS CST_CLM_YMD
+			, TO_CHAR(TO_DATE(C.CST_APRV_YMD, 'YYYY-MM-DD'), 'YYYY-MM-DD') AS CST_APRV_YMD
+			, TO_CHAR(TO_DATE(C.CST_GIVE_YMD, 'YYYY-MM-DD'), 'YYYY-MM-DD') AS CST_GIVE_YMD
+			
+			, D.BANK_NM || ' ' || D.DPSTR_NM || ' ' || D.ACTNO AS BACNT_INFO
+			, D.DPSTR_NM
+			, D.BANK_NM
+			, D.BANK_SE_NO
+			, D.ACTNO
+			, D.USE_YN
+			, D.RMRK_CN AS BANK_RMRK_CN
+		FROM TB_CNSTN_RVW_OPNN A,
+		     TB_CNSTN_RVW_PIC B LEFT OUTER JOIN TB_CNSTN_CST C ON B.RVW_TKCG_MNG_NO = C.RVW_TKCG_MNG_NO
+		                        LEFT OUTER JOIN TB_COM_LWYR_BACNT D ON C.BACNT_MNG_NO = D.BACNT_MNG_NO
+		WHERE A.RVW_TKCG_MNG_NO = B.RVW_TKCG_MNG_NO
+		  AND A.RVW_OPNN_MNG_NO = B.RVW_OPNN_MNG_NO
+<!-- 		  AND B.RCPT_YN != 'N' -->
+		  AND A.CNSTN_MNG_NO = #{consultid}
+		<if  test="chckid != null and chckid != ''"> <!-- 수정일때 여기 타서 값들어가서 -->
+		  AND A.RVW_OPNN_MNG_NO = #{chckid}
+		</if>
+	</select>
+	
+	<select id="selectAgreeEmp" resultType="HashMap">
+		/* consultSql_selectAgreeEmp_자문승인자조회 */
+		SELECT 
+			B.EMP_NO		/* 직원번호 */
+			, B.EMP_NM		/* 직원명 */
+			, B.JBGD_CD	/* 직급코드 */
+			, B.JBGD_NM	/* 직급명 */
+			, 'MAPP' AS GBN
+		FROM TB_COM_ORGCHT A
+		   , TB_COM_HRIS B
+		WHERE A.DEPT_NO = B.DEPT_NO
+		  AND A.DEPT_NM LIKE '%법%'
+<!-- 		  AND B.JBGD_CD = 09 -->
+		  AND A.USE_YN = 'Y'
+<!-- 		  AND B.USE_YN = 'Y' -->
+		UNION ALL
+		SELECT 
+			B.EMP_NO		/* 직원번호 */
+			, B.EMP_NM		/* 직원명 */
+			, B.JBGD_CD	/* 직급코드 */
+			, B.JBGD_NM	/* 직급명 */
+			, 'TAPP' AS GBN
+		FROM TB_COM_ORGCHT A
+		   , TB_COM_HRIS B
+		WHERE A.UP_DEPT_NO = B.DEPT_NO
+		  AND A.DEPT_NM LIKE '%법무%'
+<!-- 		  AND B.JBGD_CD = 40 -->
+		  AND A.USE_YN = 'Y'
+<!-- 		  AND B.USE_YN = 'Y' -->
+	</select>
+	
+	<delete id="deleteConsult2">
+		/* consultSql_deleteConsult_자문삭제 */
+		DELETE FROM TB_CNSTN_MNG
+		WHERE CNSTN_MNG_NO = #{consultid}
+	</delete>
+	
+	<delete id="deleteConsultAnswer">
+		/* consultSql_deleteConsultAnswer_자문 답변삭제 */
+		DELETE FROM TB_CNSTN_RVW_OPNN
+		WHERE CNSTN_MNG_NO = #{consultid}
+	</delete>
+	
+	<delete id="deleteConsultFile">
+		/* consultSql_deleteConsultFile_자문 파일삭제 */
+		DELETE FROM TB_CNSTN_FILE
+		WHERE CNSTN_MNG_NO = #{consultid}
+	</delete>
+	
+	<delete id="deleteConsultLawyer2">
+		/* consultSql_deleteConsultLawyer2_자문 위원삭제 */
+		DELETE FROM TB_CNSTN_RVW_PIC
+		WHERE CNSTN_MNG_NO = #{consultid}
+		<if test="consultLawyerid != null and consultLawyerid != ''">
+		  AND RVW_TKCG_MNG_NO = #{consultLawyerid}
+		</if>
+	</delete>
+	
+	<delete id="deleteRelConsult">
+		/* consultSql_deleteRelConsult_관련 자문 삭제 */
+		DELETE FROM TB_COM_REL_DOC
+		WHERE REL_DOC_MNG_NO = #{consultid}
+	</delete>
+	
+	<delete id="deleteConsultRole">
+		/* consultSql_deleteConsultRole_자문 권한 삭제 */
+		DELETE FROM TB_COM_PRSL_AUTHRT
+		WHERE DOC_MNG_NO = #{consultid}
+		<if test="rolewriterid != null and rolewriterid != ''">
+		  AND AUTHRT_EMP_NO = #{rolewriterid}
+		</if>
+		<if test="roledeptid != null and roledeptid != ''">
+		  AND AUTHRT_DEPT_NO = #{roledeptid}
+		</if>
+	</delete>
+	
+	<delete id="deleteConsultProg">
+		/* consultSql_deleteConsultAnswer */
+		DELETE FROM TB_CNSTN_MEMO
+		WHERE CNSTN_MNG_NO = #{consultid}
+		<if  test="progid != null and progid != ''">
+		  AND CNSTN_MEMO_MNG_NO = #{progid}
+		</if>
+	</delete>
+	
+	<delete id="deleteRole">
+		/* consultSql.deleteRole_자문권한삭제 */
+		DELETE TB_LM_ROLE
+		WHERE DOCID = #{docid}
+		<if test="docgbn != '' and docgbn != null">
+		  AND DOCGBN = #{docgbn}
+		</if>
+		<if test="rolewriterid != '' and rolewriterid != null">
+		  AND ROLEWRITERID = #{rolewriterid}
+		</if>
+		<if test="roledeptid != '' and roledeptid != null">
+		  AND ROLEDEPTID = #{roledeptid}
+		</if>
+		<if test="rolegbn != '' and rolegbn != null">
+		  AND ROLEGBN = #{rolegbn}
+		</if>
+		<if test="param != '' and param != null">
+		  AND ROLEGBN = 'D'
+		</if>
+	</delete>
+	
+	<insert id="insertRole" parameterType="HashMap">
+		<selectKey keyProperty="authrt_mng_no" resultType="int" order="BEFORE">
+			SELECT KEYID.NEXTVAL FROM DUAL
+		</selectKey>
+		/* consultSql.insertRole_자문권한등록 */
+		INSERT INTO TB_COM_PRSL_AUTHRT (
+<!-- 			  ROLEID -->
+<!-- 			, DOCID -->
+<!-- 			, DOCGBN -->
+<!-- 			, ROLEGBN -->
+<!-- 			, ROLEWRITERID -->
+<!-- 			, ROLEDEPTID -->
+<!-- 			, WRITERID -->
+<!-- 			, WRITER -->
+<!-- 			, UPDT -->
+			AUTHRT_MNG_NO			/* 권한관리번호 */
+			, DOC_MNG_NO			/* 문서관리번호 */
+			, DOC_SE			/* 문서구분 */
+			, AUTHRT_SE			/* 권한구분 */
+			, AUTHRT_EMP_NO			/* 권한직원번호 */
+			, AUTHRT_DEPT_NO			/* 권한부서번호 */
+			, DEL_YN			/* 삭제여부 */
+			
+			, WRTR_EMP_NM			/* 작성직원명 */
+			, WRTR_EMP_NO			/* 작성직원번호 */
+			, WRT_YMD			/* 작성일자 */
+			, WRT_DEPT_NM			/* 작성부서명 */
+			, WRT_DEPT_NO			/* 작성부서번호 */
+			, MDFCN_EMP_NM			/* 수정직원명 */
+			, MDFCN_EMP_NO			/* 수정직원번호 */
+			, MDFCN_YMD			/* 수정일자 */
+			, MDFCN_DEPT_NM			/* 수정부서명 */
+			, MDFCN_DEPT_NO			/* 수정부서번호 */
+		) VALUES (
+			  #{authrt_mng_no}
+			, #{doc_mng_no}
+			, #{doc_se}
+			, #{authrt_se}
+			, #{authrt_emp_no}
+			, #{authrt_dept_no}
+			, 'N'
+			
+			, #{writer}
+			, #{writerid}
+			, to_char(sysdate,'YYYYMMDD')
+			, #{deptname}
+			, #{deptid}
+			, #{writer}
+			, #{writerid}
+			, to_char(sysdate,'YYYYMMDD')
+			, #{deptname}
+			, #{deptid}
+		)
+	</insert>
+	
+	<select id="selectChrgEmp" resultType="HashMap">
+		WITH TMP AS (
+		    SELECT A.USERNO
+		         , A.USERNAME
+		         , NVL(B.LASTCHRGDT, '200001010000') AS LASTCHRGDT
+		         , ROW_NUMBER() OVER (ORDER BY NVL(B.LASTCHRGDT, '200001010000')) AS CNT
+		    FROM TB_LM_RULEUSER A
+		       , TB_CO_CONSULT_CHR_MNG B
+		    WHERE A.USERNO = B.CHRGEMPNO
+		      AND A.IS_MANAGER = 'K'
+		      AND B.STATECD != 'N'
+		      AND B.USEYN = 'Y'
+		) 
+		SELECT *
+		FROM TMP
+		WHERE CNT = 1
+	</select>
+	
+	<select id="selectChrgEmpList" resultType="HashMap" parameterType="HashMap">
+		/* consultSql_selectChrgEmpList_자문담당자배정 위해 법률지원팀 목록 불러오기  */
+		<!-- SELECT A.CHRGEMPNO
+		     , A.CHRGEMPNM
+		     , A.STATECD
+		     , A.USEYN
+		     , B.JIKGUB_NM
+		     , NVL(C.CNT, 0) AS CNT
+		     , TO_CHAR(TO_DATE(A.LASTCHRGDT, 'YYYY-MM-DD HH24MI'), 'YYYY-MM-DD') AS LASTCHRGDT
+		     <if test="consultid != null and consultid != ''">
+		     , CASE WHEN (SELECT COUNT(*) FROM TB_CO_CONSULT Z WHERE Z.CONSULTID = #{consultid} AND Z.CHRGEMPNO = A.CHRGEMPNO) > 0 THEN 'Y'
+		            ELSE 'N'
+		       END CHRGYN
+		     </if>
+		FROM TB_CO_CONSULT_CHR_MNG A
+		   , IMS_USER B
+		  , (
+		        SELECT CHRGEMPNO, COUNT(*) AS CNT
+		        FROM TB_CO_CONSULT
+		        WHERE STATCD != '완료'
+		          AND CHRGEMPNO IS NOT NULL
+		        GROUP BY CHRGEMPNO
+		    ) C
+		WHERE A.CHRGEMPNO = B.USER_ID
+		  AND A.USEYN = 'Y'
+		  AND A.CHRGEMPNO = C.CHRGEMPNO (+)
+		ORDER BY A.CHRGEMPNM -->
+		SELECT 
+			A.EMP_NO			/* 직원번호 */
+			, A.EMP_NM			/* 직원명 */
+			, A.DEPT_NO			/* 부서번호 */
+			, A.DEPT_GROUP_NO			/* 부서그룹번호 */
+			, A.DEPT_GROUP_NM			/* 부서그룹명 */
+			, A.UP_DEPT_NO			/* 상위부서번호 */
+			, A.UP_DEPT_NM			/* 상위부서명 */
+			, A.WRC_TELNO			/* 직장전화번호 */
+			, A.MBL_TELNO			/* 휴대전화번호 */
+			, A.EML_ADDR			/* 이메일주소 */
+			, A.JBGD_CD			/* 직급코드 */
+			, A.JBGD_NM			/* 직급명 */
+			, A.JBTTL_CD			/* 직책코드 */
+			, A.JBTTL_NM			/* 직책명 */
+			, A.JBSRS_NM			/* 직렬명 */
+			, A.JBSRS_CD			/* 직렬코드 */
+			, A.HDOF_YN			/* 재직여부 */
+			, A.REG_YMD			/* 등록일자 */
+			,(
+				SELECT
+					COUNT(*)
+				FROM
+					TB_CNSTN_MNG B
+				WHERE 
+					B.CNSTN_TKCG_EMP_NO = A.EMP_NO
+					AND B.PRGRS_STTS_SE_NM NOT IN ('작성중', '접수대기', '완료', '철회')
+					AND B.CNSTN_DOC_NO IS NOT NULL
+			 ) AS TKCG_CNSTN_CNT <!-- 자문의뢰 데이터 중에 완료되지 않고 담당자로 들어가 있는게 있는지 조회. 진행중인 담당건수-->
+			, CASE WHEN (
+						SELECT
+							COUNT(*)
+						FROM
+							TB_CNSTN_MNG B
+						WHERE 
+						B.CNSTN_TKCG_EMP_NO = A.EMP_NO
+							AND B.PRGRS_STTS_SE_NM NOT IN ('작성중', '접수대기', '완료', '철회')
+							AND B.CNSTN_DOC_NO IS NOT NULL
+						) > 0 THEN 'Y'
+					ELSE 'N'
+			END STATE <!-- 진행중 담당건수 있으면 배정중인지 아닌지 나타내기위해 YN 값을 반환-->
+			 <if test="consultid != null and consultid != ''">
+				, CASE WHEN (
+								SELECT
+									COUNT(*)
+								FROM
+									TB_CNSTN_MNG B
+								WHERE 
+									B.CNSTN_MNG_NO = #{consultid}
+									AND B.CNSTN_TKCG_EMP_NO = A.EMP_NO
+									AND B.PRGRS_STTS_SE_NM NOT IN ('작성중', '접수대기', '완료', '철회')
+<!-- 									AND B.CNSTN_DOC_NO IS NOT NULL -->
+			 				) > 0 THEN 'Y'
+	 					ELSE 'N'
+				 END CHRGYN <!-- 현재 자문의 담당자인지를 YN 값으로 반환  -->
+			 </if>
+			 , TO_CHAR(TO_DATE(C.RCNT_ALTMNT_YMD, 'YYYYMMDD'), 'YYYY-MM-DD') AS RCNT_ALTMNT_YMD
+        	, B.MNGR_AUTHRT_NM
+	    FROM 
+	        (   select 
+	        E.EMP_NO
+	        , LISTAGG(E.MNGR_AUTHRT_NM, ',') WITHIN GROUP (ORDER BY E.MNGR_AUTHRT_NM) AS MNGR_AUTHRT_NM
+	        from TB_COM_MNGR_AUTHRT E
+	        GROUP BY E.EMP_NO
+	        ) B
+	            LEFT OUTER JOIN
+	        TB_COM_HRIS	A 
+	            ON A.EMP_NO = B.EMP_NO
+	            LEFT JOIN
+	        TB_CNSTN_PIC C
+	            ON A.EMP_NO = C.TKCG_EMP_NO
+	    WHERE 
+	        (
+	        B.MNGR_AUTHRT_NM LIKE '%M%'
+	        OR
+	        B.MNGR_AUTHRT_NM LIKE '%J%'
+	        OR
+	        B.MNGR_AUTHRT_NM LIKE '%Q%'
+	        OR
+	        B.MNGR_AUTHRT_NM LIKE '%Y%'
+	        )
+	</select>
+	
+	<update id="setChrgEmpState" parameterType="HashMap">
+		/* consultSql_setChrgEmpState_자문담당자상태수정 */
+		UPDATE TB_CNSTN_PIC
+		SET STATECD = #{state}
+		WHERE CHRGEMPNO = #{userno}
+	</update>
+	
+	<update id="setChrgEmp" parameterType="HashMap">
+		/* consultSql_setChrgEmp_자문담당자수정 */
+		UPDATE TB_CNSTN_MNG
+		SET CNSTN_TKCG_EMP_NO = #{userno}
+		  , CNSTN_TKCG_EMP_NM = #{usernm}
+		WHERE CNSTN_MNG_NO = #{consultid}
+	</update>
+	
+	<select id="selectAltmntCount" resultType="int">
+		/* consultSql_selectAltmntCount_마지막배정일자 등록 및 업데이트 위한 값 존재여부 카운트 */
+		SELECT COUNT(*)
+		FROM TB_CNSTN_PIC
+		WHERE TKCG_EMP_NO = #{userno}
+	</select>
+	
+	<update id="updateAltmntYmd" parameterType="HashMap">
+		/* consultSql_updateAltmntYmd_자문담당자의 마지막 배정일자 수정 */
+		UPDATE 
+			TB_CNSTN_PIC
+		SET 
+			RCNT_ALTMNT_YMD = to_char(sysdate, 'YYYYMMDD')
+			, MDFCN_EMP_NM = #{writer}		/* 수정직원명 */
+			, MDFCN_EMP_NO = #{writerid}		/* 수정직원번호 */
+			, MDFCN_YMD = to_char(sysdate, 'YYYYMMDD')		/* 수정일자 */
+			, MDFCN_DEPT_NM = #{sdeptname}		/* 수정부서명 */
+			, MDFCN_DEPT_NO = #{sdeptid}		/* 수정부서번호 */
+		WHERE 
+			TKCG_EMP_NO = #{userno}
+	</update>
+	
+	<insert id="insertAltmntYmd" parameterType="HashMap">
+		/* consultSql_insertAltmntYmd_마지막 배정일자 등록 */
+		INSERT INTO TB_CNSTN_PIC (
+			TKCG_EMP_NO			/* 담당자직원번호 */
+			, TKCG_EMP_NM			/* 담당자직원명 */
+			, USE_YN			/* 사용여부 */
+			, RCNT_ALTMNT_YMD			/* 마지막배정일자 */
+			, DEL_YN			/* 삭제여부 */
+			, WRTR_EMP_NM			/* 작성직원명 */
+			, WRTR_EMP_NO			/* 작성직원번호 */
+			, WRT_YMD			/* 작성일자 */
+			, WRT_DEPT_NM			/* 작성부서명 */
+			, WRT_DEPT_NO			/* 작성부서번호 */
+			, MDFCN_EMP_NM			/* 수정직원명 */
+			, MDFCN_EMP_NO			/* 수정직원번호 */
+			, MDFCN_YMD			/* 수정일자 */
+			, MDFCN_DEPT_NM			/* 수정부서명 */
+			, MDFCN_DEPT_NO			/* 수정부서번호 */
+		) VALUES (
+			  #{userno}
+			, #{usernm}
+			, 'Y'
+			, to_char(sysdate, 'YYYYMMDD')
+			, 'N'
+			, #{WRTR_EMP_NM}
+			, #{WRTR_EMP_NO}
+			, to_char(sysdate, 'YYYYMMDD')
+			, #{WRT_DEPT_NM}
+			, #{WRT_DEPT_NO}
+			, #{WRTR_EMP_NM}
+			, #{WRTR_EMP_NO}
+			, to_char(sysdate, 'YYYYMMDD')
+			, #{WRT_DEPT_NM}
+			, #{WRT_DEPT_NO}
+		)
+	</insert>
+	
+<!-- 	<select id="createConsultno2" resultType="String"> -->
+<!-- 		SELECT CASE WHEN A.CNT = 0 THEN (SELECT TO_CHAR(SYSDATE, 'YYYY') FROM DUAL)||'-001' -->
+<!-- 		            ELSE ( -->
+<!-- 		                  SELECT D.TODAY2||'-'||LPAD(MAX(TO_NUMBER(REPLACE(C.CNSTN_DOC_NO, D.TODAY2||'-')))+1, 3, '0') -->
+<!-- 		                  FROM TB_CNSTN_MNG C, -->
+<!-- 		                       ( -->
+<!-- 		                        SELECT TO_CHAR(SYSDATE, '%YYYY') AS TODAY1, -->
+<!-- 		                               TO_CHAR(SYSDATE, 'YYYY') AS TODAY2 -->
+<!-- 		                        FROM DUAL -->
+<!-- 		                       ) D -->
+<!-- 		                  WHERE C.CNSTN_DOC_NO LIKE D.TODAY1||'%' -->
+<!-- 		                 ) -->
+<!-- 		       END AS CNSTN_DOC_NO -->
+<!-- 		FROM ( -->
+<!-- 		    SELECT COUNT(C.CNSTN_DOC_NO) AS CNT -->
+<!-- 		    FROM TB_CNSTN_MNG C,  -->
+<!-- 		         (SELECT TO_CHAR(SYSDATE, '%YYYY') AS TODAY FROM DUAL) D -->
+<!-- 		    WHERE CNSTN_DOC_NO LIKE TODAY||'%' -->
+<!-- 		) A -->
+<!-- 	</select> -->
+	
+	<insert id="insertConsultLawyer2" parameterType="HashMap">
+		<selectKey keyProperty="rvw_tkcg_mng_no" resultType="String" order="BEFORE">
+			SELECT KEYID.NEXTVAL FROM DUAL
+		</selectKey>
+		/* consultSql_insertConsultLawyer_자문인등록 */
+		INSERT INTO TB_CNSTN_RVW_PIC (
+<!-- 			  CONSULTLAWYERID  /* 관리번호 */ -->
+<!-- 			, CONSULTID        /* 자문 관리번호 */ -->
+<!-- 			, INOUTCON         /* 내/외부 구분 */ -->
+<!-- 			, ADVISORID        /* 자문인 번호 */ -->
+<!-- 			, ADVISORNM        /* 자문인명 */ -->
+<!-- 			, WRITER           /* 작성자 */ -->
+<!-- 			, WRITERID         /* 작성자사번 */ -->
+<!-- 			, WRITEDT          /* 작성일 */ -->
+<!-- 			, DEPTID           /* 작성자부서코드 */ -->
+<!-- 			, DEPTNAME         /* 작성자부서명 */ -->
+			RVW_TKCG_MNG_NO				/* 검토담당관리번호 */
+			, CNSTN_MNG_NO				/* 자문관리번호 */
+			, INSD_OTSD_TASK_SE				/* 내부외부업무구분 */
+			, RVW_TKCG_EMP_NO				/* 검토담당직원번호 */
+			, RVW_TKCG_EMP_NM				/* 검토담당직원명 */
+			, PRSL_PSBLTY_YN
+			, DEL_YN				/* 삭제여부 */
+			, WRTR_EMP_NM				/* 작성직원명 */
+			, WRTR_EMP_NO				/* 작성직원번호 */
+			, WRT_YMD				/* 작성일자 */
+			, WRT_DEPT_NM				/* 작성부서명 */
+			, WRT_DEPT_NO				/* 작성부서번호 */
+			, MDFCN_EMP_NM				/* 수정직원명 */
+			, MDFCN_EMP_NO				/* 수정직원번호 */
+			, MDFCN_YMD				/* 수정일자 */
+			, MDFCN_DEPT_NM				/* 수정부서명 */
+			, MDFCN_DEPT_NO				/* 수정부서번호 */
+			
+			, RCPT_YN
+		) VALUES (
+			 #{rvw_tkcg_mng_no}
+			, #{consultid}
+			, #{inoutcon}
+			<if test='inoutcon == "I"'>
+			, #{chrgempno}
+			, #{chrgempnm}
+			</if>			
+			<if test='inoutcon == "O"'>
+				, #{advisorid}
+				, (
+				   SELECT LWYR_NM
+				   FROM TB_COM_LWYR
+				   WHERE LWYR_MNG_NO = #{advisorid}
+				     AND DEL_YN = 'N'
+				  )
+			</if>
+			, 'Y'
+			, 'N'
+			, #{writer}
+			, #{writerid}
+			, to_char(sysdate, 'YYYYMMDD')
+			, #{deptname}
+			, #{deptid}
+			, #{writer}
+			, #{writerid}
+			, to_char(sysdate, 'YYYYMMDD')
+			, #{deptname}
+			, #{deptid}
+			
+			, 'A'
+		)
+	</insert>
+	
+	<update id="updateConsultState" parameterType="HashMap">
+		/* consultSql_updateConsultState_자문진행상태수정 */
+		UPDATE TB_CNSTN_MNG
+		SET PRGRS_STTS_SE_NM = #{statcd}
+		
+		<if test='statcd == "접수"'>
+		  <if test="consultno!=null and consultno!=''">
+		  , CNSTN_DOC_NO = #{consultno}
+		  </if>
+  		  <if test="consultno2!=null and consultno2!=''">
+		  , CNSTN_INTL_DOC_NO = #{consultno2}
+		  </if>
+		</if>
+<!-- 		<if test='statcd == "접수대기" or statcd == "작성중"'> -->
+<!-- 		  , CHRGEMPNO = '' -->
+<!-- 		  , CHRGEMPNM = '' -->
+<!-- 		</if> -->
+		
+<!-- 		<if test='statcd == "접수대기"'> -->
+<!-- 		  , REQDT = to_char(sysdate, 'YYYY-MM-DD') -->
+<!-- 		</if> -->
+<!-- 		<if test='statcd == "답변완료"'> -->
+<!-- 		  기존 승인 정보 초기화 -->
+<!-- 		  , TAPPYN = 'N' -->
+<!-- 		  , MAPPYN = 'N' -->
+<!-- 		</if> -->
+<!-- 		<if test='statcd == "접수" and chrgempno != "" and chrgempno != null'> -->
+<!-- 		  , CHRGEMPNO = #{chrgempno} -->
+<!-- 		  , CHRGEMPNM = #{chrgempnm} -->
+<!-- 		</if> -->
+		
+		
+<!-- 		<if test='statcd == "완료"'> -->
+<!-- 		  <if test='inoutcon == "I"'> -->
+<!-- 		  , MENUID = (SELECT MENUID FROM TB_LM_MENU WHERE MENUPARID = '10000002' AND MENUTITLE LIKE '%내부%' AND USEYN = 'Y')	자문회신 메뉴로 이동 -->
+<!-- 		  </if> -->
+<!-- 		  <if test='inoutcon == "O"'> -->
+<!-- 		  , MENUID = (SELECT MENUID FROM TB_LM_MENU WHERE MENUPARID = '10000002' AND MENUTITLE LIKE '%외부%' AND USEYN = 'Y')	자문회신 메뉴로 이동 -->
+<!-- 		  </if> -->
+<!-- 		</if> -->
+<!-- 		<if test='statcd != "완료"'> -->
+<!-- 		  , MENUID = (SELECT MENUID FROM TB_LM_MENU WHERE MENUPARID = '10000002' AND MENUTITLE LIKE '%의뢰%' AND USEYN = 'Y')	자문요청 메뉴로 이동 -->
+<!-- 		</if> -->
+		
+		
+<!-- 		<if test='statcd == "답변중"'> -->
+<!-- 		  <if test="consultno!=null and consultno!=''"> -->
+<!-- 		  , CONSULTNO = #{consultno} -->
+<!-- 		  </if> -->
+<!-- 		</if> -->
+<!-- 		<if test="inoutcon != null and inoutcon != ''"> -->
+<!-- 		  , INOUTCON = #{inoutcon} -->
+<!-- 		</if> -->
+<!-- 		<if test="outreqdt != null and outreqdt != ''"> -->
+<!-- 		  , OUTREQDT = #{outreqdt} -->
+<!-- 		</if> -->
+<!-- 		<if test="tappyn != null and tappyn != ''"> -->
+<!-- 		  , TAPPYN = #{tappyn} -->
+<!-- 		</if> -->
+<!-- 		<if test="mappyn != null and mappyn != ''"> -->
+<!-- 		  , MAPPYN = #{mappyn} -->
+<!-- 		  , REPDT = to_char(sysdate, 'YYYY-MM-DD') -->
+<!-- 		</if> -->
+		WHERE CNSTN_MNG_NO = #{consultid}
+	</update>
+	
+	<select id="selectRqstDeptManagerList" resultType="HashMap" parameterType="HashMap">
+		/* consultSql_selectRqstDeptManagerList_자문의뢰부서 책임자 선택을 위해 해당 부서의 팀/과장 목록 불러오기  */
+		SELECT 
+			A.EMP_NO			/* 직원번호 */
+			, A.EMP_NM			/* 직원명 */
+			, A.DEPT_NO			/* 부서번호 */
+			, A.DEPT_GROUP_NO			/* 부서그룹번호 */
+			, A.DEPT_GROUP_NM			/* 부서그룹명 */
+			, A.UP_DEPT_NO			/* 상위부서번호 */
+			, A.UP_DEPT_NM			/* 상위부서명 */
+			, A.WRC_TELNO			/* 직장전화번호 */
+			,(
+				CASE
+					WHEN LENGTH(WRC_TELNO) = 10 AND SUBSTR(WRC_TELNO, 1, 2) = '02' THEN
+				  		SUBSTR(WRC_TELNO, 1, 2) || '-' || SUBSTR(WRC_TELNO, 3, 4) || '-' || SUBSTR(WRC_TELNO, 7, 4)
+					
+					WHEN LENGTH(WRC_TELNO) = 10 THEN -- 지역번호 3자리 + 3 + 4
+				  		SUBSTR(WRC_TELNO, 1, 3) || '-' || SUBSTR(WRC_TELNO, 4, 3) || '-' || SUBSTR(WRC_TELNO, 7, 4)
+					
+					WHEN LENGTH(WRC_TELNO) = 11 THEN -- 휴대폰 (3-4-4)
+				  		SUBSTR(WRC_TELNO, 1, 3) || '-' || SUBSTR(WRC_TELNO, 4, 4) || '-' || SUBSTR(WRC_TELNO, 8, 4)
+					
+					WHEN LENGTH(WRC_TELNO) = 8 THEN
+				  		SUBSTR(WRC_TELNO, 1, 4) || '-' || SUBSTR(WRC_TELNO, 5, 4)
+					
+					WHEN LENGTH(WRC_TELNO) = 7 THEN
+				  		<!-- '02-' ||  -->SUBSTR(WRC_TELNO, 1, 3) || '-' || SUBSTR(WRC_TELNO, 4, 4)
+					ELSE
+						A.WRC_TELNO
+				END
+			) AS FORMATTED_TELNO
+			, A.MBL_TELNO			/* 휴대전화번호 */
+			, A.EML_ADDR			/* 이메일주소 */
+			, A.JBGD_CD			/* 직급코드 */
+			, A.JBGD_NM			/* 직급명 */
+			, A.JBTTL_CD			/* 직책코드 */
+			, A.JBTTL_NM			/* 직책명 */
+			, A.JBSRS_NM			/* 직렬명 */
+			, A.JBSRS_CD			/* 직렬코드 */
+			, A.HDOF_YN			/* 재직여부 */
+			, A.REG_YMD			/* 등록일자 */
+			, B.DEPT_NM		/* 부서명 */
+			, A.USER_SEQ
+		FROM 
+			TB_COM_HRIS	A 
+			LEFT JOIN TB_COM_ORGCHT B ON A.DEPT_NO = B.DEPT_NO
+		WHERE 1=1
+		<if test="srchTxt == null or srchTxt == ''">
+		  AND A.DEPT_NO = #{WRT_DEPT_NO}
+<!-- 		  AND JBGD_NM LIKE '%'||#{jbgd_nm}||'%' -->
+		</if>
+		<if test="srchTxt != null and srchTxt != ''">
+		  AND (
+		    A.EMP_NM LIKE '%'||#{srchTxt}||'%' 
+		    OR
+		    B.DEPT_NM LIKE '%'||#{srchTxt}||'%'
+		  )
+		</if>
+		<if test="firstCheck != null and firstCheck != ''">
+			  AND A.JBGD_NM LIKE '%팀장'
+		</if>
+		ORDER BY A.USER_SEQ, A.EMP_NM
+	</select>
+	
+	
+	<update id="updateConsult2" parameterType="HashMap">
+		UPDATE TB_CNSTN_MNG /* 자문의뢰 기본정보 수정 */
+		<trim prefix="set " prefixOverrides=", ">
+<!-- 			<if test="statcd != null and statcd != ''"> -->
+<!-- 				, STATCD = #{statcd} -->
+<!-- 			</if> -->
+<!-- 			<if test="cellphone != null and cellphone != ''"> -->
+<!-- 				, CELLPHONE = #{cellphone} -->
+<!-- 			</if> -->
+<!-- 			<if test="csttypecd != null and csttypecd != ''"> -->
+<!-- 				, CSTTYPECD = #{cellphone} -->
+<!-- 			</if> -->
+			
+			<if test="rqst_dept_last_aprvr_jbps_nm != null and rqst_dept_last_aprvr_jbps_nm != ''">
+				, RQST_DEPT_LAST_APRVR_JBPS_NM = #{rqst_dept_last_aprvr_jbps_nm}
+			</if>
+			<if test="cnstn_rqst_dept_tmldr_nm != null and cnstn_rqst_dept_tmldr_nm != ''">
+				, CNSTN_RQST_DEPT_TMLDR_NM = #{cnstn_rqst_dept_tmldr_nm}
+			</if>
+			<if test="cnstn_rqst_dept_tmldr_emp_no != null and cnstn_rqst_dept_tmldr_emp_no != ''">
+				, CNSTN_RQST_DEPT_TMLDR_EMP_NO = #{cnstn_rqst_dept_tmldr_emp_no}
+			</if>
+			<if test="rls_yn != null and rls_yn != ''">
+				, RLS_YN = #{rls_yn}
+			</if>
+			<if test="cnstn_hope_rply_ymd != null and cnstn_hope_rply_ymd != ''">
+				, CNSTN_HOPE_RPLY_YMD = (REPLACE(#{cnstn_hope_rply_ymd}, '-', ''))
+			</if>
+			<if test="emrg_yn != null and emrg_yn != ''">
+				, EMRG_YN = #{emrg_yn}
+			</if>
+			<if test="prvt_srch_kywd_cn != null and prvt_srch_kywd_cn != ''">
+				, PRVT_SRCH_KYWD_CN = #{prvt_srch_kywd_cn}
+			</if>
+			<if test="otsd_rqst_rsn != null and otsd_rqst_rsn != ''">
+				, OTSD_RQST_RSN = #{otsd_rqst_rsn}
+			</if>
+		 	<if test="cnstn_ttl != null and cnstn_ttl != ''">
+				, CNSTN_TTL = #{cnstn_ttl}
+			</if>
+			<if test="cnstn_rqst_cn != null and cnstn_rqst_cn != ''">
+				, CNSTN_RQST_CN = #{cnstn_rqst_cn}
+			</if>
+			<if test="cnstn_rqst_subst_cn != null and cnstn_rqst_subst_cn != ''">
+				, CNSTN_RQST_SUBST_CN = #{cnstn_rqst_subst_cn}
+			</if>
+			<if test="rmrk_cn != null and rmrk_cn != ''">
+				, RMRK_CN = #{rmrk_cn}
+			</if>
+			<if test="excl_dmnd_jdaf_corp_nm != null and excl_dmnd_jdaf_corp_nm != ''">
+				, EXCL_DMND_JDAF_CORP_NM = #{excl_dmnd_jdaf_corp_nm}
+			</if>
+			<if test="cnstn_se_nm != null and cnstn_se_nm != ''">
+				, CNSTN_SE_NM = #{cnstn_se_nm}
+			</if>
+			<if test="cnstn_rqst_dept_tmldr_telno != null and cnstn_rqst_dept_tmldr_telno != ''">
+				, CNSTN_RQST_DEPT_TMLDR_TELNO = #{cnstn_rqst_dept_tmldr_telno}
+			</if>
+			<if test="cnstn_rqst_dh_emp_no != null and cnstn_rqst_dh_emp_no != ''">
+				, CNSTN_RQST_DH_EMP_NO = #{cnstn_rqst_dh_emp_no}
+			</if>
+			<if test="cnstn_rqst_dh_nm != null and cnstn_rqst_dh_nm != ''">
+				, CNSTN_RQST_DH_NM = #{cnstn_rqst_dh_nm}
+			</if>
+			<if test="cnstn_rqst_dh_jbps_nm != null and cnstn_rqst_dh_jbps_nm != ''">
+				, CNSTN_RQST_DH_JBPS_NM = #{cnstn_rqst_dh_jbps_nm}
+			</if>
+			<if test="cnstn_rqst_dept_tmldr_jbps_nm != null and cnstn_rqst_dept_tmldr_jbps_nm != ''">
+				, CNSTN_RQST_DEPT_TMLDR_JBPS_NM = #{cnstn_rqst_dept_tmldr_jbps_nm}
+			</if>
+			, INSD_OTSD_TASK_SE = #{insd_otsd_task_se}
+			, EMRG_RSN = #{emrg_rsn}
+			, MDFCN_EMP_NM = #{writer}		/* 수정직원명 */
+			, MDFCN_EMP_NO = #{writerid}		/* 수정직원번호 */
+			, MDFCN_YMD = to_char(sysdate, 'YYYYMMDD')		/* 수정일자 */
+			, MDFCN_DEPT_NM = #{sdeptname}		/* 수정부서명 */
+			, MDFCN_DEPT_NO = #{sdeptid}		/* 수정부서번호 */
+		</trim>
+      WHERE CNSTN_MNG_NO = #{consultid}
+	</update>
+	
+	<insert id="insertInsdAtrz" parameterType="HashMap">
+		<selectKey keyProperty="insd_atrz_mng_no" resultType="int" order="BEFORE">
+			SELECT KEYID.NEXTVAL FROM DUAL
+		</selectKey>
+		/* consultSql.insertInsdAtrz_내부결재요청시 내부결재정보 등록 */
+		INSERT INTO TB_CNSTN_INSD_ATRZ (
+			INSD_ATRZ_MNG_NO			/* 내부결재관리번호 */
+			, CNSTN_MNG_NO			/* 자문관리번호 */
+<!-- 			, RVW_OPNN_MNG_NO			/* 검토의견관리번호 */ -->
+			, ATRZ_DMND_EMP_NO			/* 결재요청직원번호 */
+<!-- 			, ATRZ_PRCS_EMP_NO			/* 결재처리직원번호 */ -->
+<!-- 			, ATRZ_APRV_YN			/* 결재승인여부 */ -->
+<!-- 			, ATRZ_RJCT_RSN			/* 결재반려사유 */ -->
+<!-- 			, ATRZ_PRCS_YMD			/* 결재처리일자 */ -->
+			, DEL_YN			/* 삭제여부 */
+			, WRTR_EMP_NM			/* 작성직원명 */
+			, WRTR_EMP_NO			/* 작성직원번호 */
+			, WRT_YMD			/* 작성일자 */
+			, WRT_DEPT_NM			/* 작성부서명 */
+			, WRT_DEPT_NO			/* 작성부서번호 */
+			, MDFCN_EMP_NM			/* 수정직원명 */
+			, MDFCN_EMP_NO			/* 수정직원번호 */
+			, MDFCN_YMD			/* 수정일자 */
+			, MDFCN_DEPT_NM			/* 수정부서명 */
+			, MDFCN_DEPT_NO			/* 수정부서번호 */
+		) VALUES (
+			  #{insd_atrz_mng_no}
+			, #{consultid}
+<!-- 			, #{RVW_OPNN_MNG_NO} -->
+			, #{WRTR_EMP_NO}
+<!-- 			, #{ATRZ_PRCS_EMP_NO} -->
+<!-- 			, #{ATRZ_APRV_YN} -->
+<!-- 			, #{ATRZ_RJCT_RSN} -->
+<!-- 			, #{ATRZ_PRCS_YMD} -->
+			, 'N'
+			, #{WRTR_EMP_NM}
+			, #{WRTR_EMP_NO}
+			, to_char(sysdate, 'YYYYMMDD')
+			, #{WRT_DEPT_NM}
+			, #{WRT_DEPT_NO}
+			, #{WRTR_EMP_NM}
+			, #{WRTR_EMP_NO}
+			, to_char(sysdate, 'YYYYMMDD')
+			, #{WRT_DEPT_NM}
+			, #{WRT_DEPT_NO}
+		)
+	</insert>
+	
+	<update id="updateInsdAtrz" parameterType="HashMap">
+		/* consultSql.updateInsdAtrz_내부결재승인시 내부결재상태 수정 */
+		UPDATE TB_CNSTN_INSD_ATRZ
+		<trim prefix="set " prefixOverrides=", ">
+			, ATRZ_PRCS_EMP_NO = #{WRTR_EMP_NO} 	/* 결재처리직원번호 */
+			, ATRZ_APRV_YN = #{atrz_aprv_yn}			/* 결재승인여부 */
+			, ATRZ_PRCS_YMD	= to_char(sysdate, 'YYYYMMDD')	/* 결재처리일자 */
+			, MDFCN_EMP_NM = #{WRTR_EMP_NM}		/* 수정직원명 */
+			, MDFCN_EMP_NO = #{WRTR_EMP_NO}		/* 수정직원번호 */
+			, MDFCN_YMD = to_char(sysdate, 'YYYYMMDD')		/* 수정일자 */
+			, MDFCN_DEPT_NM = #{WRT_DEPT_NM}		/* 수정부서명 */
+			, MDFCN_DEPT_NO = #{WRT_DEPT_NO}		/* 수정부서번호 */
+		</trim>
+      WHERE CNSTN_MNG_NO = #{consultid}
+	</update>
+	
+	<select id="chkRvwPic" resultType="int">
+		/* consultSql_chkRvwPic_자문상태 답변중으로 변경하기위해 자문컴토담당자 카운트 */
+		SELECT COUNT(*)
+		FROM TB_CNSTN_RVW_PIC
+		WHERE CNSTN_MNG_NO = #{consultid}
+	</select>
+	
+	<select id="selectLawyerList2" resultType="HashMap" parameterType="HashMap">
+		/* consultSql_selectLawyerList2_변호사목록조회 */
+		SELECT B.* 
+		FROM (
+			SELECT A.*
+			     , CEIL(ROWNUM/#{pagesize}) AS PAGE
+			FROM (
+				SELECT A.LWYR_MNG_NO
+				     , A.JDAF_CORP_MNG_NO
+				     , B.JDAF_CORP_NM
+				     , A.LWYR_NM
+<!-- 				     , A.LAWYERGBN -->
+				     , A.MBL_TELNO
+				     , A.EML_ADDR
+				FROM TB_COM_LWYR A, TB_COM_JDAF_CORP B
+				WHERE A.JDAF_CORP_MNG_NO = B.JDAF_CORP_MNG_NO
+				  AND A.DEL_YN = 'N'
+				  AND B.DEL_YN = 'N'
+				  AND A.LWYR_CTRT_STTS_NM = 'Y'
+				<if test="office != null and office != ''">
+				  AND A.LWYR_NM LIKE '%'||#{office}||'%'
+				</if>
+				ORDER BY B.JDAF_CORP_NM
+			) A
+		) B 
+	</select>
+	
+	<select id="selectLawyerTotal" resultType="int">
+		/* consultSql_selectLawyerTotal_변호사목록수조회 */
+		SELECT COUNT(*)
+		FROM TB_COM_LWYR A, TB_COM_JDAF_CORP B
+		WHERE A.JDAF_CORP_MNG_NO = B.JDAF_CORP_MNG_NO
+		  AND A.DEL_YN = 'N'
+		  AND B.DEL_YN = 'N'
+		  AND A.LWYR_CTRT_STTS_NM = 'Y'
+		<if test="office != null and office != ''">
+		  AND A.LWYR_NM LIKE '%'||#{office}||'%'
+		</if>
+	</select>
+	
+	<update id="updateRvwPic" parameterType="HashMap">
+		/* consultSql.updateRvwPic_자문 검토 담당자 변경 */
+		UPDATE TB_CNSTN_RVW_PIC
+		<trim prefix="set " prefixOverrides=", ">
+			, RVW_TKCG_EMP_NO = #{userno} 	/* 검토담당직원번호 */
+			, RVW_TKCG_EMP_NM = #{usernm}			/* 검토담당직원명 */
+			, MDFCN_EMP_NM = #{writer}		/* 수정직원명 */
+			, MDFCN_EMP_NO = #{writerid}		/* 수정직원번호 */
+			, MDFCN_YMD = to_char(sysdate, 'YYYYMMDD')		/* 수정일자 */
+			, MDFCN_DEPT_NM = #{sdeptname}		/* 수정부서명 */
+			, MDFCN_DEPT_NO = #{sdeptid}		/* 수정부서번호 */
+		</trim>
+      WHERE CNSTN_MNG_NO = #{consultid}
+	</update>
+	
+	<update id="deleteInsdAtrz">
+		/* consultSql.deleteInsdAtrz_내부결재요청취소시(작성중 상태로 변경될시 ) 내부결재데이터 삭제처리  업데이트 */
+		UPDATE 
+			TB_CNSTN_INSD_ATRZ
+		SET 
+			DEL_YN = 'Y'
+		WHERE 
+			CNSTN_MNG_NO = #{consultid}
+			AND ATRZ_DMND_EMP_NO = #{WRTR_EMP_NO}
+	</update>
+	
+	<select id="selectMemoList" resultType="HashMap">
+		/* consultSql_selectMemoList_자문메모목록조회 */
+		SELECT 
+			CNSTN_MEMO_MNG_NO			/* 자문메모관리번호 */
+			,CNSTN_MNG_NO			/* 자문관리번호 */
+			,CNSTN_DOC_SE_NM			/* 자문문서구분명 */
+			,MEMO_TTL			/* 메모제목 */
+			,MEMO_CN			/* 메모내용 */
+			,DEL_YN			/* 삭제여부 */
+			,WRTR_EMP_NM			/* 작성직원명 */
+			,WRTR_EMP_NO			/* 작성직원번호 */
+			,WRT_YMD			/* 작성일자 */
+			,WRT_DEPT_NM			/* 작성부서명 */
+			,WRT_DEPT_NO			/* 작성부서번호 */
+			,MDFCN_EMP_NM			/* 수정직원명 */
+			,MDFCN_EMP_NO			/* 수정직원번호 */
+			,MDFCN_YMD			/* 수정일자 */
+			,MDFCN_DEPT_NM			/* 수정부서명 */
+			,MDFCN_DEPT_NO			/* 수정부서번호 */
+		FROM 
+			TB_CNSTN_MEMO
+		WHERE 
+			CNSTN_MNG_NO = #{consultid}
+		<if  test="docGbn != null and docGbn != ''">
+			AND CNSTN_DOC_SE_NM = #{docGbn}
+		</if>
+		ORDER BY 
+			CNSTN_MEMO_MNG_NO DESC
+	</select>
+	
+	<select id="getAnswerFileList" resultType="HashMap" parameterType="HashMap">
+		/* consultSql_getAnswerFileList_자문답변파일목록조회(일단 메모글 파일 정보 가져올때 쓰는쪽으로 가져왔는데 맞는지 뭐가 다른지.) */
+		SELECT 
+			FILE_MNG_NO		/* 파일관리번호 */
+			, CNSTN_MNG_NO		/* 자문관리번호 */
+			, TRGT_PST_MNG_NO		/* 대상게시물관리번호 */
+			, FILE_SE_NM		/* 파일구분 */
+			, DWNLD_FILE_NM		/* 다운로드파일명 */
+			, SRVR_FILE_NM		/* 서버파일명 */
+			, PHYS_FILE_NM		/* 물리파일명 */
+			, FILE_EXTN_NM		/* 파일확장자명 */
+			, FILE_SZ
+			, CASE WHEN FILE_SZ = 0 THEN '0B' ELSE TO_CHAR(ROUND(FILE_SZ/POWER(1024, FLOOR(LOG(1024, FILE_SZ))), 2)) || DECODE(FLOOR(LOG(1024, FILE_SZ)), 0, 'B', 1, 'KB', 2, 'MB', 3, 'GB') END VIEW_SZ
+			, TRGT_PST_TBL_NM		/* 대상게시물테이블명 */
+			, SORT_SEQ		/* 정렬순서 */
+			, DOC_FORM_MNG_NO		/* 문서양식관리번호 */
+			, DEL_YN		/* 삭제여부 */
+			, WRTR_EMP_NM		/* 작성직원명 */
+			, WRTR_EMP_NO		/* 작성직원번호 */
+			, WRT_YMD		/* 작성일자 */
+			, WRT_DEPT_NM		/* 작성부서명 */
+			, WRT_DEPT_NO		/* 작성부서번호 */
+			, MDFCN_EMP_NM		/* 수정직원명 */
+			, MDFCN_EMP_NO		/* 수정직원번호 */
+			, MDFCN_YMD		/* 수정일자 */
+			, MDFCN_DEPT_NM		/* 수정부서명 */
+			, MDFCN_DEPT_NO		/* 수정부서번호 */
+		FROM TB_CNSTN_FILE
+		WHERE 1=1
+<!-- 		<if  test="consultid != null and consultid != ''"> -->
+<!-- 		  AND CNSTN_MNG_NO IN (SELECT Z.RVW_OPNN_MNG_NO FROM TB_CNSTN_RVW_OPNN Z WHERE Z.CNSTN_MNG_NO = #{consultid}) -->
+<!-- 		</if> -->
+		<if  test="CNSTN_MEMO_MNG_NO != null and CNSTN_MEMO_MNG_NO != ''">
+			AND CNSTN_MNG_NO = #{CNSTN_MEMO_MNG_NO}
+		</if>
+		<if  test="chckid != null and chckid != ''">
+			AND CNSTN_MNG_NO = #{chckid}
+		</if>
+		<if  test="filegbn != null and filegbn != ''">
+			AND FILE_SE_NM = #{filegbn}
+		</if>
+		<if  test="CNSTN_MNG_NO != null and CNSTN_MNG_NO != ''">
+			AND CNSTN_MNG_NO = #{CNSTN_MNG_NO}
+		</if>
+		<if  test="TRGT_PST_MNG_NO != null and TRGT_PST_MNG_NO != ''">
+			AND TRGT_PST_MNG_NO = #{TRGT_PST_MNG_NO}
+		</if>		
+		ORDER BY FILE_SE_NM, PHYS_FILE_NM
+	</select>
+	
+	<insert id="insertConsultMemo" parameterType="HashMap">
+		/* consultSql_insertConsultMemo_자문 메모 등록 */
+		<selectKey keyProperty="CNSTN_MEMO_MNG_NO" resultType="String" order="BEFORE">
+			SELECT KEYID.NEXTVAL FROM DUAL
+		</selectKey>
+		INSERT INTO TB_CNSTN_MEMO (
+			CNSTN_MEMO_MNG_NO			/* 자문메모관리번호 */
+			, CNSTN_MNG_NO			/* 자문관리번호 */
+			, CNSTN_DOC_SE_NM		/* 자문문서구분명 */
+			, MEMO_TTL			/* 메모제목 */
+			, MEMO_CN			/* 메모내용 */
+			, DEL_YN			/* 삭제여부 */
+			, WRTR_EMP_NM			/* 작성직원명 */
+			, WRTR_EMP_NO			/* 작성직원번호 */
+			, WRT_YMD			/* 작성일자 */
+			, WRT_DEPT_NM			/* 작성부서명 */
+			, WRT_DEPT_NO			/* 작성부서번호 */
+			, MDFCN_EMP_NM			/* 수정직원명 */
+			, MDFCN_EMP_NO			/* 수정직원번호 */
+			, MDFCN_YMD			/* 수정일자 */
+			, MDFCN_DEPT_NM			/* 수정부서명 */
+			, MDFCN_DEPT_NO			/* 수정부서번호 */
+		) VALUES (
+			  #{CNSTN_MEMO_MNG_NO}
+			, #{CNSTN_MNG_NO}
+			, #{filegbn}
+			, #{memo_ttl}
+			, #{memo_cn}
+			, 'N'
+			, #{WRTR_EMP_NM}
+			, #{WRTR_EMP_NO}
+			, to_char(sysdate, 'YYYYMMDD')
+			, #{WRT_DEPT_NM}
+			, #{WRT_DEPT_NO}
+			, #{WRTR_EMP_NM}
+			, #{WRTR_EMP_NO}
+			, to_char(sysdate, 'YYYYMMDD')
+			, #{WRT_DEPT_NM}
+			, #{WRT_DEPT_NO}
+		)
+	</insert>
+	
+	<update id="updateConsultMemo"   parameterType="HashMap">
+		/* consultSql_updateConsultMemo_자문 메모 수정 */
+		UPDATE 
+			TB_CNSTN_MEMO
+		SET 
+			MEMO_TTL = #{memo_ttl}					/* 메모제목 */
+			, MEMO_CN = #{memo_cn}					/* 메모내용 */
+			, MDFCN_EMP_NM = #{WRTR_EMP_NM}			/* 수정직원명 */
+			, MDFCN_EMP_NO = #{WRTR_EMP_NO}			/* 수정직원번호 */
+			, MDFCN_YMD	= to_char(sysdate, 'YYYYMMDD')		/* 수정일자 */
+			, MDFCN_DEPT_NM = #{WRT_DEPT_NM}			/* 수정부서명 */
+			, MDFCN_DEPT_NO = #{WRT_DEPT_NO}			/* 수정부서번호 */
+		WHERE 
+			CNSTN_MEMO_MNG_NO = #{CNSTN_MEMO_MNG_NO}
+			AND CNSTN_MNG_NO = #{CNSTN_MNG_NO}
+			
+	</update>
+	
+	<select id="selectConsultMemoView" resultType="HashMap">
+		/* consultSql_selectConsultMemoView_자문 메모 상세화면 조회 */
+		SELECT 
+			CNSTN_MEMO_MNG_NO			/* 자문메모관리번호 */
+			, CNSTN_MNG_NO			/* 자문관리번호 */
+			, CNSTN_DOC_SE_NM			/* 자문문서구분명 */
+			, MEMO_TTL			/* 메모제목 */
+			, MEMO_CN			/* 메모내용 */
+			, DEL_YN			/* 삭제여부 */
+			, WRTR_EMP_NM			/* 작성직원명 */
+			, WRTR_EMP_NO			/* 작성직원번호 */
+			, TO_CHAR(TO_DATE(WRT_YMD, 'YYYYMMDD'), 'YYYY-MM-DD') AS WRT_YMD			/* 작성일자 */
+			, WRT_DEPT_NM			/* 작성부서명 */
+			, WRT_DEPT_NO			/* 작성부서번호 */
+			, MDFCN_EMP_NM			/* 수정직원명 */
+			, MDFCN_EMP_NO			/* 수정직원번호 */
+			, TO_CHAR(TO_DATE(MDFCN_YMD, 'YYYYMMDD'), 'YYYY-MM-DD') AS MDFCN_YMD			/* 수정일자 */
+			, MDFCN_DEPT_NM			/* 수정부서명 */
+			, MDFCN_DEPT_NO			/* 수정부서번호 */
+			, CNSTN_DOC_SE_NM			/* 자문문서구분명 */
+		FROM TB_CNSTN_MEMO
+		WHERE CNSTN_MNG_NO = #{CNSTN_MNG_NO}
+		<if  test="CNSTN_MEMO_MNG_NO != null and CNSTN_MEMO_MNG_NO != ''">
+		  AND CNSTN_MEMO_MNG_NO = #{CNSTN_MEMO_MNG_NO}
+		</if>
+		<if  test="filegbn != null and filegbn != ''">
+			AND CNSTN_DOC_SE_NM = #{filegbn}
+		</if>
+	</select>
+	
+	<update id="updateCnstnRqstYmd" parameterType="HashMap">
+		/* consultSql.updateCnstnRqstYmd_접수 신청시 자문의뢰일자 변경 */
+		UPDATE TB_CNSTN_MNG
+		<trim prefix="set " prefixOverrides=", ">
+			, CNSTN_RQST_YMD = to_char(sysdate, 'YYYYMMDD')	/* 자문의뢰일자 */
+		</trim>
+		WHERE CNSTN_MNG_NO = #{consultid}
+	</update>
+	
+	<select id="selectConsultAnswerView" resultType="HashMap" parameterType="HashMap">
+		/* consultSql_selectConsultAnswerView_자문답변 조회 */
+		SELECT 
+<!-- A.CHCKID       /* 검토ID         */ -->
+<!-- , A.CONSULTID    /* 자문ID         */ -->
+<!-- , A.CHCKCONTS AS CHCKCONTS -->
+<!-- , A.RESMNGNO     /* 자문인번호     */ -->
+<!-- , B.ADVISORNM    /* 자문인명       */ -->
+<!-- , B.INOUTCON     /* 내/외부구분    */ -->
+<!-- , A.ANSWERDT     /* 답변일자       */ -->
+<!-- , A.ANSRESULT    /* 답변결과       */ -->
+<!-- , A.WRITER       /* 작성자         */ -->
+<!-- , A.WRITERID     /* 작성자사번     */ -->
+<!-- , A.WRITEDT      /* 작성일         */ -->
+<!-- , A.DEPTID       /* 작성자부서코드 */ -->
+<!-- , A.DEPTNAME     /* 작성자부서명   */ -->
+			A.RVW_OPNN_MNG_NO			/*  검토의견관리번호  */
+			, A.CNSTN_MNG_NO			/*  자문관리번호  */
+			, A.RVW_TKCG_MNG_NO			/*  검토담당관리번호  */
+			, A.RVW_OPNN_REG_YMD			/*  검토의견등록일  */
+			, A.RVW_OPNN_CMPTN_YMD			/*  검토의견완료일  */
+			, A.RVW_OPNN_CMPTN_YN			/*  검토의견완료여부  */
+			, A.RVW_OPNN_CN			/*  검토의견  */
+			, A.RMRK_CN			/*  비고내용  */
+			, A.DEL_YN			/*  삭제여부  */
+			, A.WRTR_EMP_NM			/*  작성직원명  */
+			, A.WRTR_EMP_NO			/*  작성직원번호  */
+			, A.WRT_YMD			/*  작성일자  */
+			, A.WRT_DEPT_NM			/*  작성부서명  */
+			, A.WRT_DEPT_NO			/*  작성부서번호  */
+			, A.MDFCN_EMP_NM			/*  수정직원명  */
+			, A.MDFCN_EMP_NO			/*  수정직원번호  */
+			, A.MDFCN_YMD			/*  수정일자  */
+			, A.MDFCN_DEPT_NM			/*  수정부서명  */
+			, A.MDFCN_DEPT_NO			/*  수정부서번호  */
+			, B.RVW_TKCG_EMP_NM		/* 검토담당직원명 */
+		FROM 
+			TB_CNSTN_RVW_OPNN A /* 자문 검토의견 */
+		    	LEFT OUTER JOIN 
+		    TB_CNSTN_RVW_PIC B 
+		    	ON A.RVW_TKCG_MNG_NO = B.RVW_TKCG_MNG_NO AND A.RVW_OPNN_MNG_NO = B.RVW_OPNN_MNG_NO
+<!-- 		    	LEFT OUTER JOIN -->
+<!-- 		    TB_CNSTN_CS C -->
+<!-- 		    	ON B. -->
+		WHERE 
+			A.CNSTN_MNG_NO = #{CNSTN_MNG_NO}
+		<if  test="RVW_OPNN_MNG_NO != null and RVW_OPNN_MNG_NO != ''">
+			AND A.RVW_OPNN_MNG_NO = #{RVW_OPNN_MNG_NO}
+		</if>
+	</select>
+	
+	<insert id="insertAnswerBoard" parameterType="java.util.Map">
+		<selectKey keyProperty="RVW_OPNN_MNG_NO" resultType="String" order="BEFORE">
+			SELECT KEYID.NEXTVAL FROM DUAL
+		</selectKey>
+		/* consultSql_insertAnswerBoard_자문답변 등록 */
+		INSERT INTO TB_CNSTN_RVW_OPNN (
+<!-- 			  CHCKID -->
+<!-- 			, CONSULTID -->
+<!-- 			, CHCKCONTS -->
+<!-- 			, RESMNGNO -->
+<!-- 			, ANSWERDT -->
+<!-- 			, ANSRESULT -->
+<!-- 			, WRITER -->
+<!-- 			, WRITERID -->
+<!-- 			, WRITEDT -->
+<!-- 			, DEPTID -->
+<!-- 			, DEPTNAME -->
+			RVW_OPNN_MNG_NO			/*  검토의견관리번호  */
+			, CNSTN_MNG_NO			/*  자문관리번호  */
+			, RVW_TKCG_MNG_NO			/*  검토담당관리번호  */
+			, RVW_OPNN_REG_YMD			/*  검토의견등록일  */
+<!-- 			, RVW_OPNN_CMPTN_YMD			/*  검토의견완료일  */ -->
+			, RVW_OPNN_CMPTN_YN			/*  검토의견완료여부  */
+			, RVW_OPNN_CN			/*  검토의견  */
+			, RMRK_CN			/*  비고내용  */
+			, DEL_YN			/*  삭제여부  */
+			, WRTR_EMP_NM			/*  작성직원명  */
+			, WRTR_EMP_NO			/*  작성직원번호  */
+			, WRT_YMD			/*  작성일자  */
+			, WRT_DEPT_NM			/*  작성부서명  */
+			, WRT_DEPT_NO			/*  작성부서번호  */
+			, MDFCN_EMP_NM			/*  수정직원명  */
+			, MDFCN_EMP_NO			/*  수정직원번호  */
+			, MDFCN_YMD			/*  수정일자  */
+			, MDFCN_DEPT_NM			/*  수정부서명  */
+			, MDFCN_DEPT_NO			/*  수정부서번호  */
+		) VALUES (
+			  #{RVW_OPNN_MNG_NO}
+			, #{CNSTN_MNG_NO}
+			, #{CONSULTLAWYERID}
+<!-- 			, #{chckconts} -->
+			, to_char(sysdate, 'YYYYMMDD')
+<!-- 			, '답변등록' -->
+			, 'N'
+			, #{rvw_opnn_cn}
+			, #{rmrk_cn}
+			, 'N'
+			, #{WRTR_EMP_NM}
+			, #{WRTR_EMP_NO}
+			, to_char(sysdate, 'YYYYMMDD')
+			, #{WRT_DEPT_NM}
+			, #{WRT_DEPT_NO}
+			, #{WRTR_EMP_NM}
+			, #{WRTR_EMP_NO}
+			, to_char(sysdate, 'YYYYMMDD')
+			, #{WRT_DEPT_NM}
+			, #{WRT_DEPT_NO}
+			)
+	</insert>
+	
+	<update id="updateLawyerChckid" parameterType="HashMap">
+		/* consultSql.updateLawyerChckid_자문인의 검토의견관리번호 넣어주기(등록 / 삭제) */
+		UPDATE TB_CNSTN_RVW_PIC
+		SET RVW_OPNN_MNG_NO = #{RVW_OPNN_MNG_NO}
+		WHERE RVW_TKCG_MNG_NO = #{CONSULTLAWYERID}
+	</update>
+	
+	<update id="updateAnswerBoard" parameterType="HashMap">
+		/* consultSql.updateAnswerBoard_자문 답변 내용 수정 */
+		UPDATE 
+			TB_CNSTN_RVW_OPNN 
+		SET 
+			RVW_OPNN_CN = #{rvw_opnn_cn}
+			, RMRK_CN = #{rmrk_cn}
+			, RVW_OPNN_CMPTN_YN = 'N'
+		WHERE 
+			CNSTN_MNG_NO = #{CNSTN_MNG_NO}
+		  AND RVW_OPNN_MNG_NO = #{RVW_OPNN_MNG_NO}
+	</update>
+	
+	<delete id="deleteAnswer" parameterType="java.util.Map">
+		/* consultSql.deleteAnswer_자문 답변내용 삭제 */
+		DELETE FROM TB_CNSTN_RVW_OPNN
+		WHERE CNSTN_MNG_NO = #{CNSTN_MNG_NO}
+		<if  test="RVW_OPNN_MNG_NO != null and RVW_OPNN_MNG_NO != ''">
+		  AND RVW_OPNN_MNG_NO = #{RVW_OPNN_MNG_NO}
+		</if>
+	</delete>
+	
+	<update id="answerResultSave" parameterType="HashMap">
+		/* consultSql.answerEditSave_자문 답변결과 수정 */
+		UPDATE 
+			TB_CNSTN_RVW_OPNN 
+		SET 
+			RVW_OPNN_CMPTN_YN = #{ansresult}	/*  검토의견완료여부  */
+			, RVW_OPNN_CMPTN_YMD = to_char(sysdate, 'YYYYMMDD')	/*  검토의견완료일자 */
+		WHERE RVW_OPNN_MNG_NO = #{chckid}
+	</update>
+	
+	<update id="updateCnstnRplyYmd" parameterType="HashMap">
+		/* consultSql.updateCnstnRplyYmd_답변완료시 자문회신일자 변경 */
+		UPDATE TB_CNSTN_MNG
+		<trim prefix="set " prefixOverrides=", ">
+			, CNSTN_RPLY_YMD = to_char(sysdate, 'YYYYMMDD')	/* 자문회신일자 */
+		</trim>
+		WHERE CNSTN_MNG_NO = #{consultid}
+	</update>
+	
+	<delete id="deleteConsultMemo">
+		/* consultSql_deleteConsultAnswer_자문 메모 삭제 */
+		DELETE FROM TB_CNSTN_MEMO
+		WHERE CNSTN_MNG_NO = #{CNSTN_MNG_NO}
+		<if  test="CNSTN_MEMO_MNG_NO != null and CNSTN_MEMO_MNG_NO != ''">
+		  AND CNSTN_MEMO_MNG_NO = #{CNSTN_MEMO_MNG_NO}
+		</if>
+	</delete>
+	
+	<update id="updateCnstnRcptYmd" parameterType="HashMap">
+		/* consultSql.updateCnstnRcptYmd_접수시 자문 접수 일자 변경 */
+		UPDATE TB_CNSTN_MNG
+		<trim prefix="set " prefixOverrides=", ">
+			, CNSTN_RCPT_YMD = to_char(sysdate, 'YYYYMMDD')	/* 자문의뢰일자 */
+		</trim>
+		WHERE CNSTN_MNG_NO = #{consultid}
+	</update>
+	
+	
+	
+	
+	
+	
+	<select id="selectSatisfactionList" resultType="HashMap">
+		/* consultSql.selectSatisfactionList */
+		SELECT A.DGSTFN_ANS_MNG_NO
+		     , A.TRGT_PST_MNG_NO
+		     , B.SRVY_SE
+		     , CASE WHEN B.DGSTFN_SRVY_TRGT_SE = 'N' THEN '부서'
+		            WHEN B.DGSTFN_SRVY_TRGT_SE = 'L' THEN '법무팀'
+		       END DGSTFN_SRVY_TRGT_SE
+		     , B.DGSTFN_EVL_TYPE_NM
+		     , C.RVW_TKCG_EMP_NM
+		     , CASE WHEN A.DGSTFN_SRVY_MNG_NO = '0' THEN '기타의견'
+		            ELSE B.DGSTFN_SRVY_CN
+		       END DGSTFN_SRVY_CN
+		     , (A.DGSTFN_ANS_SCR-1)/(5-1)*100 AS DGSTFN_ANS_SCR
+		     , A.DGSTFN_ETC_ANS_CN
+		FROM TB_COM_DGSTFN_EXMN A 
+		     LEFT OUTER JOIN TB_COM_DGSTFN_ARTC B ON A.DGSTFN_SRVY_MNG_NO = B.DGSTFN_SRVY_MNG_NO
+		     JOIN (
+		         SELECT F.RVW_TKCG_MNG_NO, F.RVW_TKCG_EMP_NO, F.RVW_TKCG_EMP_NM
+		         FROM TB_CNSTN_RVW_PIC F
+		         WHERE F.CNSTN_MNG_NO = #{CNSTN_MNG_NO}
+		     ) C ON A.DGSTFN_SRVY_TRGT_MNG_NO = C.RVW_TKCG_MNG_NO
+		WHERE A.TRGT_PST_MNG_NO = #{CNSTN_MNG_NO}
+		ORDER BY A.DGSTFN_ANS_MNG_NO
+	</select>
+	
+	
+	<select id="getSatisfactionList" resultType="HashMap">
+		/* consultSql.getSatisfactionList */
+		SELECT SATIS.DGSTFN_ANS_MNG_NO,
+		       SATIS.TRGT_PST_MNG_NO,
+		       SATIS.DGSTFN_ANS_SCR,
+		       (SATIS.DGSTFN_ANS_SCR-1)/(5-1)*100 AS DGSTFN_ANS_SCR2,
+		       SATIS.WRTR_EMP_NM,
+		       SATIS.WRTR_EMP_NO,
+		       SATIS.DGSTFN_SRVY_TRGT_MNG_NO,
+		       (SELECT Z.RVW_TKCG_EMP_NM FROM TB_CNSTN_RVW_PIC Z WHERE Z.RVW_TKCG_MNG_NO = SATIS.DGSTFN_SRVY_TRGT_MNG_NO) AS TRGT_NM,
+		       ITEM.DGSTFN_SRVY_MNG_NO,
+		       ITEM.DGSTFN_SRVY_CN,
+		       ITEM.USE_YN,
+		       ITEM.DGSTFN_SRVY_TRGT_SE,
+		       ITEM.DGSTFN_EVL_TYPE_NM,
+		       ITEM.FST_ANS_ARTCL_NM,
+		       ITEM.SEC_ANS_ARTCL_NM,
+		       ITEM.THR_ANS_ARTCL_NM,
+		       ITEM.FOUR_ANS_ARTCL_NM,
+		       ITEM.FIFTH_ANS_ARTCL_NM
+		FROM TB_COM_DGSTFN_ARTC ITEM
+		         LEFT OUTER JOIN TB_COM_DGSTFN_EXMN SATIS
+		         ON ITEM.DGSTFN_SRVY_MNG_NO = SATIS.DGSTFN_SRVY_MNG_NO
+		           AND TRGT_PST_MNG_NO = #{CNSTN_MNG_NO}
+		WHERE ITEM.USE_YN = 'Y'
+		  AND ITEM.SRVY_SE = 'CON'
+		ORDER BY SATIS.DGSTFN_SRVY_MNG_NO ASC
+	</select>
+	
+	
+	<select id="getProcSatisList" resultType="HashMap">
+		/* consultSql.getProcSatisList */
+		SELECT *
+		FROM TB_COM_DGSTFN_EXMN
+		WHERE TRGT_PST_MNG_NO = #{CNSTN_MNG_NO}
+	</select>
+	
+	<select id="getOutConsultCnt" resultType="HashMap">
+		/* consultSql.getOutConsultCnt */
+		SELECT NVL(SUM(ENDCNT), 0) AS ENDCNT
+		     , NVL(SUM(PROGCNT), 0) AS PROGCNT
+		     , NVL(SUM(TOTALCNT), 0) AS TOTALCNT
+		FROM (
+		    SELECT CASE WHEN A.PRGRS_STTS_SE_NM IN ('완료', '종료')     THEN 1 ELSE 0 END ENDCNT
+		         , CASE WHEN A.PRGRS_STTS_SE_NM NOT IN ('완료', '종료') THEN 1 ELSE 0 END PROGCNT
+		         , CASE WHEN A.CNSTN_MNG_NO IS NOT NULL                 THEN 1 ELSE 0 END TOTALCNT
+		    FROM TB_CNSTN_MNG A
+		       , TB_CNSTN_RVW_PIC B
+		    WHERE A.CNSTN_MNG_NO = B.CNSTN_MNG_NO
+		      AND B.RVW_TKCG_EMP_NO = #{WRTR_EMP_NO}
+		)
+	</select>
+	
+	<select id="selectOutConsultList" resultType="HashMap"  parameterType="HashMap">
+		/* consultSql.selectOutConsultList */
+		SELECT A.*
+		FROM (
+		    SELECT Z.*
+		         , CEIL(ROWNUM/#{pagesize}) PAGE
+		    FROM (
+		        SELECT A.CNSTN_MNG_NO 
+		             , A.MENU_MNG_NO         /* 메뉴ID */
+		             , A.PRGRS_STTS_SE_NM         /* 진행상태 */ 
+		             , A.CNSTN_TTL          /* 자문제목 */
+		             , A.CNSTN_RQST_DEPT_NO   /* 요청부서코드 */
+		             , A.CNSTN_RQST_DEPT_NM   /* 요청부서명 */ 
+		             , A.CNSTN_RQST_EMP_NO    /* 요청자사번 */
+		             , A.CNSTN_RQST_EMP_NM    /* 요청자명 */
+		             , A.CNSTN_HOPE_RPLY_YMD         /* 자문회신희망일자 */ 
+		             , 'Y' AS OPENYN    /* 공개여부 */ 
+		             , A.CNSTN_TKCG_EMP_NO       /* 자문담당자사번 */
+		             , A.CNSTN_TKCG_EMP_NM      /* 자문담당자명 */ 
+		             , A.INSD_OTSD_TASK_SE       /* 내/외부 구분 */ 
+		             , CASE WHEN A.INSD_OTSD_TASK_SE = 'I' THEN '내부검토'
+		                    WHEN A.INSD_OTSD_TASK_SE = 'O' THEN '외부자문'
+		                    ELSE ''
+		               END AS INOUTHAN   /* 내/외부 구분 한글명 */
+		             , A.CNSTN_RQST_YMD           /* 자문요청일자 */
+		             , A.CNSTN_RPLY_YMD          /* 자문회신일자 */
+		             , A.CNSTN_DOC_NO      /* 자문관리번호 */ 
+		             , A.WRT_YMD        /* 작성일 */
+		             , B.RVW_TKCG_EMP_NM      /* 자문인명 */ 
+		             , A.MDFCN_YMD      /* 수정일자 */ 
+		             , A.CNSTN_RCPT_YMD	/* 접수일자 */ 
+		             , B.RCPT_YN
+		        FROM TB_CNSTN_MNG A 
+		           , TB_CNSTN_RVW_PIC B
+		        WHERE A.CNSTN_MNG_NO = B.CNSTN_MNG_NO
+		          AND B.RVW_TKCG_EMP_NO = #{WRTR_EMP_NO}
+		          AND B.PRSL_PSBLTY_YN = 'Y'
+		    ) Z
+		    WHERE Z.OPENYN = 'Y'
+		) A
+		<trim prefix="WHERE" prefixOverrides="AND |OR ">
+			<if test="pageno != null and pageno != ''">
+				page = #{pageno}
+			</if>
+		</trim>
+	</select>
+	
+	<select id="selectOutConsultListTotal" resultType="int" parameterType="java.util.Map">
+		/* consultSql.selectOutConsultListTotal */
+		SELECT COUNT(*)
+		FROM (
+		    SELECT A.CNSTN_MNG_NO 
+		         , A.MENU_MNG_NO         /* 메뉴ID */
+		         , A.PRGRS_STTS_SE_NM         /* 진행상태 */ 
+		         , A.CNSTN_TTL          /* 자문제목 */
+		         , A.CNSTN_RQST_DEPT_NO   /* 요청부서코드 */
+		         , A.CNSTN_RQST_DEPT_NM   /* 요청부서명 */ 
+		         , A.CNSTN_RQST_EMP_NO    /* 요청자사번 */
+		         , A.CNSTN_RQST_EMP_NM    /* 요청자명 */
+		         , A.CNSTN_HOPE_RPLY_YMD         /* 자문회신희망일자 */ 
+		         , 'Y' AS OPENYN    /* 공개여부 */ 
+		         , A.CNSTN_TKCG_EMP_NO       /* 자문담당자사번 */
+		         , A.CNSTN_TKCG_EMP_NM      /* 자문담당자명 */ 
+		         , A.INSD_OTSD_TASK_SE       /* 내/외부 구분 */ 
+		         , CASE WHEN A.INSD_OTSD_TASK_SE = 'I' THEN '내부검토'
+		                WHEN A.INSD_OTSD_TASK_SE = 'O' THEN '외부자문'
+		                ELSE ''
+		           END AS INOUTHAN   /* 내/외부 구분 한글명 */
+		         , A.CNSTN_RQST_YMD           /* 자문요청일자 */
+		         , A.CNSTN_RPLY_YMD          /* 자문회신일자 */
+		         , A.CNSTN_DOC_NO      /* 자문관리번호 */ 
+		         , A.WRT_YMD        /* 작성일 */
+		         , B.RVW_TKCG_EMP_NM      /* 자문인명 */ 
+		         , A.MDFCN_YMD      /* 수정일자 */ 
+		         , A.CNSTN_RCPT_YMD	/* 접수일자 */ 
+		    FROM TB_CNSTN_MNG A 
+		       , TB_CNSTN_RVW_PIC B
+		    WHERE A.CNSTN_MNG_NO = B.CNSTN_MNG_NO
+		      AND B.RVW_TKCG_EMP_NO = #{WRTR_EMP_NO}
+		      AND B.PRSL_PSBLTY_YN = 'Y'
+		) A
+		WHERE A.OPENYN = 'Y'
+	</select>
+	
+	
+	
+	
+	<insert id="insertConsultCost" parameterType="java.util.Map">
+		<selectKey keyProperty="CNSTN_CST_MNG_NO" resultType="String" order="BEFORE">
+			SELECT KEYID.NEXTVAL FROM DUAL
+		</selectKey>
+		/* consultSql.insertConsultCost */
+		INSERT INTO TB_CNSTN_CST (
+		    CNSTN_CST_MNG_NO      /* 자문비용관리번호 */
+		  , CNSTN_MNG_NO          /* 자문관리번호     */
+		  , RVW_TKCG_MNG_NO       /* 검토담당관리번호 */
+		  , BACNT_MNG_NO          /* 계좌관리번호     */
+		  , CNSTN_CST_AMT         /* 자문비용금액     */
+		  , CST_PRGRS_STTS_SE     /* 비용진행상태구분 */
+		  , CST_CLM_YMD           /* 비용청구일자     */
+		) VALUES (
+		    #{CNSTN_CST_MNG_NO}
+		  , #{CNSTN_MNG_NO}
+		  , #{RVW_TKCG_MNG_NO}
+		  , #{BACNT_MNG_NO}
+		  , #{CNSTN_CST_AMT}
+		  , 'R'
+		  , REPLACE(#{CST_CLM_YMD}, '-', '')
+		)
+	</insert>
+	
+	<update id="updateConsultCost" parameterType="HashMap">
+		/* consultSql.updateConsultCost */
+		UPDATE TB_CNSTN_CST
+		SET BACNT_MNG_NO = #{BACNT_MNG_NO}
+		  , CNSTN_CST_AMT = #{CNSTN_CST_AMT}
+		  , CST_CLM_YMD = REPLACE(#{CST_CLM_YMD}, '-', '')
+		  , CST_PRGRS_STTS_SE = #{CST_PRGRS_STTS_SE}
+		WHERE CNSTN_CST_MNG_NO = #{CNSTN_CST_MNG_NO}
+	</update>
+	
+	<update id="setCostInfo" parameterType="HashMap">
+		/* consultSql.setCostInfo */
+		UPDATE TB_CNSTN_CST
+		SET CST_PRGRS_STTS_SE = #{CST_PRGRS_STTS_SE}
+		  , CST_APRV_YMD = REPLACE(#{CST_APRV_YMD}, '-', '')
+		  , CST_GIVE_YMD = REPLACE(#{CST_GIVE_YMD}, '-', '')
+		WHERE CNSTN_CST_MNG_NO = #{CNSTN_CST_MNG_NO}
+	</update>
+	
+	
+	<select id="getVerbalAdviceList" resultType="HashMap"  parameterType="HashMap">
+		/* consultSql_getVerbalAdviceList_구두자문 목록조회 */
+		SELECT A.*
+		FROM (
+		    SELECT Z.*
+		         , CEIL(ROWNUM/#{pagesize}) PAGE
+		    FROM (
+                SELECT A.CNSTN_MNG_NO 
+                    , A.MENU_MNG_NO         /* 메뉴ID */ 
+                    , TO_CHAR(TO_DATE(A.CNSTN_CMPTN_YMD, 'YYYYMMDD'), 'YYYY-MM-DD') AS CNSTN_CMPTN_YMD	/* 자문완료일자 */
+                    , A.DSCSN_TYPE_NM	/* 상담유형명 */
+                    , A.CNSTN_TTL          /* 구두자문제목(안건) */
+                    , A.CNSTN_RQST_DEPT_NO   /* 요청부서코드 */
+                    , A.CNSTN_RQST_DEPT_NM   /* 요청부서명 */ 
+                    , A.CNSTN_RQST_EMP_NO    /* 요청자사번 */
+                    , A.CNSTN_RQST_EMP_NM    /* 요청자명 */
+                    , A.CNSTN_TKCG_EMP_NO       /* 자문담당자사번 */
+                    , A.CNSTN_TKCG_EMP_NM      /* 자문담당자명 */ 
+                     
+                    , A.PRGRS_STTS_SE_NM         /* 진행상태 */ 
+                    , A.CNSTN_HOPE_RPLY_YMD         /* 자문회신희망일자 */ 
+					, 'Y' AS OPENYN    /* 공개여부 */ 
+                    , A.INSD_OTSD_TASK_SE       /* 내/외부 구분 */ 
+                    , CASE 
+                       WHEN A.INSD_OTSD_TASK_SE = 'I' THEN '내부검토'
+                       WHEN A.INSD_OTSD_TASK_SE = 'O' THEN '외부자문'
+                       WHEN A.INSD_OTSD_TASK_SE = 'V' THEN '구두자문'
+                       ELSE ''
+	                end    AS INOUTHAN   /* 내/외부 구분 한글명 */
+                    , A.CNSTN_RQST_YMD           /* 자문요청일자 */
+                    , A.CNSTN_RPLY_YMD          /* 자문회신일자 */
+                    , A.CNSTN_DOC_NO      /* 자문관리번호 */ 
+                    , A.WRT_YMD        /* 작성일 */
+                    , A.MDFCN_YMD      /* 수정일자 */ 
+                    , A.CNSTN_RCPT_YMD	/* 접수일자 */ 
+
+                FROM TB_CNSTN_MNG A 
+		        WHERE A.MENU_MNG_NO = #{MENU_MNG_NO} 
+	        	AND A.INSD_OTSD_TASK_SE = 'V'
+		        <if test="schreqdt1 != null and schreqdt1 != ''">
+		          AND A.CNSTN_CMPTN_YMD >= REPLACE(#{schreqdt1}, '-', '')
+		        </if>
+		        <if test="schreqdt2 != null and schreqdt2 != ''">
+		          AND REPLACE(#{schreqdt2}, '-', '') >= A.CNSTN_CMPTN_YMD
+		        </if>
+		        <if test="dscsn_type_nm != null and dscsn_type_nm != ''">
+		          AND A.DSCSN_TYPE_NM LIKE '%'||#{dscsn_type_nm}||'%'
+		        </if>
+		        <if test="srch_kywd_cn != null and srch_kywd_cn != ''">
+		          AND A.PRVT_SRCH_KYWD_CN LIKE '%'||#{srch_kywd_cn}||'%'
+		        </if>
+		        <if test="sch_rqst_dept_nm != null and sch_rqst_dept_nm != ''">
+		          AND A.CNSTN_RQST_DEPT_NM LIKE '%'||#{sch_rqst_dept_nm}||'%'
+		        </if>
+		        <if test="sch_rqst_emp_nm != null and sch_rqst_emp_nm != ''">
+		          AND A.CNSTN_RQST_EMP_NM = #{sch_rqst_emp_nm}
+		        </if>
+		        <if test="sch_tkcg_emp_nm != null and sch_tkcg_emp_nm != ''">
+		          AND A.CNSTN_TKCG_EMP_NM = #{sch_tkcg_emp_nm}
+		        </if>
+		        <if test="cnstn_ttl != null and cnstn_ttl != ''">
+		          AND A.CNSTN_TTL LIKE '%'||#{cnstn_ttl}||'%'
+		        </if>
+		        <choose>
+		          <when test="orderby == null or orderby == ''">
+		        ORDER BY A.CNSTN_RQST_YMD, A.CNSTN_RQST_REG_YMD DESC
+		          </when>
+		          <otherwise>
+		        	<include refid="commonSql.orderbysql"></include>
+		          </otherwise>
+		        </choose>
+		    ) Z
+		    WHERE Z.OPENYN = 'Y'
+		) A
+		<trim prefix="WHERE" prefixOverrides="AND |OR ">
+			<if test="pageno != null and pageno != ''">
+				page = #{pageno}
+			</if>
+		</trim>
+	</select>
+	
+	<select id="getVerbalAdviceTotal" resultType="int" parameterType="java.util.Map">
+		/* consultSql_getVerbalAdviceTotal_구두자문 목록건수 조회 */
+		SELECT COUNT(*)
+	    FROM (
+               SELECT A.CNSTN_MNG_NO 
+                     , A.MENU_MNG_NO         /* 메뉴ID */
+                     , A.PRGRS_STTS_SE_NM         /* 진행상태 */ 
+                     , A.CNSTN_TTL          /* 자문제목 */
+                     , A.CNSTN_RQST_DEPT_NO   /* 요청부서코드 */
+                     , A.CNSTN_RQST_DEPT_NM   /* 요청부서명 */ 
+                     , A.CNSTN_RQST_EMP_NO    /* 요청자사번 */
+                     , A.CNSTN_RQST_EMP_NM    /* 요청자명 */
+                     , A.CNSTN_HOPE_RPLY_YMD         /* 자문회신희망일자 */ 
+					, 'Y' AS OPENYN    /* 공개여부 */ 
+                    , A.CNSTN_TKCG_EMP_NO       /* 자문담당자사번 */
+                    , A.CNSTN_TKCG_EMP_NM      /* 자문담당자명 */ 
+                    , A.INSD_OTSD_TASK_SE       /* 내/외부 구분 */ 
+                    , CASE 
+                       WHEN A.INSD_OTSD_TASK_SE = 'I' THEN '내부검토'
+                       WHEN A.INSD_OTSD_TASK_SE = 'O' THEN '외부자문'
+                       ELSE ''
+	                end    AS INOUTHAN   /* 내/외부 구분 한글명 */
+                    , A.CNSTN_RQST_YMD           /* 자문요청일자 */
+                    , A.CNSTN_RPLY_YMD          /* 자문회신일자 */
+                    , A.CNSTN_DOC_NO      /* 자문관리번호 */ 
+                    , A.WRT_YMD        /* 작성일 */
+                    , A.MDFCN_YMD      /* 수정일자 */ 
+                    , A.CNSTN_RCPT_YMD	/* 접수일자 */ 
+                FROM TB_CNSTN_MNG A 
+		        WHERE A.MENU_MNG_NO = #{MENU_MNG_NO}
+		        AND A.INSD_OTSD_TASK_SE = 'V'
+	        <if test="schreqdt1 != null and schreqdt1 != ''">
+	          AND A.CNSTN_CMPTN_YMD >= REPLACE(#{schreqdt1}, '-', '')
+	        </if>
+	        <if test="schreqdt2 != null and schreqdt2 != ''">
+	          AND REPLACE(#{schreqdt2}, '-', '') >= A.CNSTN_CMPTN_YMD
+	        </if>
+	        <if test="dscsn_type_nm != null and dscsn_type_nm != ''">
+	          AND A.DSCSN_TYPE_NM LIKE '%'||#{dscsn_type_nm}||'%'
+	        </if>
+	        <if test="srch_kywd_cn != null and srch_kywd_cn != ''">
+	          AND A.PRVT_SRCH_KYWD_CN LIKE '%'||#{srch_kywd_cn}||'%'
+	        </if>
+	        <if test="sch_rqst_dept_nm != null and sch_rqst_dept_nm != ''">
+	          AND A.CNSTN_RQST_DEPT_NM LIKE '%'||#{sch_rqst_dept_nm}||'%'
+	        </if>
+	        <if test="sch_rqst_emp_nm != null and sch_rqst_emp_nm != ''">
+	          AND A.CNSTN_RQST_EMP_NM = #{sch_rqst_emp_nm}
+	        </if>
+	        <if test="sch_tkcg_emp_nm != null and sch_tkcg_emp_nm != ''">
+	          AND A.CNSTN_TKCG_EMP_NM = #{sch_tkcg_emp_nm}
+	        </if>
+	        <if test="cnstn_ttl != null and cnstn_ttl != ''">
+	          AND A.CNSTN_TTL LIKE '%'||#{cnstn_ttl}||'%'
+	        </if>
+	    ) A
+	    WHERE A.OPENYN = 'Y'
+	</select>
+	
+	<insert id="insertVerbalAdvice" parameterType="HashMap">
+		<selectKey keyProperty="cnstn_mng_no" resultType="String" order="BEFORE">
+			SELECT KEYID.NEXTVAL FROM DUAL
+		</selectKey>	
+		/* consultSql_insertVerbalAdvice_구두자문 정보등록 */
+		INSERT INTO TB_CNSTN_MNG (
+			  CNSTN_MNG_NO    /* 자문관리번호 */
+			, MENU_MNG_NO       /* 메뉴관리번호 */
+			, CNSTN_CMPTN_YMD		/* 상담일자 */
+			, CNSTN_RQST_DEPT_NO /* 자문의뢰부서번호 */
+			, CNSTN_RQST_DEPT_NM /* 자문의뢰부서명 */
+			, CNSTN_RQST_EMP_NO  /* 자문의뢰직원번호 */
+			, CNSTN_RQST_EMP_NM  /* 자문의뢰직원명 */
+			, DSCSN_TYPE_NM       /* 상담유형명 */
+			, CNSTN_TKCG_EMP_NO		/* 자문담당직원번호 */
+			, CNSTN_TKCG_EMP_NM		/* 자문담당직원명 */
+			, INSD_OTSD_TASK_SE     /* 내부외부업무구분 */
+
+			, PRVT_SRCH_KYWD_CN		/* 비공개검색키워드내용 */
+			, CNSTN_TTL        /* 자문제목 */
+			, CNSTN_RQST_CN     /* 구두 자문 내용 */
+			, RMRK_CN     /* 비고 내용 */
+			
+			, DEL_YN		/* 삭제여부 */
+			, WRTR_EMP_NM		/* 작성직원명 */
+			, WRTR_EMP_NO		/* 작성직원번호 */
+			, WRT_YMD		/* 작성일자 */
+			, WRT_DEPT_NM		/* 작성부서명 */
+			, WRT_DEPT_NO		/* 작성부서번호 */
+			, MDFCN_EMP_NM		/* 수정직원명 */
+			, MDFCN_EMP_NO		/* 수정직원번호 */
+			, MDFCN_YMD		/* 수정일자 */
+			, MDFCN_DEPT_NM		/* 수정부서명 */
+			, MDFCN_DEPT_NO		/* 수정부서번호 */
+		) VALUES (
+			  #{cnstn_mng_no}
+			, #{MENU_MNG_NO}
+			, (REPLACE(#{cnstn_cmptn_ymd}, '-', ''))
+			, #{cnstn_rqst_dept_no}
+			, #{cnstn_rqst_dept_nm}
+			, #{cnstn_rqst_emp_no}
+			, #{cnstn_rqst_emp_nm}
+			, #{dscsn_type_nm}
+			, #{cnstn_tkcg_emp_no}
+			, #{cnstn_tkcg_emp_nm}
+			, #{INSD_OTSD_TASK_SE}
+
+			, #{prvt_srch_kywd_cn}
+			, #{cnstn_ttl}
+			, #{cnstn_rqst_cn}
+			, #{rmrk_cn}
+			
+			, 'N'
+			, #{WRTR_EMP_NM}
+			, #{WRTR_EMP_NO}
+			, (REPLACE(#{wrt_ymd}, '-', ''))
+			, #{WRT_DEPT_NM}
+			, #{WRT_DEPT_NO}
+			, #{WRTR_EMP_NM}
+			, #{WRTR_EMP_NO}
+			, to_char(sysdate, 'YYYYMMDD')
+			, #{WRT_DEPT_NM}
+			, #{WRT_DEPT_NO}
+		)
+	</insert>
+	
+	<update id="updateVerbalAdvice" parameterType="HashMap">
+		/* consultSql_updateVerbalAdvice_구두 자문 기본정보 수정 */
+		UPDATE TB_CNSTN_MNG 
+		<trim prefix="set " prefixOverrides=", ">
+			, cnstn_cmptn_ymd = (REPLACE(#{cnstn_cmptn_ymd}, '-', ''))
+			, cnstn_rqst_dept_nm = #{cnstn_rqst_dept_nm}
+			, cnstn_rqst_dept_no = #{cnstn_rqst_dept_no}
+			, cnstn_rqst_emp_nm = #{cnstn_rqst_emp_nm}
+			, cnstn_rqst_emp_no = #{cnstn_rqst_emp_no}
+			, dscsn_type_nm = #{dscsn_type_nm}
+			, cnstn_tkcg_emp_nm = #{cnstn_tkcg_emp_nm}
+			, cnstn_tkcg_emp_no = #{cnstn_tkcg_emp_no}
+			, wrt_ymd = (REPLACE(#{wrt_ymd}, '-', ''))
+			, cnstn_ttl = #{cnstn_ttl}
+			, cnstn_rqst_cn = #{cnstn_rqst_cn}
+			, rmrk_cn = #{rmrk_cn}
+				
+			, MDFCN_EMP_NM = #{WRTR_EMP_NM}		/* 수정직원명 */
+			, MDFCN_EMP_NO = #{WRTR_EMP_NO}		/* 수정직원번호 */
+			, MDFCN_YMD = to_char(sysdate, 'YYYYMMDD')		/* 수정일자 */
+			, MDFCN_DEPT_NM = #{WRT_DEPT_NM}		/* 수정부서명 */
+			, MDFCN_DEPT_NO = #{WRT_DEPT_NO}		/* 수정부서번호 */
+		</trim>
+      WHERE CNSTN_MNG_NO = #{consultid}
+	</update>
+	
+	<select id="getDeptList" resultType="HashMap">
+		/* suitSql.getDeptList_구두자문 직원선택팝업 부서 목록*/
+		SELECT DEPT_NO,
+		       UP_DEPT_NO,
+		       SORT_SEQ,
+		       DEPT_NM,
+		       DEPT_GROUP_NM,
+		       USE_YN
+		FROM TB_COM_ORGCHT
+		WHERE UP_DEPT_NO = #{node}
+		ORDER BY NVL(SORT_SEQ,9999999)
+	</select>
+	
+	<select id="selectUserList" resultType="HashMap">
+		/* suitSql.selectUserList_구두자문 직원선택팝업 직원 목록 */
+		SELECT U.EMP_NO,
+		       U.EMP_NM,
+		       NVL(U.JBGD_CD, '') AS JBGD_CD,
+		       U.DEPT_NO,
+		       (SELECT DEPT_NM FROM TB_COM_ORGCHT WHERE DEPT_NO = U.DEPT_NO) AS DEPT_NM,
+		       NVL(U.JBGD_NM, '') AS JBGD_NM
+		FROM TB_COM_HRIS U
+		WHERE 1=1
+		<if test="DEPT_NO != '' and DEPT_NO != null">
+		  <if test='DEPT_NO != "6110000"'>
+		  AND U.DEPT_NO = #{DEPT_NO}
+		  </if>
+		</if>
+		<if test="schtxt2 != '' and schtxt2 != null">
+		  AND U.EMP_NM LIKE '%'||#{schtxt2}||'%'
+		</if>
+		ORDER BY EMP_NM ASC
+	</select>
+	
+	<select id="selectDeptList" resultType="HashMap">
+		/* suitSql.selectDeptList */
+		SELECT ROWNUM AS RNUM,
+		       T.DEPT_NO,
+		       T.UP_DEPT_NO,
+		       T.DEPT_NM,
+		       LEVEL AS LVL
+		FROM TB_COM_ORGCHT T
+		WHERE T.USE_YN='Y'
+		START WITH T.UP_DEPT_NO = '6110000'
+		CONNECT BY PRIOR T.DEPT_NO=T.UP_DEPT_NO
+	</select>
+	
+	<update id="updateInsdOtsdTaskSe" parameterType="HashMap">
+		/* consultSql_updateInsdOtsdTaskSe_자문 내외부 유형 수정 */
+		UPDATE TB_CNSTN_MNG
+		SET INSD_OTSD_TASK_SE = #{insd_otsd_task_se}
+		WHERE CNSTN_MNG_NO = #{consultid}
+	</update>
+	
+	<select id="selectStateTotalCnt" resultType="int" parameterType="java.util.Map">
+		/* consultSql_selectStateTotalCnt_목록화면 통계그림 전체 건수 조회 */
+		SELECT COUNT(*)
+	    FROM (
+               SELECT A.CNSTN_MNG_NO 
+                     , A.MENU_MNG_NO         /* 메뉴ID */
+                     , A.PRGRS_STTS_SE_NM         /* 진행상태 */ 
+                     , A.CNSTN_TTL          /* 자문제목 */
+                     , A.CNSTN_RQST_DEPT_NO   /* 요청부서코드 */
+                     , A.CNSTN_RQST_DEPT_NM   /* 요청부서명 */ 
+                     , A.CNSTN_RQST_EMP_NO    /* 요청자사번 */
+                     , A.CNSTN_RQST_EMP_NM    /* 요청자명 */
+                     , A.CNSTN_HOPE_RPLY_YMD         /* 자문회신희망일자 */ 
+					, 'Y' AS OPENYN    /* 공개여부 */ 
+                    , A.CNSTN_TKCG_EMP_NO       /* 자문담당자사번 */
+                    , A.CNSTN_TKCG_EMP_NM      /* 자문담당자명 */ 
+                    , A.INSD_OTSD_TASK_SE       /* 내/외부 구분 */ 
+                    , CASE 
+                       WHEN A.INSD_OTSD_TASK_SE = 'I' THEN '내부검토'
+                       WHEN A.INSD_OTSD_TASK_SE = 'O' THEN '외부자문'
+                       ELSE ''
+	                end    AS INOUTHAN   /* 내/외부 구분 한글명 */
+                    , A.CNSTN_RQST_YMD           /* 자문요청일자 */
+                    , A.CNSTN_RPLY_YMD          /* 자문회신일자 */
+                    , A.CNSTN_DOC_NO      /* 자문관리번호 */ 
+                    , A.WRT_YMD        /* 작성일 */
+                    , A.MDFCN_YMD      /* 수정일자 */ 
+                    , A.CNSTN_RCPT_YMD	/* 접수일자 */ 
+                    , B.RVW_TKCG_EMP_NM      /* 자문인명 */ 
+					, B.JDAF_CORP_EMP_NMS AS JDAF_CORP_NMS
+                FROM TB_CNSTN_MNG A LEFT OUTER JOIN 
+                	(
+	                    SELECT 
+	                    	L.CNSTN_MNG_NO
+							, LISTAGG(L.RVW_TKCG_EMP_NM, ',') WITHIN GROUP (ORDER BY L.RVW_TKCG_EMP_NM) AS RVW_TKCG_EMP_NM
+							, LISTAGG(LTRIM(NVL(C2.JDAF_CORP_NM, '') || ' ' || L.RVW_TKCG_EMP_NM), ',') WITHIN GROUP (ORDER BY C2.JDAF_CORP_NM, L.RVW_TKCG_EMP_NM) AS JDAF_CORP_EMP_NMS
+	                    FROM TB_CNSTN_RVW_PIC L 
+		                    LEFT JOIN TB_COM_LWYR C1 ON L.RVW_TKCG_MNG_NO = C1.LWYR_MNG_NO
+		                    LEFT JOIN TB_COM_JDAF_CORP C2 ON C1.JDAF_CORP_MNG_NO = C2.JDAF_CORP_MNG_NO
+	                    GROUP BY L.CNSTN_MNG_NO 
+               		) B ON A.CNSTN_MNG_NO = B.CNSTN_MNG_NO 
+		        WHERE A.MENU_MNG_NO = #{MENU_MNG_NO}
+		        AND (A.INSD_OTSD_TASK_SE IS NULL OR A.INSD_OTSD_TASK_SE != 'V')
+	        <if test="schreqdt1 != null and schreqdt1 != ''">
+	          AND A.WRT_YMD >= REPLACE(#{schreqdt1}, '-', '')
+	        </if>
+	        <if test="schreqdt2 != null and schreqdt2 != ''">
+	          AND REPLACE(#{schreqdt2}, '-', '') >= A.WRT_YMD
+	        </if>
+	        <if test="sch_insd_otsd_task_se != null and sch_insd_otsd_task_se != ''">
+	          AND A.INSD_OTSD_TASK_SE LIKE '%'||#{sch_insd_otsd_task_se}||'%'
+	        </if>
+	        <if test="srch_kywd_cn != null and srch_kywd_cn != ''">
+	          AND A.PRVT_SRCH_KYWD_CN LIKE '%'||#{srch_kywd_cn}||'%'
+	        </if>
+	        <if test="sch_rqst_dept_nm != null and sch_rqst_dept_nm != ''">
+	          AND A.CNSTN_RQST_DEPT_NM LIKE '%'||#{sch_rqst_dept_nm}||'%'
+	        </if>
+	        <if test="sch_rqst_emp_nm != null and sch_rqst_emp_nm != ''">
+	          AND A.CNSTN_RQST_EMP_NM = #{sch_rqst_emp_nm}
+	        </if>
+	        <if test="sch_tkcg_emp_nm != null and sch_tkcg_emp_nm != ''">
+	          AND A.CNSTN_TKCG_EMP_NM = #{sch_tkcg_emp_nm}
+	        </if>
+	        <if test="cnstn_ttl != null and cnstn_ttl != ''">
+	          AND A.CNSTN_TTL LIKE '%'||#{cnstn_ttl}||'%'
+	        </if>
+			<if test='schGbn == "1"'>
+				AND A.PRGRS_STTS_SE_NM != '완료'
+			</if>
+			<!-- 문서관리번호 -->
+			<if test="cnstn_doc_no != null and cnstn_doc_no != ''">
+	          AND A.CNSTN_DOC_NO LIKE '%'||#{cnstn_doc_no}||'%'
+	        </if>
+	        <!-- 답변일 -->
+			        <if test="schreqdt3 != null and schreqdt3 != ''">		
+	          AND A.CNSTN_RPLY_YMD >= REPLACE(#{schreqdt3}, '-', '')
+	        </if>
+	        <if test="schreqdt4 != null and schreqdt4 != ''">
+	          AND REPLACE(#{schreqdt4}, '-', '') >= A.CNSTN_RPLY_YMD
+	        </if>
+			<!-- 담당고문변호사?(답변자) -->
+			<if test="sch_answer != null and sch_answer != ''">
+	          AND B.RVW_TKCG_EMP_NM LIKE '%'||#{sch_answer}||'%'
+	        </if>
+			<!-- 자문구분 -->
+			<if test="sch_cnstn_se_nm != null and sch_cnstn_se_nm != ''">
+	          AND A.CNSTN_SE_NM LIKE '%'||#{sch_cnstn_se_nm}||'%'
+	        </if>
+			<!-- 진행상태 -->
+			<if test="prgrs_stts_se_nm != null and prgrs_stts_se_nm != ''">
+<!-- 	          AND A.PRGRS_STTS_SE_NM LIKE '%'||#{prgrs_stts_se_nm}||'%' -->
+<!-- 	          AND A.PRGRS_STTS_SE_NM = #{prgrs_stts_se_nm} -->
+	        </if>
+			<!-- 내용(의뢰내용, 의뢰요지내용, 비고내용, 메모내용) -->
+			<if test="all_cn != null and all_cn != ''">
+	          AND 
+	          	(
+	          		A.CNSTN_RQST_CN LIKE '%'||#{all_cn}||'%'
+	          		OR A.CNSTN_RQST_SUBST_CN LIKE '%'||#{all_cn}||'%'
+	          		OR A.RMRK_CN LIKE '%'||#{all_cn}||'%'
+	          		OR EXISTS (
+	                          SELECT 1 
+	                          FROM TB_CNSTN_MEMO C 
+	                          WHERE C.CNSTN_MNG_NO = A.CNSTN_MNG_NO
+                           	  AND C.MEMO_CN LIKE '%' ||#{all_cn}|| '%'
+                              )
+	          	)
+	        </if>
+	    ) A
+	    WHERE A.OPENYN = 'Y'
+	</select>
+	
+	<select id="selectStateCnt" resultType="HashMap" parameterType="HashMap">
+	/* consultSql_selectStateCnt_목록화면 통계그림 진행상태별 건수 조회 */
+	    SELECT 
+    		PRGRS_STTS_SE_NM
+            ,COUNT(*) AS CNT
+	    FROM 
+		    (
+	        SELECT (CASE WHEN A.PRGRS_STTS_SE_NM = '팀장결재중' OR A.PRGRS_STTS_SE_NM = '과장결재중' THEN '결재중'
+	                    ELSE A.PRGRS_STTS_SE_NM
+	                END) AS PRGRS_STTS_SE_NM
+		    FROM
+		        TB_CNSTN_MNG A
+		        LEFT OUTER JOIN (
+		            SELECT 
+			            L.CNSTN_MNG_NO
+						, LISTAGG(L.RVW_TKCG_EMP_NM, ',') WITHIN GROUP (ORDER BY L.RVW_TKCG_EMP_NM) AS RVW_TKCG_EMP_NM
+						, LISTAGG(LTRIM(NVL(C2.JDAF_CORP_NM, '') || ' ' || L.RVW_TKCG_EMP_NM), ',') WITHIN GROUP (ORDER BY C2.JDAF_CORP_NM, L.RVW_TKCG_EMP_NM) AS JDAF_CORP_EMP_NMS
+		            FROM TB_CNSTN_RVW_PIC L
+	    	    		LEFT JOIN TB_COM_LWYR C1 ON L.RVW_TKCG_MNG_NO = C1.LWYR_MNG_NO
+		        	    LEFT JOIN TB_COM_JDAF_CORP C2 ON C1.JDAF_CORP_MNG_NO = C2.JDAF_CORP_MNG_NO
+		            GROUP BY L.CNSTN_MNG_NO
+		        ) B ON A.CNSTN_MNG_NO = B.CNSTN_MNG_NO
+		    WHERE
+		        A.MENU_MNG_NO = #{MENU_MNG_NO}
+		        AND (A.INSD_OTSD_TASK_SE IS NULL OR A.INSD_OTSD_TASK_SE != 'V')
+		        <if test="schreqdt1 != null and schreqdt1 != ''">
+		            AND A.WRT_YMD >= REPLACE(#{schreqdt1}, '-', '')
+		        </if>
+		        <if test="schreqdt2 != null and schreqdt2 != ''">
+		            AND REPLACE(#{schreqdt2}, '-', '') >= A.WRT_YMD
+		        </if>
+		        <if test="sch_insd_otsd_task_se != null and sch_insd_otsd_task_se != ''">
+		            AND A.INSD_OTSD_TASK_SE LIKE '%' || #{sch_insd_otsd_task_se} || '%'
+		        </if>
+		        <if test="srch_kywd_cn != null and srch_kywd_cn != ''">
+		            AND A.PRVT_SRCH_KYWD_CN LIKE '%' || #{srch_kywd_cn} || '%'
+		        </if>
+		        <if test="sch_rqst_dept_nm != null and sch_rqst_dept_nm != ''">
+		            AND A.CNSTN_RQST_DEPT_NM LIKE '%' || #{sch_rqst_dept_nm} || '%'
+		        </if>
+		        <if test="sch_rqst_emp_nm != null and sch_rqst_emp_nm != ''">
+		            AND A.CNSTN_RQST_EMP_NM = #{sch_rqst_emp_nm}
+		        </if>
+		        <if test="sch_tkcg_emp_nm != null and sch_tkcg_emp_nm != ''">
+		            AND A.CNSTN_TKCG_EMP_NM = #{sch_tkcg_emp_nm}
+		        </if>
+		        <if test="cnstn_ttl != null and cnstn_ttl != ''">
+		            AND A.CNSTN_TTL LIKE '%' || #{cnstn_ttl} || '%'
+		        </if>
+		        <if test='schGbn == "1"'>
+		            AND A.PRGRS_STTS_SE_NM != '완료'
+		        </if>
+		        <if test="cnstn_doc_no != null and cnstn_doc_no != ''">
+		            AND A.CNSTN_DOC_NO LIKE '%' || #{cnstn_doc_no} || '%'
+		        </if>
+		        <if test="schreqdt3 != null and schreqdt3 != ''">
+		            AND A.CNSTN_RPLY_YMD >= REPLACE(#{schreqdt3}, '-', '')
+		        </if>
+		        <if test="schreqdt4 != null and schreqdt4 != ''">
+		            AND REPLACE(#{schreqdt4}, '-', '') >= A.CNSTN_RPLY_YMD
+		        </if>
+		        <if test="sch_answer != null and sch_answer != ''">
+		            AND B.RVW_TKCG_EMP_NM LIKE '%' || #{sch_answer} || '%'
+		        </if>
+		        <if test="sch_cnstn_se_nm != null and sch_cnstn_se_nm != ''">
+		            AND A.CNSTN_SE_NM LIKE '%' || #{sch_cnstn_se_nm} || '%'
+		        </if>
+		        <if test="all_cn != null and all_cn != ''">
+		            AND (
+		                A.CNSTN_RQST_CN LIKE '%' || #{all_cn} || '%'
+		                OR A.CNSTN_RQST_SUBST_CN LIKE '%' || #{all_cn} || '%'
+		                OR A.RMRK_CN LIKE '%' || #{all_cn} || '%'
+		                OR EXISTS (
+				                    SELECT 1
+				                    FROM TB_CNSTN_MEMO C
+				                    WHERE C.CNSTN_MNG_NO = A.CNSTN_MNG_NO
+			                      	AND C.MEMO_CN LIKE '%' || #{all_cn} || '%'
+	                			  )
+		            )
+		        </if>
+		    )    
+	    GROUP BY PRGRS_STTS_SE_NM
+	    ORDER BY PRGRS_STTS_SE_NM
+	</select>
+	
+	<select id="selectConsultReviewComment" resultType="HashMap" parameterType="HashMap">
+		/* consultSql_selectConsultReviewComment_자문 답변 검토 의견 조회 */
+		SELECT 
+			 CNSTN_ANS_RVW_OPNN_CN			/* 자문답변검토의견내용 */
+			, TO_CHAR(TO_DATE(RVW_OPNN_REG_YMD, 'YYYYMMDD'), 'YYYY-MM-DD') AS RVW_OPNN_REG_YMD  /* 검토의견등록일자 */
+			, DEL_YN			/* 삭제여부 */
+			, WRTR_EMP_NM			/* 작성직원명 */
+			, WRTR_EMP_NO			/* 작성직원번호 */
+			, TO_CHAR(TO_DATE(WRT_YMD, 'YYYYMMDD'), 'YYYY-MM-DD') AS WRT_YMD			/* 작성일자 */
+			, WRT_DEPT_NM			/* 작성부서명 */
+			, WRT_DEPT_NO			/* 작성부서번호 */
+			, MDFCN_EMP_NM			/* 수정직원명 */
+			, MDFCN_EMP_NO			/* 수정직원번호 */
+			, TO_CHAR(TO_DATE(MDFCN_YMD, 'YYYYMMDD'), 'YYYY-MM-DD') AS MDFCN_YMD			/* 수정일자 */
+			, MDFCN_DEPT_NM			/* 수정부서명 */
+			, MDFCN_DEPT_NO			/* 수정부서번호 */
+		FROM TB_CNSTN_MNG
+		WHERE CNSTN_MNG_NO = #{CNSTN_MNG_NO}
+	</select>
+	
+	<update id="updateConsultReviewComment"   parameterType="HashMap">
+		/* consultSql_updateConsultReviewComment_자문 답변 검토 의견 저장,수정 */
+		UPDATE 
+			TB_CNSTN_MNG
+		SET 
+			CNSTN_ANS_RVW_OPNN_CN = #{CNSTN_ANS_RVW_OPNN_CN}					/* 자문답변검토의견내용 */
+			<if test="checkVal != 'rcModi'">
+			, RVW_OPNN_REG_YMD	= to_char(sysdate, 'YYYYMMDD')		/* 검토의견등록일자 */
+			</if>
+			, MDFCN_EMP_NM = #{WRTR_EMP_NM}			/* 수정직원명 */
+			, MDFCN_EMP_NO = #{WRTR_EMP_NO}			/* 수정직원번호 */
+			, MDFCN_YMD	= to_char(sysdate, 'YYYYMMDD')		/* 수정일자 */
+			, MDFCN_DEPT_NM = #{WRT_DEPT_NM}			/* 수정부서명 */
+			, MDFCN_DEPT_NO = #{WRT_DEPT_NO}			/* 수정부서번호 */
+		WHERE 
+			CNSTN_MNG_NO = #{CNSTN_MNG_NO}
+	</update>
+	
+	<delete id="deleteGbnFile">
+	/* consultSql.deleteGbnFile_자문 관련 구분자 파일 삭제 */
+		DELETE
+		  FROM TB_CNSTN_FILE
+		 WHERE CNSTN_MNG_NO = #{CNSTN_MNG_NO}
+		 <if  test="FILE_SE_NM != null and FILE_SE_NM != ''">
+			AND FILE_SE_NM = #{FILE_SE_NM}
+		</if>
+	</delete>
+	
+	<select id="selectConsultChrEmp" resultType="String">
+		/* consultSql.selectConsultChrEmp */
+		SELECT CNSTN_TKCG_EMP_NO
+		FROM TB_CNSTN_MNG
+		WHERE CNSTN_MNG_NO = #{DOC_PK}
+	</select>
+	
+	<update id="setRfslRsn" parameterType="HashMap">
+		/* consultSql.setRfslRsn */
+		UPDATE TB_CNSTN_RVW_PIC
+		SET RCPT_YN = #{RCPT_YN}
+		  , RFSL_RSN = #{RFSL_RSN}
+		  , PRSL_PSBLTY_YN = #{RCPT_YN}
+		WHERE CNSTN_MNG_NO = #{DOC_PK}
+		  AND RVW_TKCG_EMP_NO = #{WRTR_EMP_NO}
+	</update>
+	
+	<update id="updateConsultStateRfslRsn" parameterType="HashMap">
+		/* consultSql_updateConsultStateRfslRsn_외부변호사거절_자문진행상태수정 */
+		UPDATE TB_CNSTN_MNG
+		SET PRGRS_STTS_SE_NM = #{statcd}
+		WHERE CNSTN_MNG_NO = #{DOC_PK}
+	</update>
+	
+	<select id="selectConsultTeamReader" resultType="HashMap">
+		/* consultSql.selectConsultTeamReader_법률자문팀장 조회 */
+		SELECT A.EMP_PK_NO, A.EMP_NM
+		FROM TB_COM_HRIS A, TB_COM_MNGR_AUTHRT B
+		WHERE A.EMP_NO = B.EMP_NO
+		  AND B.MNGR_AUTHRT_NM = #{GRPCD}
+	</select>
+	
+	
+	<select id="getConsultChrEmpInfo" resultType="String">
+		SELECT REGEXP_REPLACE(WRC_TELNO, '(^02|^01[0-9]|^0[0-9]{2})([0-9]+)([0-9]{4})', '\1-\2-\3') AS WRC_TELNO
+		FROM TB_COM_HRIS
+		WHERE EMP_NO = #{EMP_NO}
+	</select>
+	
+	<select id="getConsultChrEmpInfo2" resultType="HashMap">
+		SELECT LISTAGG(C.JDAF_CORP_NM || ' ' || A.LWYR_NM, ', ') WITHIN GROUP (ORDER BY A.LWYR_MNG_NO) AS LWYR_NM
+		     , LISTAGG((REGEXP_REPLACE(A.OFC_TELNO, '(^02|^01[0-9]|^0[0-9]{2})([0-9]+)([0-9]{4})', '\1-\2-\3')), ', ') WITHIN GROUP (ORDER BY A.LWYR_MNG_NO) AS OFC_TELNO
+		FROM TB_COM_LWYR A
+		   , TB_CNSTN_RVW_PIC B
+		   , TB_COM_JDAF_CORP C
+		WHERE A.LWYR_MNG_NO = B.RVW_TKCG_EMP_NO
+		  AND A.JDAF_CORP_MNG_NO = C.JDAF_CORP_MNG_NO
+		  AND B.CNSTN_MNG_NO = #{CNSTN_MNG_NO}
+		GROUP BY B.CNSTN_MNG_NO
+	</select>
+	
+	<select id="getConsultSendEmpKey" resultType="String">
+		/* consultSql.getConsultSendEmpKey */
+		SELECT EMP_PK_NO
+		FROM TB_COM_HRIS
+		WHERE EMP_NO = #{EMP_NO}
+	</select>
+	
+	
+	<select id="getMainConsultCnt1" resultType="String">
+		/* consultSql.getMainConsultCnt1 */
+		SELECT COUNT(*) FROM TB_CNSTN_MNG WHERE PRGRS_STTS_SE_NM = '접수대기'
+	</select>
+
+	<select id="getMainConsultCnt2" resultType="String">
+		/* consultSql.getMainConsultCnt2 */
+		SELECT 
+			COUNT(*) 
+		FROM 
+			TB_CNSTN_MNG 
+		WHERE 
+			PRGRS_STTS_SE_NM NOT IN ('작성중', '접수대기', '완료', '철회', '법률자문 의뢰')
+			AND (INSD_OTSD_TASK_SE IS NULL OR INSD_OTSD_TASK_SE != 'V')
+    		AND MENU_MNG_NO = '100000131'
+	</select>
+	
+	<select id="selectConsultMainList" resultType="HashMap"  parameterType="HashMap">
+		/* selectConsultMainList자문메인 진행중 목록조회 */
+		SELECT A.*
+		FROM (
+		    SELECT Z.*
+		         , CEIL(ROWNUM/#{pagesize}) PAGE
+		    FROM (
+                SELECT 
+					 A.CNSTN_MNG_NO 
+	                , A.MENU_MNG_NO         /* 메뉴ID */
+	                , A.PRGRS_STTS_SE_NM         /* 진행상태 */ 
+	                , A.CNSTN_TTL          /* 자문제목 */
+	                , A.CNSTN_RQST_DEPT_NO   /* 요청부서코드 */
+	                , A.CNSTN_RQST_DEPT_NM   /* 요청부서명 */ 
+	                , A.CNSTN_RQST_EMP_NO    /* 요청자사번 */
+	                , A.CNSTN_RQST_EMP_NM    /* 요청자명 */
+	                , TO_CHAR(TO_DATE(A.CNSTN_HOPE_RPLY_YMD, 'YYYYMMDD'), 'YYYY-MM-DD') AS CNSTN_HOPE_RPLY_YMD         /* 자문회신희망일자 */
+					, 'Y' AS OPENYN    /* 공개여부 */ 
+                    , A.CNSTN_TKCG_EMP_NO       /* 자문담당자사번 */
+                    , A.CNSTN_TKCG_EMP_NM      /* 자문담당자명 */ 
+                    , A.INSD_OTSD_TASK_SE       /* 내/외부 구분 */ 
+                    , CASE 
+                       WHEN A.INSD_OTSD_TASK_SE = 'I' THEN '내부'
+                       WHEN A.INSD_OTSD_TASK_SE = 'O' THEN '외부'
+                       ELSE ''
+	                end    AS INOUTHAN   /* 내/외부 구분 한글명 */
+                    , CASE 
+                       WHEN A.INSD_OTSD_TASK_SE = 'I' THEN A.CNSTN_TKCG_EMP_NM
+                       WHEN A.INSD_OTSD_TASK_SE = 'O' THEN B.RVW_TKCG_EMP_NM      /* 자문인명 */ 
+                       ELSE '미지정'
+	                end    AS INOUT_RVW_TKCG_EMP_NM   /* 내/외부에 따른 검토자 */
+                    , TO_CHAR(TO_DATE(A.CNSTN_RQST_YMD, 'YYYYMMDD'), 'YYYY-MM-DD') AS CNSTN_RQST_YMD           /* 자문요청일자 */
+                    , TO_CHAR(TO_DATE(A.CNSTN_RPLY_YMD, 'YYYYMMDD'), 'YYYY-MM-DD') AS CNSTN_RPLY_YMD          /* 자문회신일자 */
+                    , A.CNSTN_DOC_NO      /* 자문관리번호 */ 
+                    , TO_CHAR(TO_DATE(A.WRT_YMD, 'YYYYMMDD'), 'YYYY-MM-DD') AS WRT_YMD        /* 작성일 */
+                    , TO_CHAR(TO_DATE(A.MDFCN_YMD, 'YYYYMMDD'), 'YYYY-MM-DD') AS MDFCN_YMD      /* 수정일자 */ 
+                    , TO_CHAR(TO_DATE(A.CNSTN_RCPT_YMD, 'YYYYMMDD'), 'YYYY-MM-DD') AS CNSTN_RCPT_YMD	/* 접수일자 */ 
+                    , A.RLS_YN		/* 공개여부 */
+                    , A.CNSTN_SE_NM	/* 자문구분(일반,국제) */ 
+                    , B.RVW_TKCG_EMP_NM      /* 자문인명 */ 
+					, B.JDAF_CORP_EMP_NMS AS JDAF_CORP_NMS
+                FROM TB_CNSTN_MNG A LEFT OUTER JOIN 
+	                (
+						SELECT 
+							L.CNSTN_MNG_NO 
+							, LISTAGG(LTRIM(NVL(C2.JDAF_CORP_NM, '') || ' ' || L.RVW_TKCG_EMP_NM), ',') WITHIN GROUP (ORDER BY C2.JDAF_CORP_NM, L.RVW_TKCG_EMP_NM) AS JDAF_CORP_EMP_NMS
+							, LISTAGG(L.RVW_TKCG_EMP_NM, ',') WITHIN GROUP (ORDER BY L.RVW_TKCG_EMP_NM) AS RVW_TKCG_EMP_NM
+						FROM TB_CNSTN_RVW_PIC L 
+						 LEFT JOIN TB_COM_LWYR C1 ON L.RVW_TKCG_EMP_NO = C1.LWYR_MNG_NO -- L.검토담당직원번호 = C1.변호사관리번호
+						 LEFT JOIN TB_COM_JDAF_CORP C2 ON C1.JDAF_CORP_MNG_NO = C2.JDAF_CORP_MNG_NO -- C1.법무법인관리번호 = C2.법무법인관리번호
+						GROUP BY L.CNSTN_MNG_NO 
+	                ) B ON A.CNSTN_MNG_NO = B.CNSTN_MNG_NO 
+		        WHERE A.MENU_MNG_NO = #{MENU_MNG_NO} 
+	       		AND (A.INSD_OTSD_TASK_SE IS NULL OR A.INSD_OTSD_TASK_SE != 'V')
+					AND A.PRGRS_STTS_SE_NM NOT IN ('작성중', '접수대기', '완료', '철회', '법률자문 의뢰') -- 구테이블 OPEN_YN 값 받는 컬럼 만들고 해당 컬럼 N 값인거 조회 안해보면 법률자문 의뢰 삭제해야함/
+		        ORDER BY 
+<!-- 		        A.CNSTN_RQST_YMD, A.CNSTN_RQST_REG_YMD DESC -->
+					A.CNSTN_DOC_NO DESC, CNSTN_MNG_NO DESC
+		    ) Z
+		    WHERE Z.OPENYN = 'Y'
+		) A
+		<trim prefix="WHERE" prefixOverrides="AND |OR ">
+			<if test="pageno != null and pageno != ''">
+				page = #{pageno}
+			</if>
+		</trim>
+	</select>
+	
+	<select id="getMainConCstCnt" resultType="String">
+		/* suitSql.getMainConCstCnt */
+		SELECT 
+			COUNT(*)
+		FROM 
+			TB_CNSTN_CST A
+			LEFT JOIN TB_CNSTN_RVW_PIC B ON B.RVW_TKCG_MNG_NO = A.RVW_TKCG_MNG_NO
+			LEFT JOIN TB_CNSTN_MNG C ON C.CNSTN_MNG_NO = A.CNSTN_MNG_NO
+		WHERE 
+			A.CST_PRGRS_STTS_SE != 'E'
+	</select>
+	
+	<select id="selectMainConCstList" resultType="HashMap"  parameterType="HashMap">
+		/* selectMainConCstList 자문메인 비용 지급 요청 목록조회 */
+		SELECT A.*
+		FROM (
+		    SELECT Z.*
+		         , CEIL(ROWNUM/#{pagesize}) PAGE
+		    FROM (
+				SELECT 
+				    A.CNSTN_MNG_NO
+				    , A.RVW_TKCG_MNG_NO
+				    , (CASE WHEN A.CST_PRGRS_STTS_SE = 'R' THEN '검토중'
+				          WHEN A.CST_PRGRS_STTS_SE = 'X' THEN '보완요청'
+				          WHEN A.CST_PRGRS_STTS_SE = 'A' THEN '비용승인'
+				          WHEN A.CST_PRGRS_STTS_SE = 'C' THEN '비용지급'
+				          WHEN A.CST_PRGRS_STTS_SE = 'E' THEN '완료'
+				    	END) AS CST_PRGRS_STTS_SE
+				    , C.CNSTN_TTL
+				    , B.RVW_TKCG_EMP_NM
+				    , TO_CHAR(TO_DATE(A.CST_CLM_YMD, 'YYYYMMDD'), 'YYYY-MM-DD') AS CST_CLM_YMD
+				FROM 
+					TB_CNSTN_CST A
+					LEFT JOIN TB_CNSTN_RVW_PIC B ON B.RVW_TKCG_MNG_NO = A.RVW_TKCG_MNG_NO
+					LEFT JOIN TB_CNSTN_MNG C ON C.CNSTN_MNG_NO = A.CNSTN_MNG_NO
+				WHERE 
+					A.CST_PRGRS_STTS_SE = 'R'
+				ORDER BY 
+					A.CST_CLM_YMD DESC
+		    ) Z
+<!-- 		    WHERE Z.OPENYN = 'Y' -->
+		) A
+		<trim prefix="WHERE" prefixOverrides="AND |OR ">
+			<if test="pageno != null and pageno != ''">
+				page = #{pageno}
+			</if>
+		</trim>
+	</select>
+	
+	<select id="selectMainConCnt" resultType="HashMap">
+		/* suitSql.selectMainConCnt */
+		SELECT 
+			'자문' AS GBN,
+       		SUM(CASE WHEN PRGRS_STTS_SE_NM NOT IN ('작성중', '접수대기', '완료', '철회', '법률자문 의뢰') THEN 1 ELSE 0 END) AS CNT1,
+      		SUM(CASE WHEN PRGRS_STTS_SE_NM IN ('완료', '철회') THEN 1 ELSE 0 END) AS CNT2
+		FROM 
+			TB_CNSTN_MNG
+		WHERE 1=1
+			AND CNSTN_RQST_EMP_NO =  #{userId}
+		
+	</select>
+	
+	<select id="getDeptHeadInfo" resultType="HashMap">
+		/* consultSql_getDeptHeadInfo_자문 등록화면 부서장 정보 조회 */
+		SELECT 
+			A.EMP_PK_NO
+			, A.EMP_NO
+			, A.EMP_NM
+			, A.DEPT_NO
+			, A.DEPT_GROUP_NO
+			, A.DEPT_GROUP_NM
+			, A.UP_DEPT_NO
+			, A.UP_DEPT_NM
+			, A.WRC_TELNO
+			, A.MBL_TELNO
+			, A.EML_ADDR
+			, A.JBGD_CD
+			, A.JBGD_NM
+			, A.JBTTL_CD
+			, A.JBTTL_NM
+			, A.JBSRS_CD
+			, A.JBSRS_NM
+			, A.HDOF_YN
+			, A.REG_YMD
+			, A.USER_SEQ
+		FROM
+			TB_COM_HRIS A
+		WHERE 
+			A.DEPT_NO = #{WRT_DEPT_NO}
+			AND A.USER_SEQ = '001'
+	</select>
+	
+	
+	
+	
+	<select id="selectConsultChrgCost" resultType="HashMap">
+		/* consultSql.selectConsultChrgCost */
+		SELECT A.CNSTN_CST_MNG_NO
+		     , A.CNSTN_MNG_NO
+		     , A.RVW_TKCG_MNG_NO
+		     , A.CST_PRGRS_STTS_SE
+		     , C.RVW_TKCG_EMP_NO
+		     , CASE WHEN A.CST_PRGRS_STTS_SE = 'R' THEN '검토중'
+		            WHEN A.CST_PRGRS_STTS_SE = 'X' THEN '보완요청'
+		            WHEN A.CST_PRGRS_STTS_SE = 'Z' THEN '보완완료'
+		            WHEN A.CST_PRGRS_STTS_SE = 'A' THEN '비용승인'
+		            WHEN A.CST_PRGRS_STTS_SE = 'C' THEN '비용지급'
+		            WHEN A.CST_PRGRS_STTS_SE = 'E' THEN '완료'
+		       END CST_PRGRS_STTS_NM
+		     
+		     , B.CNSTN_DOC_NO || ' ' || B.CNSTN_TTL AS CNSTN_TTL
+		     , E.JDAF_CORP_NM || ' ' || D.LWYR_NM AS LWYR_NM
+		     , A.CNSTN_CST_AMT
+		     , TO_CHAR(A.CNSTN_CST_AMT, 'FM999,999,999,999') AS VIEW_CNSTN_CST_AMT
+		     , TO_CHAR(TO_DATE(A.CST_CLM_YMD, 'YYYY-MM-DD'), 'YYYY-MM-DD') AS CST_CLM_YMD
+		     , TO_CHAR(TO_DATE(A.CST_APRV_YMD, 'YYYY-MM-DD'), 'YYYY-MM-DD') AS CST_APRV_YMD
+		     , TO_CHAR(TO_DATE(A.CST_GIVE_YMD, 'YYYY-MM-DD'), 'YYYY-MM-DD') AS CST_GIVE_YMD
+		FROM TB_CNSTN_CST A
+		   , TB_CNSTN_MNG B
+		   , TB_CNSTN_RVW_PIC C
+		   , TB_COM_LWYR D
+		   , TB_COM_JDAF_CORP E
+		WHERE A.CNSTN_MNG_NO = B.CNSTN_MNG_NO
+		  AND A.RVW_TKCG_MNG_NO = C.RVW_TKCG_MNG_NO
+		  AND B.CNSTN_MNG_NO = C.CNSTN_MNG_NO
+		  AND C.RVW_TKCG_EMP_NO = D.LWYR_MNG_NO
+		  AND D.JDAF_CORP_MNG_NO = E.JDAF_CORP_MNG_NO
+		  AND A.CST_PRGRS_STTS_SE NOT IN ('C', 'E')
+	</select>
+	
+	<update id="updateChrgLawyerAmt" parameterType="HashMap">
+		/* consultSql.updateChrgLawyerAmt */
+		UPDATE TB_CNSTN_CST
+		SET MDFCN_EMP_NM      = #{WRTR_EMP_NM}
+		  , MDFCN_EMP_NO      = #{WRTR_EMP_NO}
+		  , MDFCN_YMD         = to_char(sysdate,'YYYYMMDD')
+		<if test="CST_PRGRS_STTS_SE != '' and CST_PRGRS_STTS_SE != null">
+		  , CST_PRGRS_STTS_SE = #{CST_PRGRS_STTS_SE}
+		</if>
+		<if test="CST_APRV_YMD != '' and CST_APRV_YMD != null">
+		  , CST_APRV_YMD      = REPLACE(#{CST_APRV_YMD}, '-', '')
+		</if>
+		<if test="CST_GIVE_YMD != '' and CST_GIVE_YMD != null">
+		  , CST_GIVE_YMD      = REPLACE(#{CST_GIVE_YMD}, '-', '')
+		</if>
+		WHERE CNSTN_CST_MNG_NO = #{CNSTN_CST_MNG_NO}
+	</update>
+	
+	<update id="updateConsultState2" parameterType="HashMap">
+		/* consultSql_updateConsultState2_콤보박스로 자문진행상태만 수정 */
+		UPDATE TB_CNSTN_MNG
+		SET PRGRS_STTS_SE_NM = #{statcd}
+		WHERE CNSTN_MNG_NO = #{consultid}
+	</update>
+	
+	<select id="selectRqstChangEmpList" resultType="HashMap" parameterType="HashMap">
+		/* consultSql_selectRqstChangEmpList_자문의뢰자 변경 팝업  */
+		SELECT 
+			A.EMP_NO			/* 직원번호 */
+			, A.EMP_NM			/* 직원명 */
+			, A.DEPT_NO			/* 부서번호 */
+			, A.DEPT_GROUP_NO			/* 부서그룹번호 */
+			, A.DEPT_GROUP_NM			/* 부서그룹명 */
+			, A.UP_DEPT_NO			/* 상위부서번호 */
+			, A.UP_DEPT_NM			/* 상위부서명 */
+			, A.WRC_TELNO			/* 직장전화번호 */
+			,(
+				CASE
+					WHEN LENGTH(WRC_TELNO) = 10 AND SUBSTR(WRC_TELNO, 1, 2) = '02' THEN
+				  		SUBSTR(WRC_TELNO, 1, 2) || '-' || SUBSTR(WRC_TELNO, 3, 4) || '-' || SUBSTR(WRC_TELNO, 7, 4)
+					
+					WHEN LENGTH(WRC_TELNO) = 10 THEN -- 지역번호 3자리 + 3 + 4
+				  		SUBSTR(WRC_TELNO, 1, 3) || '-' || SUBSTR(WRC_TELNO, 4, 3) || '-' || SUBSTR(WRC_TELNO, 7, 4)
+					
+					WHEN LENGTH(WRC_TELNO) = 11 THEN -- 휴대폰 (3-4-4)
+				  		SUBSTR(WRC_TELNO, 1, 3) || '-' || SUBSTR(WRC_TELNO, 4, 4) || '-' || SUBSTR(WRC_TELNO, 8, 4)
+					
+					WHEN LENGTH(WRC_TELNO) = 8 THEN
+				  		SUBSTR(WRC_TELNO, 1, 4) || '-' || SUBSTR(WRC_TELNO, 5, 4)
+					
+					WHEN LENGTH(WRC_TELNO) = 7 THEN
+				  		<!-- '02-' ||  -->SUBSTR(WRC_TELNO, 1, 3) || '-' || SUBSTR(WRC_TELNO, 4, 4)
+					ELSE
+						A.WRC_TELNO
+				END
+			) AS FORMATTED_TELNO
+			, A.MBL_TELNO			/* 휴대전화번호 */
+			, A.EML_ADDR			/* 이메일주소 */
+			, A.JBGD_CD			/* 직급코드 */
+			, A.JBGD_NM			/* 직급명 */
+			, A.JBTTL_CD			/* 직책코드 */
+			, A.JBTTL_NM			/* 직책명 */
+			, A.JBSRS_NM			/* 직렬명 */
+			, A.JBSRS_CD			/* 직렬코드 */
+			, A.HDOF_YN			/* 재직여부 */
+			, A.REG_YMD			/* 등록일자 */
+			, B.DEPT_NM		/* 부서명 */
+		FROM 
+			TB_COM_HRIS	A 
+			LEFT JOIN TB_COM_ORGCHT B ON A.DEPT_NO = B.DEPT_NO
+		WHERE 1=1
+		<if test="srchTxt == null or srchTxt == ''">
+		  AND A.EMP_NO = #{WRT_DEPT_NO}
+<!-- 		  AND JBGD_NM LIKE '%'||#{jbgd_nm}||'%' -->
+		</if>
+		<if test="srchTxt != null and srchTxt != ''">
+		  AND (
+		    A.EMP_NM LIKE '%'||#{srchTxt}||'%' 
+		    OR
+		    B.DEPT_NM LIKE '%'||#{srchTxt}||'%'
+		  )
+		</if>
+	</select>
+	
+	<update id="consultRqstChang" parameterType="HashMap">
+		/* consultSql_consultRqstChang_자문 의뢰자 변경 */
+		UPDATE TB_CNSTN_MNG
+		SET 
+			CNSTN_RQST_EMP_NO = #{userno}
+			, CNSTN_RQST_EMP_NM = #{usernm}
+			, CNSTN_RQST_DEPT_NO = #{deptno}
+			, CNSTN_RQST_DEPT_NM = #{deptnm}
+		WHERE 
+			CNSTN_MNG_NO = #{consultid}
+	</update>
+	
+	<select id="getOutRcptYn" resultType="String">
+		SELECT DECODE(A.RCPT_YN, NULL, 'A', A.RCPT_YN) AS RCPT_YN
+		FROM TB_CNSTN_RVW_PIC A, TB_COM_LWYR B
+		WHERE A.CNSTN_MNG_NO = #{consultid}
+		  AND A.RVW_TKCG_EMP_NO = B.LWYR_MNG_NO
+		  AND (B.LGN_ID = #{writerid} OR B.ASST_LGN_ID = #{writerid} OR B.LWYR_MNG_NO = #{writerid})
+	</select>
+	
+	
+	
+	<select id="getConsultRole" resultType="int">
+		/* consultSql.getConsultRole */
+		SELECT COUNT(*)
+		FROM TB_CNSTN_MNG
+		WHERE CNSTN_MNG_NO = #{consultid}
+		AND (
+		    (RLS_YN = 'Y' AND CNSTN_RQST_DEPT_NO = #{WRT_DEPT_NO}) OR
+		    (RLS_YN = 'N' AND CNSTN_RQST_EMP_NO = #{WRTR_EMP_NO})
+		)
+	</select>
+	
+	<update id="updateDGSTFN_RSPNS_YN" parameterType="HashMap">
+		UPDATE TB_CNSTN_MNG
+		SET DGSTFN_RSPNS_YN = 'Y'
+		WHERE CNSTN_MNG_NO = #{CNSTN_MNG_NO}
+	</update>
+	
+	<select id="getSatisSendConsultList" resultType="HashMap">
+		SELECT A.CNSTN_MNG_NO      AS DOC_PK
+		     , A.CNSTN_DOC_NO      AS DOC_NO
+		     , A.CNSTN_TTL         AS DOC_TTL
+		     , A.CNSTN_RQST_EMP_NO AS DOC_EMP_NO
+		     , A.CNSTN_RQST_EMP_NM AS DOC_EMP_NM
+		     , TO_CHAR(TO_DATE(A.CNSTN_CMPTN_YMD, 'YYYYMMDD'), 'YYYY-MM-DD') AS DOC_END_YMD
+		     , B.EMP_PK_NO
+		FROM TB_CNSTN_MNG A LEFT OUTER JOIN TB_COM_HRIS B ON A.CNSTN_RQST_EMP_NO = B.EMP_NO
+		WHERE DECODE(A.DGSTFN_RSPNS_YN, NULL, 'N', A.DGSTFN_RSPNS_YN) = 'N'
+		  AND A.PRGRS_STTS_SE_NM = '완료'
+		  AND A.INSD_OTSD_TASK_SE = 'O'
+	</select>
+	
+	<update id="updateKeyword" parameterType="HashMap">
+		/* consultSql.updateKeyword */
+		UPDATE TB_CNSTN_MNG
+		SET PRVT_SRCH_KYWD_CN = #{PRVT_SRCH_KYWD_CN} 
+		WHERE CNSTN_MNG_NO = #{CNSTN_MNG_NO}
+	</update>
+		
+	<update id="updateConsultCmptnYmd" parameterType="HashMap">
+		/* consultSql_updateConsultCmptnYmd_자문 완료 일자 변경 */
+		UPDATE TB_CNSTN_MNG
+		SET 
+			CNSTN_CMPTN_YMD = to_char(sysdate,'YYYYMMDD')
+		WHERE 
+			CNSTN_MNG_NO = #{consultid}
+	</update>
+	
+</mapper>

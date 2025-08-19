@@ -1,0 +1,46 @@
+@CHARSET "UTF-8";
+/*
+�⺻����
+*/
+.tr_headerBasic {
+	height: 24px;
+	background: #CCC;
+	font-family: Dotum, Gulim;
+	font-weight: bold;
+	color: #000;
+	text-align: center;
+}
+
+.tr_bodyBasicOut {
+	font-family: Dotum, Gulim;
+	color: #333;
+	text-align: center;
+	height: 22px;
+	background: url(/high1/images/common/bg_trOut.gif) repeat-x bottom;
+}
+
+.tr_bodyBasicOut TD {
+	font-family: Dotum, Gulim;
+	color: #333;
+	text-align: center;
+	height: 22px;
+	padding: 1px;
+	margin: 0px;
+}
+
+.tr_bodyBasicOver {
+	font-family: Dotum, Gulim;
+	color: #333;
+	text-align: center;
+	height: 22px;
+	background: url(/high1/images/common/bg_trOver.gif) repeat-x bottom;
+}
+
+.tr_bodyBasicOver TD {
+	font-family: Dotum, Gulim;
+	color: #333;
+	text-align: center;
+	height: 22px;
+	padding: 1px;
+	margin: 0px;
+}

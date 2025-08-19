@@ -1,0 +1,15 @@
+@charset "utf-8";
+/* CSS Document */
+
+/*테이블 css*/
+.pinkTableS { width:100%; border-top:2px solid #671557; border-left:1px solid #e2e2e2; border-collapse:collapse; border-spacing:0; font-size:12px; }
+.pinkTableS th { background:#e6dce4; color:#570f46; border-bottom:1px solid #e2e2e2; border-right:1px solid #e2e2e2; padding:6px; }
+.pinkTableS td { border-bottom:1px solid #e2e2e2; border-right:1px solid #e2e2e2; padding:6px; }
+.pinkTableS input[type=text] { border:1px solid #e2e2e2; width:90%; height:22px; }
+.pinkTableS textarea {border:1px solid #e2e2e2; }
+
+/*순서도 css 화살표 이미지가 필요합니다!! icon_arrow.png를 경로에 맞춰 넣어주세요!*/
+.orderView { margin:0; padding:0; list-style:none; }
+.orderView li { float:left; background:url(../images/progress/icon_arrow.png) no-repeat right 50%; font-size:11px; padding:10px 25px 10px 10px; font-weight:600; color:#666;}
+.orderView li.on {color:red; font-weight:bold; font-size:12px;}
+.orderView li.end { float:left; font-size:12px;  background; padding:10px 25px 10px 10px; font-weight:600; color:#666;}

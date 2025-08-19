@@ -1,0 +1,46 @@
+@CHARSET "UTF-8";
+
+#popup_main {
+	margin: 0px auto;
+	color: #333;
+	border: 1px solid gray;
+	line-height: 130%;
+}
+
+#popup_top {
+	height: 50px;
+	background: #ccc;
+}
+
+#popup_top H1 {
+	font-size: 18px;
+	padding-top: 15px;
+	padding-left: 10px;
+	margin: 0px;
+}
+
+#popup_center {
+	
+}
+
+#popup_footer {
+	height: 24px;
+	text-align: right;
+	background: #efefef;
+	border: #CCC 1px solid;
+	padding-right: 15px;
+}
+
+#popup_title {
+	height: 30px;
+}
+
+#popup_title H1 {
+	font-family: Dotum, Gulim;
+	font-size: 16px;
+	font-weight: bold;
+	color: #333;
+	padding-left: 25px;
+	background: url(/high1/images/common/dot_pageTitle.gif) no-repeat left
+		center;
+}

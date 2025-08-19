@@ -1,0 +1,3774 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "/WEB-INF/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="oldDataSql">
+	<cache flushInterval="86400000" eviction="LRU"/>
+	
+	<select id="getSuitInfo" resultType="HashMap">
+		/* oldDataSql.getSuitMst */
+		SELECT A.SUT_GBN_CODE||A.SUT_MG_NO AS LWS_MNG_NO
+		     , '' AS MENU_MNG_NO
+		     , SUBSTR(ACC_YMD, 0, 4) || '-' || LPAD(ROW_NUMBER() OVER (PARTITION BY SUBSTR(ACC_YMD, 0, 4), A.SUT_GBN_CODE ORDER BY A.SUT_MG_NO), 4, '0') AS LWS_NO
+		     , CASE WHEN (SELECT Z.CODE_CTN FROM CMMANDCODE Z WHERE Z.CODE_ID = 'LGA311' AND CODE = A.ACC_GBN_CODE) = '제소' THEN 'J' ELSE 'P' END LWS_SE
+		     , (SELECT Z.CODE_CTN FROM CMMANDCODE Z WHERE Z.CODE_ID = 'LGA302' AND CODE = A.SUT_GBN_CODE) AS LWS_UP_TYPE_CD      -- 소송구분코드
+		     , (SELECT Z.CODE_CTN FROM CMMANDCODE Z WHERE Z.CODE_ID = 'LGA305' AND CODE = A.CASE_KIND_CODE) AS LWS_LWR_TYPE_CD   -- 판례유형코드
+		     , A.ACC_YMD AS FLGLW_YMD
+		     , A.SUT_EVENT_NM AS LWS_INCDNT_NM
+		     , A.ADM_TAKE_YMD AS ADMA_RCPT_YMD
+		     , CASE WHEN A.SUT_AID_DEPT_NM IS NOT NULL THEN A.SUT_AID_DEPT_NM ELSE Z.DEPT_NM END SPRVSN_DEPT_NM
+		     , A.SPR_DEP_CODE AS SPRVSN_DEPT_NO
+		     , A.ETC_SPR_DEPT_NM || ' ' || A.ETC_RELL_DEP AS ETC_SPRVSN_DEPT_NM
+		     , A.CASE_LAND_GBN AS INCDNT_REL_LAND_NM
+		     , (
+		        SELECT Z.CODE_CTN
+		        FROM CMMANDCODE Z
+		        WHERE Z.CODE_ID = 'LGA303'
+		          AND CODE = (
+		              CASE WHEN A.LAST_TRIAL_CLASS IS NULL THEN (SELECT MAX(Z.TRIAL_CLASS) FROM LGAANSUTSIM Z WHERE Z.SUT_MG_NO = A.SUT_MG_NO AND Z.SUT_GBN_CODE = A.SUT_GBN_CODE) 
+		                   ELSE A.LAST_TRIAL_CLASS
+		              END
+		          )
+		       ) AS LAST_INST_CD
+		     , (
+		        SELECT MAX(CNCLUTN_GBN)
+		        FROM LGAANSUTSIM
+		        WHERE SUT_MG_NO = A.SUT_MG_NO
+		          AND A.SUT_GBN_CODE = SUT_GBN_CODE
+		          AND TRIAL_CLASS = (
+		              CASE WHEN A.LAST_TRIAL_CLASS IS NULL THEN (SELECT MAX(Z.TRIAL_CLASS) FROM LGAANSUTSIM Z WHERE Z.SUT_MG_NO = A.SUT_MG_NO AND Z.SUT_GBN_CODE = A.SUT_GBN_CODE) 
+		                   ELSE A.LAST_TRIAL_CLASS
+		              END
+		          )
+		       ) AS TRMN_YN
+		     , DECODE(A.IMP_SUT_GBN, '', 'N', A.IMP_SUT_GBN) AS IMPT_LWS_YN
+		     , DBMS_LOB.SUBSTR(A.CASE_BRF, DBMS_LOB.GETLENGTH(A.CASE_BRF)) AS INCDNT_OTLN
+		     , DBMS_LOB.SUBSTR(A.DEMD_CAU, DBMS_LOB.GETLENGTH(A.DEMD_CAU)) AS MAIN_CN
+		     , DBMS_LOB.SUBSTR(A.AD_DOC, DBMS_LOB.GETLENGTH(A.AD_DOC)) || ' ' || DBMS_LOB.SUBSTR(A.PT_ITEM, DBMS_LOB.GETLENGTH(A.PT_ITEM)) AS RMRK_CN
+		     , DBMS_LOB.SUBSTR(A.PROOF_MET, DBMS_LOB.GETLENGTH(A.PROOF_MET)) AS LWS_CONF_DATA_CN
+		     , A.REGR_ID AS WRTR_EMP_NO
+		     , TO_CHAR(A.REG_DATE, 'YYYYMMDD') AS WRT_YMD
+		     , A.LAST_CORT_ID AS MDFCN_EMP_NO
+		     , TO_CHAR(A.LAST_MOD_DTHR, 'YYYYMMDD') AS MDFCN_YMD
+		FROM LGAANSUTMST A LEFT OUTER JOIN TB_COM_ORGCHT Z ON A.SPR_DEP_CODE = Z.DEPT_NO
+		ORDER BY A.SUT_MG_NO, A.ACC_YMD
+	</select>
+	
+	<insert id="insertSuitInfo" parameterType="HashMap">
+		/* oldDataSql.insertSuitInfo */
+		INSERT INTO TB_LWS_MNG (
+		    LWS_MNG_NO
+		  , MENU_MNG_NO
+		  , LWS_NO
+		  , LWS_SE
+		  , LWS_UP_TYPE_CD
+		  , LWS_LWR_TYPE_CD
+		  , LWS_INCDNT_NM
+		  , FLGLW_YMD
+		  , ADMA_RCPT_YMD
+		  , SPRVSN_DEPT_NM
+		  , SPRVSN_DEPT_NO
+		  , ETC_SPRVSN_DEPT_NM
+		  , INCDNT_REL_LAND_NM
+		  , LAST_INST_CD
+		  , TRMN_YN
+		  , IMPT_LWS_YN
+		  , INCDNT_OTLN
+		  , MAIN_CN
+		  , RMRK_CN
+		  , LWS_CONF_DATA_CN
+		  , WRTR_EMP_NO
+		  , WRT_YMD
+		  , MDFCN_EMP_NO
+		  , MDFCN_YMD
+		) VALUES (
+		    #{LWS_MNG_NO}
+		  , '10000008'
+		  , #{LWS_NO}
+		  , #{LWS_SE}
+		  , (SELECT Z.CD_MNG_NO FROM TB_COM_CD Z WHERE Z.CD_LCLSF_ENG_NM = 'LWSTYPECD' AND Z.CD_NM = #{LWS_UP_TYPE_CD} AND Z.USE_YN = 'Y')
+		  , (SELECT Z.CD_MNG_NO FROM TB_COM_CD Z WHERE Z.CD_LCLSF_KORN_NM = #{LWS_UP_TYPE_CD} AND Z.CD_NM = #{LWS_LWR_TYPE_CD} AND Z.USE_YN = 'Y')
+		  , #{LWS_INCDNT_NM}
+		  , #{FLGLW_YMD}
+		  , #{ADMA_RCPT_YMD}
+		  , #{SPRVSN_DEPT_NM}
+		  , #{SPRVSN_DEPT_NO}
+		  , #{ETC_SPRVSN_DEPT_NM}
+		  , #{INCDNT_REL_LAND_NM}
+		  , (SELECT Z.CD_MNG_NO FROM TB_COM_CD Z WHERE Z.CD_LCLSF_ENG_NM = 'CASECD' AND Z.CD_NM = #{LAST_INST_CD} AND Z.USE_YN = 'Y')
+		  , #{TRMN_YN}
+		  , #{IMPT_LWS_YN}
+		  , #{INCDNT_OTLN}
+		  , #{MAIN_CN}
+		  , #{RMRK_CN}
+		  , #{LWS_CONF_DATA_CN}
+		  , #{WRTR_EMP_NO}
+		  , #{WRT_YMD}
+		  , #{MDFCN_EMP_NO}
+		  , #{MDFCN_YMD}
+		)
+	</insert>
+	
+	<!-- 부서명 업데이트쳐야 함 -->
+	<!-- UPDATE TB_LWS_MNG SET SPRVSN_DEPT_NM = (SELECT DEPT_NM FROM TB_COM_ORGCHT WHERE DEPT_NO = SPRVSN_DEPT_NO); -->
+	
+	<select id="getCaseInfo1" resultType="HashMap">
+		/* oldDataSql.getCaseInfo1 */
+		SELECT SIM_MG_NO AS INST_MNG_NO
+		     , SUT_GBN_CODE||SUT_MG_NO AS LWS_MNG_NO
+		     , (SELECT CASE WHEN Z.CODE_CTN = '신청' THEN '신청1심' ELSE Z.CODE_CTN END FROM CMMANDCODE Z WHERE Z.CODE_ID = 'LGA303' AND CODE = TRIAL_CLASS) AS INST_CD
+		     , CASE WHEN LENGTH(SUBSTR(SUT_EVENT_NO, 0, REGEXP_INSTR(SUT_EVENT_NO, '[가-힝]')-1)) = 4 THEN SUBSTR(SUT_EVENT_NO, 0, 4)
+		            WHEN SUT_EVENT_NO LIKE '%미정%' OR SUT_EVENT_NO = '' OR SUT_EVENT_NO IS NULL THEN ''
+		            ELSE '19'||SUBSTR(SUT_EVENT_NO, 0, 2)
+		       END || '@' ||
+		       REGEXP_REPLACE(SUT_EVENT_NO, '[^가-힝]') || '@' ||
+		       REPLACE(SUBSTR(SUT_EVENT_NO, REGEXP_INSTR(SUT_EVENT_NO, '[가-힝]'), LENGTH(SUT_EVENT_NO)), REGEXP_REPLACE(SUT_EVENT_NO, '[^가-힝]'), '') AS INCDNT_NO
+		     , (SELECT Z.CODE_CTN FROM CMMANDCODE Z WHERE Z.CODE_ID = 'LGA301' AND CODE = COURT_CODE) AS COURT_NAME
+		     , (
+		        SELECT CASE WHEN Z.FIX_COURT_COST != '0' AND Z.FIX_COURT_COST != '' THEN Z.FIX_COURT_COST
+		                    ELSE CASE WHEN Z.CHG_COURT_COST != '0' AND Z.CHG_COURT_COST != '' THEN Z.CHG_COURT_COST
+		                              ELSE Z.DEMD_COURT_COST
+		                         END
+		               END LWS_EQVL
+		        FROM LGAANSUTMST Z
+		        WHERE Z.SUT_MG_NO = A.SUT_MG_NO
+		          AND Z.SUT_GBN_CODE = A.SUT_GBN_CODE
+		       ) AS LWS_EQVL
+		     , CASE WHEN (SELECT Z.IMP_SUT_GBN FROM LGAANSUTMST Z WHERE Z.SUT_MG_NO = A.SUT_MG_NO AND Z.SUT_GBN_CODE = A.SUT_GBN_CODE) = 'Y' THEN 'B'
+		            ELSE 'A'
+		       END INCDNT_SE_CD
+		     , JUST_DEP AS JSDP_NM
+		     , PSC_EVENT_NO AS PPOF_INCDNT_NO
+		     , JOINT_EXE_YN AS JNT_FLFMT_YN
+		     , PSC_SUT_EXE_MAN AS PPOF_LWS_FLFMT_EMP_NM
+		     , CHR_ATTORNEY AS TKCG_PROC_NM
+		     , OTP_SUT_DAE
+		     , (SELECT Z.CODE_CTN FROM CMMANDCODE Z WHERE Z.CODE_ID = 'LGA306' AND CODE = SUT_RT_CODE) AS JDGM_UP_TYPE_CD
+		     , SIM_WIN_LWSIT_RTO AS WIN_RT
+		     , JUG_YMD       AS JDGM_ADJ_YMD
+		     , JUG_PBAS_YMD  AS RLNG_TMTL_YMD
+		     , FIX_YMD       AS JDGM_CFMTN_YMD
+		     , JUG_COST      AS JDGM_AMT
+		     , JUG_COST_IRT  AS JDGM_AMT_INT
+		     , DBMS_LOB.SUBSTR(JUST_SMY, DBMS_LOB.GETLENGTH(JUST_SMY)) AS JDGM_CN
+		     , REGR_ID AS WRTR_EMP_NO
+		     , DECODE(REG_YMD, '', TO_CHAR(LAST_MOD_DTHR, 'YYYYMMDD'), REG_YMD) AS WRT_YMD
+		     , LAST_CORT_ID AS MDFCN_EMP_NO
+		     , TO_CHAR(LAST_MOD_DTHR, 'YYYYMMDD') AS MDFCN_YMD
+		FROM LGAANSUTSIM A
+		ORDER BY INST_MNG_NO
+	</select>
+	
+	<select id="getCaseInfo2" resultType="HashMap">
+		/* oldDataSql.getCaseInfo2 */
+		SELECT S.APPL_EVENT_NO AS INST_MNG_NO
+		     , S.SUT_MG_NO     AS LWS_MNG_NO
+		     , S.TRIL_NM       AS INST_CD
+		     , S.APPL_YMD      AS FLGLW_YMD
+		     , CASE WHEN S.INCDNT_NO = '@@' THEN '' ELSE S.INCDNT_NO END INCDNT_NO
+		     , S.DES_YMD       AS JDGM_ADJ_YMD
+		     , S.GET_YMD       AS RLNG_TMTL_YMD
+		     , S.PERMA_YMD     AS JDGM_CFMTN_YMD
+		     , S.REGR_ID       AS WRTR_EMP_NO
+		     , S.REG_YMD       AS WRT_YMD
+		     , S.LAST_CORT_ID  AS MDFCN_EMP_NO
+		     , S.LAST_MOD_DTHR AS MDFCN_YMD
+		FROM (
+		    SELECT APPL_EVENT_NO||1 AS APPL_EVENT_NO
+		         , TRIAL_CLASS
+		         , APPL_YMD
+		         , APPL_NM
+		         , DEF_APPL_NM
+		         , DES_YMD
+		         , GET_YMD
+		         , PERMA_YMD
+		         , SYD_YN
+		         , SUT_GBN_CODE
+		         , SUT_GBN_CODE||SUT_MG_NO AS SUT_MG_NO
+		         , REGR_ID
+		         , REG_YMD
+		         , LAST_CORT_ID
+		         , LAST_MOD_DTHR
+		         , '신청1심' AS TRIL_NM
+		         , CASE WHEN LENGTH(SUBSTR(APPL_1ST_EVENT_NO, 0, REGEXP_INSTR(APPL_1ST_EVENT_NO, '[가-힝]')-1)) = 4 THEN SUBSTR(APPL_1ST_EVENT_NO, 0, 4)
+		                WHEN APPL_1ST_EVENT_NO LIKE '%미정%' OR APPL_1ST_EVENT_NO = '' OR APPL_1ST_EVENT_NO IS NULL THEN ''
+		                ELSE '19'||SUBSTR(APPL_1ST_EVENT_NO, 0, 2)
+		           END || '@' ||
+		           REGEXP_REPLACE(APPL_1ST_EVENT_NO, '[^가-힝]') || '@' ||
+		           REPLACE(SUBSTR(APPL_1ST_EVENT_NO, REGEXP_INSTR(APPL_1ST_EVENT_NO, '[가-힝]'), LENGTH(APPL_1ST_EVENT_NO)), REGEXP_REPLACE(APPL_1ST_EVENT_NO, '[^가-힝]'), '') 
+		           AS INCDNT_NO
+		         , APPL_EVENT_NM
+		    FROM LGAANAPPLEVENT
+		    UNION ALL
+		    SELECT APPL_EVENT_NO||2 AS APPL_EVENT_NO
+		         , TRIAL_CLASS
+		         , APPL_YMD
+		         , APPL_NM
+		         , DEF_APPL_NM
+		         , DES_YMD
+		         , GET_YMD
+		         , PERMA_YMD
+		         , SYD_YN
+		         , SUT_GBN_CODE
+		         , SUT_GBN_CODE||SUT_MG_NO AS SUT_MG_NO
+		         , REGR_ID
+		         , REG_YMD
+		         , LAST_CORT_ID
+		         , LAST_MOD_DTHR
+		         , '신청2심' AS TRIL_NM
+		         , CASE WHEN LENGTH(SUBSTR(APPL_2ND_EVENT_NO, 0, REGEXP_INSTR(APPL_2ND_EVENT_NO, '[가-힝]')-1)) = 4 THEN SUBSTR(APPL_2ND_EVENT_NO, 0, 4)
+		                WHEN APPL_2ND_EVENT_NO LIKE '%미정%' OR APPL_2ND_EVENT_NO = '' OR APPL_2ND_EVENT_NO IS NULL THEN ''
+		                ELSE '19'||SUBSTR(APPL_2ND_EVENT_NO, 0, 2)
+		           END || '@' ||
+		           REGEXP_REPLACE(APPL_2ND_EVENT_NO, '[^가-힝]') || '@' ||
+		           REPLACE(SUBSTR(APPL_2ND_EVENT_NO, REGEXP_INSTR(APPL_2ND_EVENT_NO, '[가-힝]'), LENGTH(APPL_2ND_EVENT_NO)), REGEXP_REPLACE(APPL_2ND_EVENT_NO, '[^가-힝]'), '') 
+		           AS INCDNT_NO
+		         , APPL_EVENT_NM
+		    FROM LGAANAPPLEVENT
+		    UNION ALL
+		    SELECT APPL_EVENT_NO||3 AS APPL_EVENT_NO
+		         , TRIAL_CLASS
+		         , APPL_YMD
+		         , APPL_NM
+		         , DEF_APPL_NM
+		         , DES_YMD
+		         , GET_YMD
+		         , PERMA_YMD
+		         , SYD_YN
+		         , SUT_GBN_CODE
+		         , SUT_GBN_CODE||SUT_MG_NO AS SUT_MG_NO
+		         , REGR_ID
+		         , REG_YMD
+		         , LAST_CORT_ID
+		         , LAST_MOD_DTHR
+		         , '신청3심' AS TRIL_NM
+		         , CASE WHEN LENGTH(SUBSTR(APPL_3RD_EVENT_NO, 0, REGEXP_INSTR(APPL_3RD_EVENT_NO, '[가-힝]')-1)) = 4 THEN SUBSTR(APPL_3RD_EVENT_NO, 0, 4)
+		                WHEN APPL_3RD_EVENT_NO LIKE '%미정%' OR APPL_3RD_EVENT_NO = '' OR APPL_3RD_EVENT_NO IS NULL THEN ''
+		                ELSE '19'||SUBSTR(APPL_3RD_EVENT_NO, 0, 2)
+		           END || '@' ||
+		           REGEXP_REPLACE(APPL_3RD_EVENT_NO, '[^가-힝]') || '@' ||
+		           REPLACE(SUBSTR(APPL_3RD_EVENT_NO, REGEXP_INSTR(APPL_3RD_EVENT_NO, '[가-힝]'), LENGTH(APPL_3RD_EVENT_NO)), REGEXP_REPLACE(APPL_3RD_EVENT_NO, '[^가-힝]'), '') 
+		           AS INCDNT_NO
+		         , APPL_EVENT_NM
+		    FROM LGAANAPPLEVENT
+		) S
+	</select>
+	
+	<insert id="insertCaseInfo1" parameterType="HashMap">
+		/* oldDataSql.insertCaseInfo1 */
+		INSERT INTO TB_LWS_INST (
+		    INST_MNG_NO
+		  , LWS_MNG_NO
+		  , INST_CD
+		  , INCDNT_NO
+		  , LWS_EQVL
+		  , INCDNT_SE_CD
+		  , CT_CD
+		  , JSDP_NM
+		  , PPOF_INCDNT_NO
+		  , JNT_FLFMT_YN
+		  , PPOF_LWS_FLFMT_EMP_NM
+		  , TKCG_PROC_NM
+		  , JDGM_UP_TYPE_CD
+		  , WIN_RT_NM
+		  , JDGM_ADJ_YMD
+		  , RLNG_TMTL_YMD
+		  , JDGM_CFMTN_YMD
+		  , JDGM_AMT
+		  , JDGM_AMT_INT
+		  , JDGM_CN
+		  , WRTR_EMP_NO
+		  , WRT_YMD
+		  , MDFCN_EMP_NO
+		  , MDFCN_YMD
+		) VALUES (
+		    #{INST_MNG_NO}
+		  , #{LWS_MNG_NO}
+		  , (SELECT Z.CD_MNG_NO FROM TB_COM_CD Z WHERE Z.CD_LCLSF_ENG_NM = 'CASECD' AND Z.CD_NM = #{INST_CD} AND Z.USE_YN = 'Y')
+		  , #{INCDNT_NO}
+		  , #{LWS_EQVL}
+		  , #{INCDNT_SE_CD}
+		  , (SELECT Z.CD_MNG_NO FROM TB_COM_CD Z WHERE Z.CD_LCLSF_ENG_NM = 'COURTCD' AND Z.CD_NM = #{COURT_NAME} AND Z.USE_YN = 'Y' AND ROWNUM=1)
+		  , #{JSDP_NM}
+		  , #{PPOF_INCDNT_NO}
+		  , #{JNT_FLFMT_YN}
+		  , #{PPOF_LWS_FLFMT_EMP_NM}
+		  , #{TKCG_PROC_NM}
+		  , (SELECT Z.CD_MNG_NO FROM TB_COM_CD Z WHERE Z.CD_LCLSF_ENG_NM = 'JDGMTGBN' AND Z.CD_NM = #{JDGM_UP_TYPE_CD} AND Z.USE_YN = 'Y')
+		  , #{WIN_RT}
+		  , #{JDGM_ADJ_YMD}
+		  , #{RLNG_TMTL_YMD}
+		  , #{JDGM_CFMTN_YMD}
+		  , #{JDGM_AMT}
+		  , #{JDGM_AMT_INT}
+		  , #{JDGM_CN}
+		  , #{WRTR_EMP_NO}
+		  , #{WRT_YMD}
+		  , #{MDFCN_EMP_NO}
+		  , #{MDFCN_YMD}
+		)
+	</insert>
+	
+	<insert id="insertCaseInfo2" parameterType="HashMap">
+		/* oldDataSql.insertCaseInfo2 */
+		INSERT INTO TB_LWS_INST (
+		    INST_MNG_NO
+		  , LWS_MNG_NO
+		  , INST_CD
+		  , FLGLW_YMD
+		  , INCDNT_NO
+		  , JDGM_ADJ_YMD
+		  , RLNG_TMTL_YMD
+		  , JDGM_CFMTN_YMD
+		  , WRTR_EMP_NO
+		  , WRT_YMD
+		  , MDFCN_EMP_NO
+		  , MDFCN_YMD
+		) VALUES (
+		    #{INST_MNG_NO}
+		  , #{LWS_MNG_NO}
+		  , (SELECT Z.CD_MNG_NO FROM TB_COM_CD Z WHERE Z.CD_LCLSF_ENG_NM = 'CASECD' AND Z.CD_NM = #{INST_CD} AND Z.USE_YN = 'Y')
+		  , #{FLGLW_YMD}
+		  , #{INCDNT_NO}
+		  , #{JDGM_ADJ_YMD}
+		  , #{RLNG_TMTL_YMD}
+		  , #{JDGM_CFMTN_YMD}
+		  , #{WRTR_EMP_NO}
+		  , #{WRT_YMD}
+		  , #{MDFCN_EMP_NO}
+		  , #{MDFCN_YMD}
+		)
+	</insert>
+	
+	<select id="getCncprInfo" resultType="HashMap">
+		/* oldDataSql.getCncprInfo */
+		SELECT 10||ROWNUM||ROW_NUMBER() OVER (PARTITION BY A.SUT_MG_NO, A.INST_MNG_NO, LWS_CNCPR_SE ORDER BY A.SUT_MG_NO, A.USE_SNO DESC) AS LWS_CNCPR_MNG_NO--, COUNT(*)
+		     , LWS_MNG_NO
+		     , INST_MNG_NO
+		     , LWS_CNCPR_SE
+		     , LWS_CNCPR_NM
+		     , LWS_CNCPR_CNPL
+		     , LWS_CNCPR_ADDR
+		     , RMRK_CN
+		     , WRTR_EMP_NO
+		     , WRT_YMD
+		     , MDFCN_EMP_NO
+		     , MDFCN_YMD
+		FROM (
+		    SELECT A.SUT_MG_NO
+		         , A.ACCUSER_SNO AS USE_SNO
+		         , B.SUT_GBN_CODE||B.SUT_MG_NO AS LWS_MNG_NO
+		         , B.SIM_MG_NO AS INST_MNG_NO
+		         , 'WON'       AS LWS_CNCPR_SE
+		         , A.ACCUSER   AS LWS_CNCPR_NM
+		         , A.TELNO     AS LWS_CNCPR_CNPL
+		         , A.ADDR      AS LWS_CNCPR_ADDR
+		         , REM ||
+		           CASE WHEN A.POST_NO IS NOT NULL THEN ' ' || '우편번호 : ' || A.POST_NO ELSE '' END ||
+		           CASE WHEN A.BASIC_ADDR IS NOT NULL THEN ' 기본주소 : ' || A.BASIC_ADDR || ' ' || A.SPEC_ADDR || ' ' || A.SPEC_DNG || ' ' || A.SPEC_HO ELSE '' END ||
+		           CASE WHEN A.SAN IS NOT NULL THEN ' 산 : ' || A.SAN ELSE '' END ||
+		           CASE WHEN A.BUNGI IS NOT NULL THEN ' 번지 : ' || A.BUNGI ELSE '' END ||
+		           CASE WHEN A.HO IS NOT NULL THEN ' 호 : ' || A.HO ELSE '' END ||
+		           CASE WHEN A.TONG IS NOT NULL THEN ' 통 : ' || A.TONG ELSE '' END ||
+		           CASE WHEN A.BAN IS NOT NULL THEN ' 반 : ' || A.BAN ELSE '' END ||
+		           CASE WHEN A.RD_SIG_CODE IS NOT NULL THEN ' 도로명시도시군구코드 : ' || A.RD_SIG_CODE ELSE '' END || 
+		           CASE WHEN A.RD_CODE IS NOT NULL THEN ' 도로명코드 : ' || A.RD_CODE ELSE '' END || 
+		           CASE WHEN A.RD_BASIC_ADDR IS NOT NULL THEN ' 도로명기본주소 : ' || A.RD_BASIC_ADDR ELSE '' END || 
+		           CASE WHEN A.RD_UMD_GBN IS NOT NULL THEN ' 도로명읍면동구분 : ' || A.RD_UMD_GBN ELSE '' END || 
+		           CASE WHEN A.RD_UMD_CODE IS NOT NULL THEN ' 도로명읍면동코드 : ' || A.RD_UMD_CODE ELSE '' END || 
+		           CASE WHEN A.RD_BDNG_ORGNO IS NOT NULL THEN ' 도로명건물본번 : ' || A.RD_BDNG_ORGNO ELSE '' END || 
+		           CASE WHEN A.RD_BDNG_SUBNO IS NOT NULL THEN ' 도로명건물구번 : ' || A.RD_BDNG_SUBNO ELSE '' END || 
+		           CASE WHEN A.RD_BDNG_FLR_GBN IS NOT NULL THEN ' 도로명건물지하구분 : ' || A.RD_BDNG_FLR_GBN ELSE '' END || 
+		           CASE WHEN A.RD_SPEC_ADDR IS NOT NULL THEN ' 도로명특수주소 : ' || A.RD_SPEC_ADDR ELSE '' END || 
+		           CASE WHEN A.RD_SPEC_DONG IS NOT NULL THEN ' 도로명특수지동 : ' || A.RD_SPEC_DONG ELSE '' END || 
+		           CASE WHEN A.RD_SPEC_HO IS NOT NULL THEN ' 도로명특수지호 : ' || A.RD_SPEC_HO ELSE '' END || 
+		           CASE WHEN A.RD_FULL_ADDR IS NOT NULL THEN ' 도로명전체주소 : ' || A.RD_FULL_ADDR ELSE '' END || 
+		           CASE WHEN A.RD_POST_NO IS NOT NULL THEN ' 도로명우편번호 : ' || A.RD_POST_NO ELSE '' END || 
+		           CASE WHEN A.RD_SPEC_ADDR_FLR IS NOT NULL THEN ' 도로명특수지층 : ' || A.RD_SPEC_ADDR_FLR ELSE '' END
+		           AS RMRK_CN
+		         , A.REGR_ID AS WRTR_EMP_NO
+		         , TO_CHAR(A.REG_DATE, 'YYYYMMDD') AS WRT_YMD
+		         , A.LAST_CORT_ID AS MDFCN_EMP_NO
+		         , TO_CHAR(A.LAST_MOD_DTHR, 'YYYYMMDD') AS MDFCN_YMD
+		    FROM LGAANSUTACCUSER A, LGAANSUTSIM B
+		    WHERE A.SUT_MG_NO = B.SUT_MG_NO
+		      AND A.SUT_GBN_CODE = B.SUT_GBN_CODE
+		    UNION ALL
+		    SELECT A.SUT_MG_NO
+		         , A.DEFENDANT_SNO AS USE_SNO
+		         , B.SUT_GBN_CODE||B.SUT_MG_NO AS LWS_MNG_NO
+		         , B.SIM_MG_NO AS INST_MNG_NO
+		         , 'PI'        AS LWS_CNCPR_SE
+		         , A.DEFENDANT AS LWS_CNCPR_NM
+		         , A.TELNO     AS LWS_CNCPR_CNPL
+		         , A.ADDR      AS LWS_CNCPR_ADDR
+		         , REM ||
+		           CASE WHEN A.POST_NO IS NOT NULL THEN ' ' || '우편번호 : ' || A.POST_NO ELSE '' END ||
+		           CASE WHEN A.BASIC_ADDR IS NOT NULL THEN ' 기본주소 : ' || A.BASIC_ADDR || ' ' || A.SPEC_ADDR || ' ' || A.SPEC_DNG || ' ' || A.SPEC_HO ELSE '' END ||
+		           CASE WHEN A.SAN IS NOT NULL THEN ' 산 : ' || A.SAN ELSE '' END ||
+		           CASE WHEN A.BUNGI IS NOT NULL THEN ' 번지 : ' || A.BUNGI ELSE '' END ||
+		           CASE WHEN A.HO IS NOT NULL THEN ' 호 : ' || A.HO ELSE '' END ||
+		           CASE WHEN A.TONG IS NOT NULL THEN ' 통 : ' || A.TONG ELSE '' END ||
+		           CASE WHEN A.BAN IS NOT NULL THEN ' 반 : ' || A.BAN ELSE '' END ||
+		           CASE WHEN A.RD_SIG_CODE IS NOT NULL THEN ' 도로명시도시군구코드 : ' || A.RD_SIG_CODE ELSE '' END || 
+		           CASE WHEN A.RD_CODE IS NOT NULL THEN ' 도로명코드 : ' || A.RD_CODE ELSE '' END || 
+		           CASE WHEN A.RD_BASIC_ADDR IS NOT NULL THEN ' 도로명기본주소 : ' || A.RD_BASIC_ADDR ELSE '' END || 
+		           CASE WHEN A.RD_UMD_GBN IS NOT NULL THEN ' 도로명읍면동구분 : ' || A.RD_UMD_GBN ELSE '' END || 
+		           CASE WHEN A.RD_UMD_CODE IS NOT NULL THEN ' 도로명읍면동코드 : ' || A.RD_UMD_CODE ELSE '' END || 
+		           CASE WHEN A.RD_BDNG_ORGNO IS NOT NULL THEN ' 도로명건물본번 : ' || A.RD_BDNG_ORGNO ELSE '' END || 
+		           CASE WHEN A.RD_BDNG_SUBNO IS NOT NULL THEN ' 도로명건물구번 : ' || A.RD_BDNG_SUBNO ELSE '' END || 
+		           CASE WHEN A.RD_BDNG_FLR_GBN IS NOT NULL THEN ' 도로명건물지하구분 : ' || A.RD_BDNG_FLR_GBN ELSE '' END || 
+		           CASE WHEN A.RD_SPEC_ADDR IS NOT NULL THEN ' 도로명특수주소 : ' || A.RD_SPEC_ADDR ELSE '' END || 
+		           CASE WHEN A.RD_SPEC_DONG IS NOT NULL THEN ' 도로명특수지동 : ' || A.RD_SPEC_DONG ELSE '' END || 
+		           CASE WHEN A.RD_SPEC_HO IS NOT NULL THEN ' 도로명특수지호 : ' || A.RD_SPEC_HO ELSE '' END || 
+		           CASE WHEN A.RD_FULL_ADDR IS NOT NULL THEN ' 도로명전체주소 : ' || A.RD_FULL_ADDR ELSE '' END || 
+		           CASE WHEN A.RD_POST_NO IS NOT NULL THEN ' 도로명우편번호 : ' || A.RD_POST_NO ELSE '' END || 
+		           CASE WHEN A.RD_SPEC_ADDR_FLR IS NOT NULL THEN ' 도로명특수지층 : ' || A.RD_SPEC_ADDR_FLR ELSE '' END
+		           AS RMRK_CN
+		         , A.REGR_ID AS WRTR_EMP_NO
+		         , TO_CHAR(A.REG_DATE, 'YYYYMMDD') AS WRT_YMD
+		         , A.LAST_CORT_ID AS MDFCN_EMP_NO
+		         , TO_CHAR(A.LAST_MOD_DTHR, 'YYYYMMDD') AS MDFCN_YMD
+		    FROM LGAANSUTDEFENDANT A, LGAANSUTSIM B
+		    WHERE A.SUT_MG_NO = B.SUT_MG_NO
+		      AND A.SUT_GBN_CODE = B.SUT_GBN_CODE
+		) A
+		ORDER BY LWS_MNG_NO, INST_MNG_NO
+	</select>
+	
+	<insert id="insertCncprInfo" parameterType="HashMap">
+		/* oldDataSql.insertCncprInfo */
+		INSERT INTO TB_LWS_CNCPR (
+		    LWS_CNCPR_MNG_NO
+		  , INST_MNG_NO
+		  , LWS_CNCPR_SE
+		  , LWS_CNCPR_NM
+		  , LWS_CNCPR_CNPL
+		  , LWS_CNCPR_ADDR
+		  , RMRK_CN
+		  , WRTR_EMP_NO
+		  , WRT_YMD
+		  , MDFCN_EMP_NO
+		  , MDFCN_YMD
+		) VALUES (
+		    #{LWS_CNCPR_MNG_NO}
+		  , #{INST_MNG_NO}
+		  , #{LWS_CNCPR_SE}
+		  , #{LWS_CNCPR_NM}
+		  , #{LWS_CNCPR_CNPL}
+		  , #{LWS_CNCPR_ADDR}
+		  , #{RMRK_CN}
+		  , #{WRTR_EMP_NO}
+		  , #{WRT_YMD}
+		  , #{MDFCN_EMP_NO}
+		  , #{MDFCN_YMD}
+		)
+	</insert>
+	
+	<select id="getAgtInfo" resultType="HashMap">
+		/* oldDataSql.getAgtInfo */
+		SELECT A.SIM_MG_NO||SUT_DAE_SNO AS AGT_MNG_NO
+		     , A.SIM_MG_NO    AS INST_MNG_NO
+		     , (SELECT Z.SUT_GBN_CODE||Z.SUT_MG_NO FROM LGAANSUTSIM Z WHERE Z.SIM_MG_NO = A.SIM_MG_NO) AS LWS_MNG_NO
+		     , CASE WHEN A.ATTORNY_CODE IS NULL THEN (SELECT TT.ATTORNY_CODE FROM LGAANSUTATT TT WHERE TT.ATTORNY_NM = A.SUT_DAE_NM AND ROWNUM = 1)
+		            ELSE A.ATTORNY_CODE
+		       END LWYR_MNG_NO
+		     , A.SUT_DAE_NM   AS LWYR_NM
+		     , A.BUP_NM       AS JDAF_CORP_NM
+		     , WCH_YMD        AS DLGT_YMD
+		     , HCH_YMD        AS DLGT_END_YMD
+		     , ETC            AS RMRK_CN
+		     , A.REGR_ID      AS WRTR_EMP_NO
+		     , A.REG_YMD      AS WRT_YMD
+		     , A.LAST_CORT_ID AS MDFCN_EMP_NO
+		     , TO_CHAR(A.LAST_MOD_DTHR, 'YYYYMMDD') AS MDFCN_YMD
+		FROM LGAANSUTDAE A
+	</select>
+	
+	<insert id="insertAgtInfo" parameterType="HashMap">
+		/* oldDataSql.insertAgtInfo */
+		INSERT INTO TB_LWS_AGT (
+		    AGT_MNG_NO
+		  , INST_MNG_NO
+		  , LWS_MNG_NO
+		  , LWYR_MNG_NO
+		  , LWYR_NM
+		  , JDAF_CORP_MNG_NO
+		  , JDAF_CORP_NM
+		  , DLGT_YMD
+		  , DLGT_END_YMD
+		  , RMRK_CN
+		  , WRTR_EMP_NO
+		  , WRT_YMD
+		  , MDFCN_EMP_NO
+		  , MDFCN_YMD
+		) VALUES (
+		    #{AGT_MNG_NO}
+		  , #{INST_MNG_NO}
+		  , #{LWS_MNG_NO}
+		  , #{LWYR_MNG_NO}
+		  , (SELECT Z.LWYR_NM FROM TB_COM_LWYR Z WHERE Z.LWYR_MNG_NO = #{LWYR_MNG_NO})
+		  , (SELECT Z.JDAF_CORP_MNG_NO FROM TB_COM_LWYR Z WHERE Z.LWYR_MNG_NO = #{LWYR_MNG_NO})
+		<if test="JDAF_CORP_NM != '' and JDAF_CORP_NM != null">
+		  , #{JDAF_CORP_NM}
+		</if>
+		<if test="JDAF_CORP_NM == '' or JDAF_CORP_NM == null">
+		  , (SELECT ZZ.JDAF_CORP_NM FROM TB_COM_JDAF_CORP ZZ WHERE ZZ.JDAF_CORP_MNG_NO = (SELECT Z.JDAF_CORP_MNG_NO FROM TB_COM_LWYR Z WHERE Z.LWYR_MNG_NO = #{LWYR_MNG_NO}))
+		</if>
+		  , #{DLGT_YMD}
+		  , #{DLGT_END_YMD}
+		  , #{RMRK_CN}
+		  , #{WRTR_EMP_NO}
+		  , #{WRT_YMD}
+		  , #{MDFCN_EMP_NO}
+		  , #{MDFCN_YMD}
+		)
+	</insert>
+	
+	<select id="getFlfmtInfo1" resultType="HashMap">
+		/* oldDataSql.getFlfmtInfo1 */
+		SELECT INST_MNG_NO||SUT_EXE_MAN_SNO||ROW_NUMBER() OVER (PARTITION BY INST_MNG_NO, SUT_EXE_MAN_SNO ORDER BY INST_MNG_NO DESC) AS LWS_FLFMT_MNG_NO
+		     , INST_MNG_NO
+		     , LWS_FLFMT_EMP_NO
+		     , LWS_FLFMT_EMP_NM
+		     , LWS_FLFMT_DEPT_NO
+		     , LWS_FLFMT_DEPT_NM
+		     , FLFMT_BGNG
+		     , FLFMT_END
+		     , FLFMT_YN
+		     , RMRK_CN
+		     , WRTR_EMP_NO
+		     , WRT_YMD
+		     , MDFCN_EMP_NO
+		     , MDFCN_YMD
+		FROM (
+		    SELECT SUT_EXE_MAN_SNO
+		         , SIM_MG_NO       AS INST_MNG_NO
+		         , SUT_EXE_MAN_ID  AS LWS_FLFMT_EMP_NO
+		         , REGEXP_SUBSTR(A.SUT_EXE_MAN_NM, '[^,]+', 1, b.row_cnt) AS LWS_FLFMT_EMP_NM
+		         , DEPT_CODE       AS LWS_FLFMT_DEPT_NO
+		         , Z.DEPT_NM AS LWS_FLFMT_DEPT_NM
+		         , ASGN_YMD        AS FLFMT_BGNG
+		         , DISM_YMD        AS FLFMT_END
+		         , CASE WHEN DISM_YMD IS NULL THEN 'Y' ELSE 'N' END FLFMT_YN
+		         , SUT_EXE_MAN_NM || CASE WHEN ETC IS NOT NULL THEN '\n'|| ETC ELSE '' END RMRK_CN
+		         , REGR_ID         AS WRTR_EMP_NO
+		         , A.REG_YMD         AS WRT_YMD
+		         , LAST_CORT_ID    AS MDFCN_EMP_NO
+		         , TO_CHAR(LAST_MOD_DTHR, 'YYYYMMDD') AS MDFCN_YMD
+		    FROM LGAANSUTSUH A LEFT OUTER JOIN LEGAL_PORTAL.LINK_PORTAL_DEPT Z ON A.DEPT_CODE = Z.DEPT_CD
+		       , (SELECT LEVEL row_cnt FROM dual CONNECT BY LEVEL <![CDATA[<=]]> 10) b
+		    WHERE b.row_cnt <![CDATA[<=]]> REGEXP_COUNT(a.SUT_EXE_MAN_NM, ',') + 1
+		    UNION ALL
+		    SELECT SUT_EXE_MAN_HIST_SNO AS SUT_EXE_MAN_SNO
+		         , SIM_MG_NO       AS INST_MNG_NO
+		         , SUT_EXE_MAN_ID  AS LWS_FLFMT_EMP_NO
+		         , REGEXP_SUBSTR(A.SUT_EXE_MAN_NM, '[^,]+', 1, b.row_cnt) AS LWS_FLFMT_EMP_NM
+		         , DEPT_CODE       AS LWS_FLFMT_DEPT_NO
+		         , Z.DEPT_NM AS LWS_FLFMT_DEPT_NM
+		         , ASGN_YMD        AS FLFMT_BGNG
+		         , DISM_YMD        AS FLFMT_END
+		         , 'N'             AS FLFMT_YN
+		         , ETC             AS RMRK_CN
+		         , REGR_ID         AS WRTR_EMP_NO
+		         , A.REG_YMD         AS WRT_YMD
+		         , LAST_CORT_ID    AS MDFCN_EMP_NO
+		         , TO_CHAR(LAST_MOD_DTHR, 'YYYYMMDD') AS MDFCN_YMD
+		    FROM LGAANSUTEXEMANHIST A LEFT OUTER JOIN LEGAL_PORTAL.LINK_PORTAL_DEPT Z ON A.DEPT_CODE = Z.DEPT_CD
+		       , (SELECT LEVEL row_cnt FROM dual CONNECT BY LEVEL <![CDATA[<=]]> 10) b
+		    WHERE b.row_cnt <![CDATA[<=]]> REGEXP_COUNT(a.SUT_EXE_MAN_NM, ',') + 1
+		)
+	</select>
+	
+	<insert id="insertFlfmtInfo1" parameterType="HashMap">
+		/* oldDataSql.insertFlfmtInfo1 */
+		INSERT INTO TB_LWS_FLFMT (
+		    LWS_FLFMT_MNG_NO
+		  , INST_MNG_NO
+		  , LWS_FLFMT_EMP_NO
+		  , LWS_FLFMT_EMP_NM
+		  , LWS_FLFMT_DEPT_NO
+		  , LWS_FLFMT_DEPT_NM
+		  , FLFMT_BGNG
+		  , FLFMT_END
+		  , FLFMT_YN
+		  , RMRK_CN
+		  , WRTR_EMP_NO
+		  , WRT_YMD
+		  , MDFCN_EMP_NO
+		  , MDFCN_YMD
+		) VALUES (
+		    #{LWS_FLFMT_MNG_NO}
+		  , #{INST_MNG_NO}
+		  , #{LWS_FLFMT_EMP_NO}
+		  , #{LWS_FLFMT_EMP_NM}
+		  , #{LWS_FLFMT_DEPT_NO}
+		  , #{LWS_FLFMT_DEPT_NM}
+		  , #{FLFMT_BGNG}
+		  , #{FLFMT_END}
+		  , #{FLFMT_YN}
+		  , #{RMRK_CN}
+		  , #{WRTR_EMP_NO}
+		  , #{WRT_YMD}
+		  , #{MDFCN_EMP_NO}
+		  , #{MDFCN_YMD}
+		)
+	</insert>
+	
+	<select id="getFlfmtInfo2" resultType="HashMap">
+		/* oldDataSql.getFlfmtInfo2 */
+		SELECT LWS_FLFMT_MNG_NO||ROW_NUMBER() OVER (PARTITION BY LWS_FLFMT_MNG_NO ORDER BY LWS_FLFMT_MNG_NO DESC) AS LWS_FLFMT_MNG_NO
+		     , INST_MNG_NO
+		     , LWS_FLFMT_EMP_NM
+		     , LWS_FLFMT_DEPT_NO
+		     , LWS_FLFMT_DEPT_NM
+		     , FLFMT_BGNG
+		     , FLFMT_END
+		     , FLFMT_YN
+		     , RMRK_CN
+		     , WRTR_EMP_NO
+		     , WRT_YMD
+		     , MDFCN_EMP_NO
+		     , MDFCN_YMD
+		FROM (
+		    SELECT SIM_MG_NO||0||SUT_ASTNFD_MAN_SNO AS LWS_FLFMT_MNG_NO
+		         , SIM_MG_NO AS INST_MNG_NO
+		         , SUT_ASTNFD_MAN_NM AS LWS_FLFMT_EMP_NM
+		         , DEPT_CODE AS LWS_FLFMT_DEPT_NO
+		         , Z.DEPT_NM AS LWS_FLFMT_DEPT_NM
+		         , ASGN_YMD        AS FLFMT_BGNG
+		         , DISM_YMD        AS FLFMT_END
+		         , CASE WHEN DISM_YMD IS NULL THEN 'Y' ELSE 'N' END FLFMT_YN
+		         , ETC             AS RMRK_CN
+		         , REGR_ID      AS WRTR_EMP_NO
+		         , A.REG_YMD      AS WRT_YMD
+		         , LAST_CORT_ID AS MDFCN_EMP_NO
+		         , TO_CHAR(LAST_MOD_DTHR, 'YYYYMMDD') AS MDFCN_YMD
+		    FROM LGAANSUTASTNFD A LEFT OUTER JOIN LEGAL_PORTAL.LINK_PORTAL_DEPT Z ON A.DEPT_CODE = Z.DEPT_CD
+		    UNION ALL
+		    SELECT SIM_MG_NO||0||SUT_ASTNFD_MAN_SNO AS LWS_FLFMT_MNG_NO
+		         , SIM_MG_NO AS INST_MNG_NO
+		         , SUT_ASTNFD_MAN_NM AS LWS_FLFMT_EMP_NM
+		         , DEPT_CODE AS LWS_FLFMT_DEPT_NO
+		         , Z.DEPT_NM AS LWS_FLFMT_DEPT_NM
+		         , ASGN_YMD        AS FLFMT_BGNG
+		         , DISM_YMD        AS FLFMT_END
+		         , 'N' FLFMT_YN
+		         , ETC             AS RMRK_CN
+		         , REGR_ID      AS WRTR_EMP_NO
+		         , A.REG_YMD      AS WRT_YMD
+		         , LAST_CORT_ID AS MDFCN_EMP_NO
+		         , TO_CHAR(LAST_MOD_DTHR, 'YYYYMMDD') AS MDFCN_YMD
+		    FROM LGAANSUTASTNFDHIST A LEFT OUTER JOIN LEGAL_PORTAL.LINK_PORTAL_DEPT Z ON A.DEPT_CODE = Z.DEPT_CD
+		)
+	</select>
+	
+	<insert id="insertFlfmtInfo2" parameterType="HashMap">
+		/* oldDataSql.insertFlfmtInfo2 */
+		INSERT INTO TB_LWS_FLFMT (
+		    LWS_FLFMT_MNG_NO
+		  , INST_MNG_NO
+		  , LWS_FLFMT_EMP_NM
+		  , LWS_FLFMT_DEPT_NO
+		  , LWS_FLFMT_DEPT_NM
+		  , FLFMT_BGNG
+		  , FLFMT_END
+		  , FLFMT_YN
+		  , RMRK_CN
+		  , WRTR_EMP_NO
+		  , WRT_YMD
+		  , MDFCN_EMP_NO
+		  , MDFCN_YMD
+		) VALUES (
+		    #{LWS_FLFMT_MNG_NO}
+		  , #{INST_MNG_NO}
+		  , #{LWS_FLFMT_EMP_NM}
+		  , #{LWS_FLFMT_DEPT_NO}
+		  , #{LWS_FLFMT_DEPT_NM}
+		  , #{FLFMT_BGNG}
+		  , #{FLFMT_END}
+		  , #{FLFMT_YN}
+		  , #{RMRK_CN}
+		  , #{WRTR_EMP_NO}
+		  , #{WRT_YMD}
+		  , #{MDFCN_EMP_NO}
+		  , #{MDFCN_YMD}
+		)
+	</insert>
+	
+	<select id="getDateInfo" resultType="HashMap">
+		/* oldDataSql.getDateInfo */
+		SELECT ROWNUM||ROW_NUMBER() OVER (PARTITION BY SIM_MG_NO, BRON_CHASU ORDER BY SIM_MG_NO, BRON_CHASU DESC) AS DATE_MNG_NO
+		     , SIM_MG_NO           AS INST_MNG_NO
+		     , (SELECT Z.SUT_GBN_CODE||Z.SUT_MG_NO FROM LGAANSUTSIM Z WHERE Z.SIM_MG_NO = A.SIM_MG_NO) AS LWS_MNG_NO
+		     , BRON_YMD            AS DATE_YMD
+		     , ''                  AS DATE_PLC_NM
+		     , ''                  AS DATE_TM
+		     , CASE WHEN FIXED_GBN = 1 THEN '변론기일' WHEN FIXED_GBN = 2 THEN '판결기일' ELSE '기타' END DATE_TYPE_CD
+		     , (
+		        CASE WHEN BRON_CHASU    IS NOT NULL THEN '변론차수 : '       || BRON_CHASU || '차' END || 
+		        CASE WHEN ACC_ATTEND_YN IS NOT NULL THEN '\n원고출석여부 : ' || ACC_ATTEND_YN END || 
+		        CASE WHEN DEF_ATTEND_YN IS NOT NULL THEN '\n피고출석여부 : ' || DEF_ATTEND_YN END || 
+		        CASE WHEN BRON_SMY      IS NOT NULL AND BRON_SMY      != '' THEN '\n변론요약 : '     || BRON_SMY      END || 
+		        CASE WHEN BRON_SMY      IS NOT NULL AND BRON_SMY      != '' THEN '\n변론요약 : '     || BRON_SMY      END || 
+		        CASE WHEN LENGTH(ACC_ASSERT_ITEM) > 0 THEN '\n원고주장사항 : ' || DBMS_LOB.SUBSTR(ACC_ASSERT_ITEM, DBMS_LOB.GETLENGTH(ACC_ASSERT_ITEM)) END || 
+		        CASE WHEN LENGTH(DEF_ASSERT_ITEM) > 0 THEN '\n피고주장사항 : ' || DBMS_LOB.SUBSTR(DEF_ASSERT_ITEM, DBMS_LOB.GETLENGTH(DEF_ASSERT_ITEM)) END || 
+		        CASE WHEN ACC_PROOF_MET IS NOT NULL THEN '\n원고입증방법 : ' || ACC_PROOF_MET END || 
+		        CASE WHEN DEF_PROOF_MET IS NOT NULL THEN '\n피고입증방법 : ' || DEF_PROOF_MET END
+		       ) AS DATE_CN
+		     , JUST_DEP_INDC_ITEM AS DATE_RSLT_CN
+		     , (
+		        CASE WHEN LENGTH(SUT_EXE_MAN_OPI) > 0 THEN '소송수행자 의견 : ' || DBMS_LOB.SUBSTR(SUT_EXE_MAN_OPI, DBMS_LOB.GETLENGTH(SUT_EXE_MAN_OPI)) END ||
+		        CASE WHEN NEXT_FIXED     IS NOT NULL  THEN '\n다음 기일 : '     || NEXT_FIXED END || 
+		        CASE WHEN NEDT_PLAN_ITEM IS NOT NULL  THEN '\n차회예정사항 : '  || NEDT_PLAN_ITEM END
+		       ) AS RMRK_CN
+		     , REGR_ID          AS WRTR_EMP_NO
+		     , REG_YMD          AS WRT_YMD
+		     , LAST_CORT_ID     AS MDFCN_EMP_NO
+		     , TO_CHAR(LAST_MOD_DTHR, 'YYYYMMDD') AS MDFCN_YMD
+		FROM LGAANSUTBRES A
+		UNION ALL
+		SELECT 3||ROWNUM||ROW_NUMBER() OVER (PARTITION BY SIM_MG_NO, BRON_CHASU ORDER BY SIM_MG_NO, BRON_CHASU DESC) AS DATE_MNG_NO
+		     , SIM_MG_NO                        AS INST_MNG_NO
+		     , (SELECT Z.SUT_GBN_CODE||Z.SUT_MG_NO FROM LGAANSUTSIM Z WHERE Z.SIM_MG_NO = A.SIM_MG_NO) AS LWS_MNG_NO
+		     , BRON_PLAN_YMD                    AS DATE_YMD
+		     , FIXED_PLC                        AS DATE_PLC_NM
+		     , REPLACE(BRON_PLAN_TIME, ':', '') AS DATE_TM
+		     , CASE WHEN FIXED_GBN = 1 THEN '변론기일' WHEN FIXED_GBN = 2 THEN '판결기일' ELSE '기타' END DATE_TYPE_CD
+		     , (
+		        CASE WHEN NEDT_PLAN_ITEM IS NOT NULL THEN '차회예정사항 : ' || NEDT_PLAN_ITEM END || 
+		        CASE WHEN DEF_DAE_NM     IS NOT NULL THEN '\n피고대리인 : ' || DEF_DAE_NM     END ||
+		        CASE WHEN ACC_DAE_NM     IS NOT NULL THEN '\n원고대리인 : ' || ACC_DAE_NM     END
+		       ) AS DATE_CN
+		     , ''               AS DATE_RSLT_CN
+		     , REM              AS RMRK_CN
+		     , REGR_ID          AS WRTR_EMP_NO
+		     , REG_YMD          AS WRT_YMD
+		     , LAST_CORT_ID     AS MDFCN_EMP_NO
+		     , TO_CHAR(LAST_MOD_DTHR, 'YYYYMMDD') AS MDFCN_YMD
+		FROM LGAANSUTBRON A
+	</select>
+	
+	<insert id="insertDateInfo" parameterType="HashMap">
+		/* oldDataSql.insertDateInfo */
+		INSERT INTO TB_LWS_DATE (
+		    DATE_MNG_NO
+		  , INST_MNG_NO
+		  , LWS_MNG_NO
+		  , DATE_YMD
+		  , DATE_PLC_NM
+		  , DATE_TM
+		  , DATE_TYPE_CD
+		  , DATE_CN
+		  , DATE_RSLT_CN
+		  , RMRK_CN
+		  , WRTR_EMP_NO
+		  , WRT_YMD
+		  , MDFCN_EMP_NO
+		  , MDFCN_YMD
+		) VALUES (
+		    #{DATE_MNG_NO}
+		  , #{INST_MNG_NO}
+		  , #{LWS_MNG_NO}
+		  , #{DATE_YMD}
+		  , #{DATE_PLC_NM}
+		  , #{DATE_TM}
+		  , (SELECT Z.CD_MNG_NO FROM TB_COM_CD Z WHERE Z.CD_LCLSF_ENG_NM = 'DATEGBN' AND Z.CD_NM = #{DATE_TYPE_CD})
+		  , #{DATE_CN}
+		  , #{DATE_RSLT_CN}
+		  , #{RMRK_CN}
+		  , #{WRTR_EMP_NO}
+		  , #{WRT_YMD}
+		  , #{MDFCN_EMP_NO}
+		  , #{MDFCN_YMD}
+		)
+	</insert>
+	
+	<select id="getCostInfo" resultType="HashMap">
+		/* oldDataSql.getCostInfo */
+		SELECT CST_MNG_NO
+		     , INST_MNG_NO
+		     , CASE WHEN LWS_MNG_NO IS NULL THEN '0'
+		            ELSE LWS_MNG_NO
+		       END LWS_MNG_NO
+		     , CST_PRCS_SE
+		     , CST_SE_CD
+		     , CST_PRCS_YMD
+		     , PRCS_AMT
+		     , CST_TRGT_MNG_NO
+		     , CST_PRCS_CMPTN_YN
+		     , RMRK_CN
+		     , WRTR_EMP_NO
+		     , WRT_YMD
+		     , MDFCN_EMP_NO
+		     , MDFCN_YMD
+		FROM (
+		    SELECT SIM_MG_NO || SUT_EXP_SNO AS CST_MNG_NO
+		         , SIM_MG_NO AS INST_MNG_NO
+		         , (SELECT Z.SUT_GBN_CODE||Z.SUT_MG_NO FROM LGAANSUTSIM Z WHERE Z.SIM_MG_NO = A.SIM_MG_NO) AS LWS_MNG_NO
+		         , 'J' AS CST_PRCS_SE
+		         , (SELECT Z.CODE_CTN FROM CMMANDCODE Z WHERE Z.CODE_ID = 'LGA309' AND Z.CODE = A.EPTR_GBN) AS CST_SE_CD
+		         , PAY_YMD AS CST_PRCS_YMD
+		         , SUT_EXP_AMT AS PRCS_AMT
+		         , (SELECT Z.SIM_MG_NO||Z.SUT_DAE_SNO AS TARGETID FROM LGAANSUTDAE Z WHERE Z.ATTORNY_CODE = A.ATTORNY_CODE AND Z.SIM_MG_NO = A.SIM_MG_NO AND ROWNUM = 1) AS CST_TRGT_MNG_NO
+		         , 'Y' AS CST_PRCS_CMPTN_YN
+		         , '지출 대상 : ' || EPTR_TRGT ||
+		           '\n회계 구분 : ' || ACCT_GBN  ||
+		           '\n주관부서코드 : ' || SPR_DEP_CODE ||
+		           '\n'||REM
+		           AS RMRK_CN
+		         , REGR_ID      AS WRTR_EMP_NO
+		         , REG_YMD      AS WRT_YMD
+		         , LAST_CORT_ID AS MDFCN_EMP_NO
+		         , TO_CHAR(LAST_MOD_DTHR, 'YYYYMMDD') AS MDFCN_YMD
+		    FROM LGAANSUTEXP A
+		)
+	</select>
+	
+	<insert id="insertCostInfo" parameterType="HashMap">
+		/* oldDataSql.insertCostInfo */
+		INSERT INTO TB_LWS_CST (
+		    CST_MNG_NO
+		  , INST_MNG_NO
+		  , LWS_MNG_NO
+		  , CST_PRCS_SE
+		  , CST_SE_CD
+		  , CST_PRCS_YMD
+		  , PRCS_AMT
+		  , CST_TRGT_MNG_NO
+		  , CST_PRCS_CMPTN_YN
+		  , RMRK_CN
+		  , WRTR_EMP_NO
+		  , WRT_YMD
+		  , MDFCN_EMP_NO
+		  , MDFCN_YMD
+		) VALUES (
+		    #{CST_MNG_NO}
+		  , #{INST_MNG_NO}
+		  , #{LWS_MNG_NO}
+		  , #{CST_PRCS_SE}
+		  , (SELECT Z.CD_MNG_NO FROM TB_COM_CD Z WHERE Z.CD_LCLSF_ENG_NM = 'COSTGBN' AND Z.CD_NM = #{CST_SE_CD})
+		  , #{CST_PRCS_YMD}
+		  , #{PRCS_AMT}
+		  , #{CST_TRGT_MNG_NO}
+		  , #{CST_PRCS_CMPTN_YN}
+		  , #{RMRK_CN}
+		  , #{WRTR_EMP_NO}
+		  , #{WRT_YMD}
+		  , #{MDFCN_EMP_NO}
+		  , #{MDFCN_YMD}
+		)
+	</insert>
+	
+	<select id="getBndInfo" resultType="HashMap">
+		/* oldDataSql.getBndInfo */
+		SELECT SUT_MG_NO||ROW_NUMBER() OVER (PARTITION BY SUT_MG_NO ORDER BY COST_FIX_AMT DESC) AS BND_MNG_NO
+		     , SUT_GBN_CODE||SUT_MG_NO  AS LWS_MNG_NO
+		     , (SELECT MAX(Z.SIM_MG_NO) AS SIM_MG_NO FROM LGAANSUTSIM Z WHERE Z.SUT_MG_NO = A.SUT_MG_NO) AS INST_MNG_NO
+		     , COST_FIX_APPL_YMD    AS BND_PBLCN_YMD
+		     , COST_FIX_DCS_YMD     AS JDGM_CFMTN_YMD
+		     , COST_FIX_AMT         AS BND_AMT
+		     , BOND_ENSR_ITEM || CASE WHEN BOND_ENSR_ITEM IS NULL THEN '' ELSE ' ' END || REM AS RMRK_CN
+		     , COST_CASE_NO         AS BND_INCDNT_NO
+		     , COST_FIX_CASE_NO     AS BND_CFMTN_INCDNT_NO
+		     , N_COLL_WHY           AS UNPAID_RSN
+		     , REGR_ID              AS WRTR_EMP_NO
+		     , TO_CHAR(TO_DATE(REG_YMD, 'YY-MM-DD'), 'YYYYMMDD') AS WRT_YMD
+		     , LAST_CORT_ID AS MDFCN_EMP_NO
+		     , TO_CHAR(LAST_MOD_DTHR, 'YYYYMMDD') AS MDFCN_YMD
+		FROM LGAANSUTEXPFIX A
+		ORDER BY SUT_MG_NO
+	</select>
+	
+	<insert id="insertBndInfo" parameterType="HashMap">
+		/* oldDataSql.insertBndInfo */
+		INSERT INTO TB_LWS_BND (
+		    BND_MNG_NO
+		  , LWS_MNG_NO
+		  , INST_MNG_NO
+		  , BND_PBLCN_YMD
+		  , JDGM_CFMTN_YMD
+		  , BND_AMT
+		  , RMRK_CN
+		  , BND_INCDNT_NO
+		  , BND_CFMTN_INCDNT_NO
+		  , UNPAID_RSN
+		  , WRTR_EMP_NO
+		  , WRT_YMD
+		  , MDFCN_EMP_NO
+		  , MDFCN_YMD
+		) VALUES (
+		    #{BND_MNG_NO}
+		  , #{LWS_MNG_NO}
+		  , #{INST_MNG_NO}
+		  , #{BND_PBLCN_YMD}
+		  , #{JDGM_CFMTN_YMD}
+		  , #{BND_AMT}
+		  , #{RMRK_CN}
+		  , #{BND_INCDNT_NO}
+		  , #{BND_CFMTN_INCDNT_NO}
+		  , #{UNPAID_RSN}
+		  , #{WRTR_EMP_NO}
+		  , #{WRT_YMD}
+		  , #{MDFCN_EMP_NO}
+		  , #{MDFCN_YMD}
+		)
+	</insert>
+	
+	<select id="getBndRtrvlInfo" resultType="HashMap">
+		/* oldDataSql.getBndRtrvlInfo */
+		SELECT SUT_MG_NO||ROW_NUMBER() OVER (PARTITION BY SUT_MG_NO ORDER BY COST_FIX_AMT DESC) AS BND_MNG_NO
+		     , SUT_MG_NO||ROW_NUMBER() OVER (PARTITION BY SUT_MG_NO ORDER BY COST_FIX_AMT DESC)||ROW_NUMBER() OVER (PARTITION BY SUT_MG_NO ORDER BY COST_FIX_AMT DESC) AS BND_RTRVL_MNG_NO
+		     , COST_COLL_YMD     AS GIVE_RTRVL_YMD
+		     , COST_COLL_TOT_AMT AS GIVE_RTRVL_AMT
+		     , REGR_ID      AS WRTR_EMP_NO
+		     , TO_CHAR(TO_DATE(REG_YMD, 'YY-MM-DD'), 'YYYYMMDD') AS WRT_YMD
+		     , LAST_CORT_ID AS MDFCN_EMP_NO
+		     , TO_CHAR(LAST_MOD_DTHR, 'YYYYMMDD') AS MDFCN_YMD
+		FROM LGAANSUTEXPFIX
+		ORDER BY SUT_MG_NO
+	</select>
+	
+	<insert id="insertBndRtrvlInfo" parameterType="HashMap">
+		/* oldDataSql.insertBndRtrvlInfo */
+		INSERT INTO TB_LWS_BND_RTRVL (
+		    BND_RTRVL_MNG_NO
+		  , BND_MNG_NO
+		  , GIVE_RTRVL_AMT
+		  , GIVE_RTRVL_YMD
+		  , WRTR_EMP_NO
+		  , WRT_YMD
+		  , MDFCN_EMP_NO
+		  , MDFCN_YMD
+		) VALUES (
+		    #{BND_RTRVL_MNG_NO}
+		  , #{BND_MNG_NO}
+		  , #{GIVE_RTRVL_AMT}
+		  , #{GIVE_RTRVL_YMD}
+		  , #{WRTR_EMP_NO}
+		  , #{WRT_YMD}
+		  , #{MDFCN_EMP_NO}
+		  , #{MDFCN_YMD}
+		)
+	</insert>
+	
+	<select id="getConsultInfo1" resultType="HashMap">
+		/* oldDataSql.getConsultInfo1_법률자문*/
+		SELECT
+			CNSTN_MNG_NO
+			, MENU_MNG_NO
+			, CNSTN_DOC_NO
+			, PRGRS_STTS_SE_NM
+			, REQUEST_STATUS_CD
+			, RLS_YN
+			, INSD_OTSD_TASK_SE
+			, OTSD_RQST_RSN
+			, CNSTN_TTL
+			, CNSTN_RQST_EMP_NO
+			, CNSTN_RQST_EMP_NM
+			, CNSTN_RQST_DEPT_NO
+			, CNSTN_RQST_DEPT_NM
+			, CNSTN_RQST_DEPT_TMLDR_EMP_NO
+			, CNSTN_RQST_DEPT_TMLDR_NM
+			, RQST_DEPT_LAST_APRVR_JBPS_NM
+			, CNSTN_RQST_REG_YMD
+			, CNSTN_RQST_YMD
+			, CNSTN_RQST_CN
+			, CNSTN_RQST_SUBST_CN
+			, RMRK_CN
+			, CNSTN_HOPE_RPLY_YMD
+			, CNSTN_RCPT_YMD
+			, CNSTN_TKCG_EMP_NO
+			, CNSTN_TKCG_EMP_NM
+			, CNSTN_RPLY_YMD
+			, CNSTN_CMPTN_YMD
+			, PRVT_SRCH_KYWD_CN
+			, EMRG_YN
+			, EMRG_RSN
+			, DEL_YN
+			, WRTR_EMP_NM
+			, WRTR_EMP_NO
+			, WRT_YMD
+			, WRT_DEPT_NM
+			, WRT_DEPT_NO
+			, MDFCN_EMP_NM
+			, MDFCN_EMP_NO
+			, MDFCN_YMD
+			, MDFCN_DEPT_NM
+			, MDFCN_DEPT_NO
+			, EXCL_DMND_JDAF_CORP_NM
+			, DSCSN_TYPE_NM
+			, CNSTN_SE_NM
+			, CNSTN_ANS_RVW_OPNN_CN
+			, RVW_OPNN_CN
+			, RVW_OPNN_REG_YMD
+			
+			, RVW_TKCG_EMP_NO -- 검토담당자 위한 값
+			, RVW_TKCG_EMP_NM -- 검토담당자 위한 값
+			
+			, OPEN_YN -- 사용여부
+		FROM
+			(
+			SELECT 
+			A.REQUEST_SQNO AS CNSTN_MNG_NO
+			, '100000131' AS MENU_MNG_NO
+			, A.DOCNO_NM AS CNSTN_DOC_NO
+			, (CASE WHEN A.REQUEST_STATUS_CD = 1000 THEN '법률자문 의뢰'
+					WHEN A.REQUEST_STATUS_CD = 1100 THEN '접수대기'
+					WHEN A.REQUEST_STATUS_CD = 1200 THEN '내부검토중'
+					WHEN A.REQUEST_STATUS_CD = 1300 THEN '외부검토중'
+					WHEN A.REQUEST_STATUS_CD = 1400 THEN '과장결재중'
+					WHEN A.REQUEST_STATUS_CD = 1410 THEN '팀장결재중'
+<!-- 					WHEN A.REQUEST_STATUS_CD = '1400' OR A.REQUEST_STATUS_CD = '1410' THEN '결재중' -->
+					WHEN A.REQUEST_STATUS_CD = 1500 THEN '철회'
+<!-- 					WHEN A.REQUEST_STATUS_CD = 1600 THEN '종료-과장' -->
+<!-- 					WHEN A.REQUEST_STATUS_CD = 1610 THEN '종료-팀장' -->
+					WHEN A.REQUEST_STATUS_CD = '1600' OR A.REQUEST_STATUS_CD = '1610' THEN '완료'
+					WHEN A.REQUEST_STATUS_CD = 9999 THEN '9999'
+					ELSE ''
+			END) AS PRGRS_STTS_SE_NM
+			, A.REQUEST_STATUS_CD AS REQUEST_STATUS_CD
+			, (CASE WHEN A.VIEW_CD = 1000 THEN 'Y'
+					WHEN A.VIEW_CD = 1100 THEN 'N'
+					ELSE 'Y'
+				END) AS RLS_YN
+			, (CASE WHEN A.REQUEST_WAY_CD = 1000 THEN 'I'
+					WHEN A.REQUEST_WAY_CD = 2000 THEN 'O'
+					WHEN A.REQUEST_WAY_CD = 3000 THEN ''
+					WHEN A.REQUEST_WAY_CD = 1010 THEN '1010'
+					WHEN A.REQUEST_WAY_CD = 1200 THEN '1200'
+					WHEN A.REQUEST_WAY_CD = 1300 THEN '1300'
+					ELSE ''
+				END) AS INSD_OTSD_TASK_SE
+			, (CASE WHEN A.REQUEST_WAY_SUB_CD = 1000 THEN '특수분야 전문지식 필요'
+				WHEN A.REQUEST_WAY_SUB_CD = 2000 THEN '외부의 객관적 시각 필요'
+				WHEN A.REQUEST_WAY_SUB_CD = 3000 THEN '기타'
+				ELSE ''
+			END) AS OTSD_RQST_RSN
+			, A.REQUEST_NM AS CNSTN_TTL
+			, A.CRT_USER_ID AS CNSTN_RQST_EMP_NO
+			, B.MANAGER_NM AS CNSTN_RQST_EMP_NM
+			, B.MANAGER_DEPT_CD AS CNSTN_RQST_DEPT_NO
+			, B.MANAGER_DEPT_NM  AS CNSTN_RQST_DEPT_NM
+			, C.CRT_USER_ID AS CNSTN_RQST_DEPT_TMLDR_EMP_NO
+			, C.MANAGER_NM AS CNSTN_RQST_DEPT_TMLDR_NM
+			, (CASE WHEN A.REVIEW_STATUS_CD = 1000 THEN '과장'
+					WHEN A.REVIEW_STATUS_CD = 2000 THEN '팀장'
+					ELSE ''
+				END) AS RQST_DEPT_LAST_APRVR_JBPS_NM
+			, TO_CHAR(TO_DATE(SUBSTR(A.CRT_DTTM, 1, 10), 'RR/MM/DD'), 'YYYYMMDD') AS CNSTN_RQST_REG_YMD
+			, TO_CHAR(TO_DATE(SUBSTR(A.CRT_DTTM, 1, 10), 'RR/MM/DD'), 'YYYYMMDD') AS CNSTN_RQST_YMD
+			, A.REQUEST_PURPOSE_CNTN AS CNSTN_RQST_CN
+			, A.REQUEST_SUMMARY_CNTN AS CNSTN_RQST_SUBST_CN
+			, '' AS RMRK_CN
+			, A.REPLY_WISH_DTTM AS CNSTN_HOPE_RPLY_YMD
+			, TO_CHAR(TO_DATE(SUBSTR(A.CRT_DTTM, 1, 10), 'RR/MM/DD'), 'YYYYMMDD') AS CNSTN_RCPT_YMD -- tobe에서는 자문의 접수요청을 받아들인 일자를 자문접수일자로 하려고 했느데 asis에는 해당 값이 없어서.. AS의 등록일시를 일단 넣얻줌.. 빈값으로 해야할지?
+			, A.STAFF_USER_ID AS CNSTN_TKCG_EMP_NO
+			, D.STAFF_NM AS CNSTN_TKCG_EMP_NM
+			, '' AS CNSTN_RPLY_YMD -- 자문회신일자도 없는듯
+			, TO_CHAR(TO_DATE(SUBSTR(A.APPROVAL_DTTM, 1, 10), 'RR/MM/DD'), 'YYYYMMDD') AS CNSTN_CMPTN_YMD -- 자문완료일자도 애매한데, 대리님은 완료일자에 넣어주신것 같아서 일단 이쪽으로 넣어줌, APPROVAL_DTTM가 어떤 날짜인지 확인 더 필요
+			, '' AS PRVT_SRCH_KYWD_CN --비공개검색키워드
+			, (CASE WHEN A.EMERGENCY_STATUS_CD = 1000 THEN 'N'
+					WHEN A.EMERGENCY_STATUS_CD = 2000 THEN 'Y'
+					ELSE ''
+				END) AS EMRG_YN
+			, '' AS EMRG_RSN
+			, 'N' AS DEL_YN
+			, B.MANAGER_NM AS WRTR_EMP_NM
+			, A.CRT_USER_ID AS WRTR_EMP_NO
+			, TO_CHAR(TO_DATE(SUBSTR(A.CRT_DTTM, 1, 10), 'RR/MM/DD'), 'YYYYMMDD') AS WRT_YMD
+			, B.MANAGER_DEPT_NM  AS WRT_DEPT_NM
+			, A.STAFF_ORG_CODE AS WRT_DEPT_NO
+			, B.MANAGER_NM AS MDFCN_EMP_NM
+			, A.CRT_USER_ID AS MDFCN_EMP_NO
+			, TO_CHAR(TO_DATE(SUBSTR(A.CRT_DTTM, 1, 10), 'RR/MM/DD'), 'YYYYMMDD') AS MDFCN_YMD
+			, B.MANAGER_DEPT_NM  AS MDFCN_DEPT_NM
+			, A.STAFF_ORG_CODE AS MDFCN_DEPT_NO
+			, '' AS EXCL_DMND_JDAF_CORP_NM
+			, '' AS DSCSN_TYPE_NM
+			, '' AS CNSTN_SE_NM
+			, (CASE WHEN A.REQUEST_WAY_CD = 1000 THEN NULL
+					ELSE 
+						(CASE WHEN A.REVIEW_COMMENT_CNTN IS NULL OR TRIM(A.REVIEW_COMMENT_CNTN) = '' THEN NULL
+								ELSE A.REVIEW_COMMENT_CNTN
+						END) 
+			END
+			) AS CNSTN_ANS_RVW_OPNN_CN
+			, A.REVIEW_COMMENT_CNTN AS RVW_OPNN_CN
+			, '' AS RVW_OPNN_REG_YMD
+			
+			, A.STAFF_USER_ID AS RVW_TKCG_EMP_NO
+			, D.STAFF_NM AS RVW_TKCG_EMP_NM
+
+			, A.OPEN_YN
+			
+<!-- 		아래는 ASIS에는 있지만 TOBE에는 없는 값들로 넣어야하는지 검토 필요한 부분 -->
+			, A.TLNO
+			, A.LAWYER_REVIEW_CD
+			, A.REF_DOCNO_ATTR
+			, A.CRT_IP
+			, A.CHG_DTTM
+			, A.CHG_USER_ID
+			, A.CHG_IP
+			, (CASE WHEN A.REQUEST_GUBUN_CD = 1000 THEN '법률자문' -- 기본 자문 의뢰 데이터?
+					WHEN A.REQUEST_GUBUN_CD = 2000 THEN '자문사례' -- 참고자료 메뉴의 법률자문 사례모음 메뉴의 데이터?
+					WHEN A.REQUEST_GUBUN_CD = 3000 THEN '자문과거자료' -- 자문 과거자료 메뉴의 데이터?
+					WHEN A.REQUEST_GUBUN_CD = 5000 THEN '의회동의필요여부' -- 의회동의 필요여부에 대한 자문 데이터?
+					ELSE ''
+				END) AS REQUEST_GUBUN_CD
+			, A.CASE_SEND_YN -- '사례전송여부(메일)' : Y,N으로 들어가 있음,사용 안하는 값일 것 같음 / 대리님께서도 미사용이라고 적어두심.
+			, A.CASE_TYPE_CD -- '사례유형코드' : null 이랑 "공탁" 만 있음,사용 안하는 값일 것 같음 / 대리님께서도 미사용이라고 적어두심.
+			, A.CNTN -- 협약에 관련된 값인 것 같음. 값이 들어가있는게 146개 밖에 안된다..
+			, A.REQ_TYPE -- LAW와 CONT로 들어가있음.
+		FROM 
+			LA_REQUEST A  
+			LEFT JOIN (SELECT * FROM LA_REQUEST_MANAGER WHERE MANAGER_GUBUN_CD = 1000) B ON A.REQUEST_SQNO = B.REQUEST_SQNO
+			LEFT JOIN (SELECT * FROM LA_REQUEST_MANAGER WHERE MANAGER_GUBUN_CD = 2000) C ON A.REQUEST_SQNO = C.REQUEST_SQNO
+			LEFT JOIN LA_STAFF D ON A.STAFF_USER_ID = D.STAFF_USER_ID
+		WHERE 
+			A.REQUEST_GUBUN_CD = '1000' 
+			AND 
+			A.REQUEST_STATUS_CD != '9999' 
+			AND 
+			A.REQ_TYPE = 'LAW'
+		ORDER BY A.REQUEST_SQNO, A.CRT_DTTM
+		) TMP
+<!-- 		WHERE 101 > ROWNUM -->
+	</select>
+	
+	<select id="getConsultInfo2" resultType="HashMap">
+		/* oldDataSql.getConsultInfo2_자문과거자료*/
+		SELECT
+			CNSTN_MNG_NO
+			, MENU_MNG_NO
+			, CNSTN_DOC_NO
+			, PRGRS_STTS_SE_NM
+			, REQUEST_STATUS_CD
+			, RLS_YN
+			, INSD_OTSD_TASK_SE
+			, OTSD_RQST_RSN
+			, CNSTN_TTL
+			, CNSTN_RQST_EMP_NO
+			, CNSTN_RQST_EMP_NM
+			, CNSTN_RQST_DEPT_NO
+			, CNSTN_RQST_DEPT_NM
+			, CNSTN_RQST_DEPT_TMLDR_EMP_NO
+			, CNSTN_RQST_DEPT_TMLDR_NM
+			, RQST_DEPT_LAST_APRVR_JBPS_NM
+			, CNSTN_RQST_REG_YMD
+			, CNSTN_RQST_YMD
+			, CNSTN_RQST_CN
+			, CNSTN_RQST_SUBST_CN
+			, RMRK_CN
+			, CNSTN_HOPE_RPLY_YMD
+			, CNSTN_RCPT_YMD
+			, CNSTN_TKCG_EMP_NO
+			, CNSTN_TKCG_EMP_NM
+			, CNSTN_RPLY_YMD
+			, CNSTN_CMPTN_YMD
+			, PRVT_SRCH_KYWD_CN
+			, EMRG_YN
+			, EMRG_RSN
+			, DEL_YN
+			, WRTR_EMP_NM
+			, WRTR_EMP_NO
+			, WRT_YMD
+			, WRT_DEPT_NM
+			, WRT_DEPT_NO
+			, MDFCN_EMP_NM
+			, MDFCN_EMP_NO
+			, MDFCN_YMD
+			, MDFCN_DEPT_NM
+			, MDFCN_DEPT_NO
+			, EXCL_DMND_JDAF_CORP_NM
+			, DSCSN_TYPE_NM
+			, CNSTN_SE_NM
+			, CNSTN_ANS_RVW_OPNN_CN
+			, RVW_OPNN_CN
+			, RVW_OPNN_REG_YMD
+			
+			, RVW_TKCG_EMP_NO -- 검토담당자 위한 값
+			, RVW_TKCG_EMP_NM -- 검토담당자 위한 값
+
+			, OPEN_YN -- 사용여부
+		FROM
+			(
+			SELECT 
+			A.REQUEST_SQNO AS CNSTN_MNG_NO
+			, '100003231' AS MENU_MNG_NO
+			, A.DOCNO_NM AS CNSTN_DOC_NO
+			, (CASE WHEN A.REQUEST_STATUS_CD = 1000 THEN '법률자문 의뢰'
+					WHEN A.REQUEST_STATUS_CD = 1100 THEN '접수대기'
+					WHEN A.REQUEST_STATUS_CD = 1200 THEN '내부검토중'
+					WHEN A.REQUEST_STATUS_CD = 1300 THEN '외부검토중'
+					WHEN A.REQUEST_STATUS_CD = 1400 THEN '과장결재중'
+					WHEN A.REQUEST_STATUS_CD = 1410 THEN '팀장결재중'
+<!-- 					WHEN A.REQUEST_STATUS_CD = '1400' OR A.REQUEST_STATUS_CD = '1410' THEN '결재중' -->
+					WHEN A.REQUEST_STATUS_CD = 1500 THEN '철회'
+<!-- 					WHEN A.REQUEST_STATUS_CD = 1600 THEN '종료-과장' -->
+<!-- 					WHEN A.REQUEST_STATUS_CD = 1610 THEN '종료-팀장' -->
+					WHEN A.REQUEST_STATUS_CD = '1600' OR A.REQUEST_STATUS_CD = '1610' THEN '완료'
+					WHEN A.REQUEST_STATUS_CD = 9999 THEN '9999'
+					ELSE ''
+			END) AS PRGRS_STTS_SE_NM
+			, A.REQUEST_STATUS_CD AS REQUEST_STATUS_CD
+			, (CASE WHEN A.VIEW_CD = 1000 THEN 'Y'
+					WHEN A.VIEW_CD = 1100 THEN 'N'
+					ELSE 'N'
+				END) AS RLS_YN
+			, (CASE WHEN A.REQUEST_WAY_CD = 1000 THEN 'I'
+					WHEN A.REQUEST_WAY_CD = 2000 THEN 'O'
+					WHEN A.REQUEST_WAY_CD = 3000 THEN ''
+					WHEN A.REQUEST_WAY_CD = 1010 THEN '1010'
+					WHEN A.REQUEST_WAY_CD = 1200 THEN '1200'
+					WHEN A.REQUEST_WAY_CD = 1300 THEN '1300'
+					ELSE ''
+				END) AS INSD_OTSD_TASK_SE
+			, (CASE WHEN A.REQUEST_WAY_SUB_CD = 1000 THEN '특수분야 전문지식 필요'
+				WHEN A.REQUEST_WAY_SUB_CD = 2000 THEN '외부의 객관적 시각 필요'
+				WHEN A.REQUEST_WAY_SUB_CD = 3000 THEN '기타'
+				ELSE ''
+			END) AS OTSD_RQST_RSN
+			, A.REQUEST_NM AS CNSTN_TTL
+			, A.CRT_USER_ID AS CNSTN_RQST_EMP_NO
+			, B.MANAGER_NM AS CNSTN_RQST_EMP_NM
+			, B.MANAGER_DEPT_CD AS CNSTN_RQST_DEPT_NO
+			, B.MANAGER_DEPT_NM  AS CNSTN_RQST_DEPT_NM
+			, C.CRT_USER_ID AS CNSTN_RQST_DEPT_TMLDR_EMP_NO
+			, C.MANAGER_NM AS CNSTN_RQST_DEPT_TMLDR_NM
+			, (CASE WHEN A.REVIEW_STATUS_CD = 1000 THEN '과장'
+					WHEN A.REVIEW_STATUS_CD = 2000 THEN '팀장'
+					ELSE ''
+				END) AS RQST_DEPT_LAST_APRVR_JBPS_NM
+			, TO_CHAR(TO_DATE(SUBSTR(A.CRT_DTTM, 1, 10), 'RR/MM/DD'), 'YYYYMMDD') AS CNSTN_RQST_REG_YMD
+			, TO_CHAR(TO_DATE(SUBSTR(A.CRT_DTTM, 1, 10), 'RR/MM/DD'), 'YYYYMMDD') AS CNSTN_RQST_YMD
+			, A.REQUEST_PURPOSE_CNTN AS CNSTN_RQST_CN
+			, A.REQUEST_SUMMARY_CNTN AS CNSTN_RQST_SUBST_CN
+			, '' AS RMRK_CN
+			, A.REPLY_WISH_DTTM AS CNSTN_HOPE_RPLY_YMD
+			, TO_CHAR(TO_DATE(SUBSTR(A.CRT_DTTM, 1, 10), 'RR/MM/DD'), 'YYYYMMDD') AS CNSTN_RCPT_YMD -- tobe에서는 자문의 접수요청을 받아들인 일자를 자문접수일자로 하려고 했느데 asis에는 해당 값이 없어서.. AS의 등록일시를 일단 넣얻줌.. 빈값으로 해야할지?
+			, A.STAFF_USER_ID AS CNSTN_TKCG_EMP_NO
+			, D.STAFF_NM AS CNSTN_TKCG_EMP_NM
+			, '' AS CNSTN_RPLY_YMD -- 자문회신일자도 없는듯
+			, TO_CHAR(TO_DATE(SUBSTR(A.APPROVAL_DTTM, 1, 10), 'RR/MM/DD'), 'YYYYMMDD') AS CNSTN_CMPTN_YMD -- 자문완료일자도 애매한데, 대리님은 완료일자에 넣어주신것 같아서 일단 이쪽으로 넣어줌, APPROVAL_DTTM가 어떤 날짜인지 확인 더 필요
+			, '' AS PRVT_SRCH_KYWD_CN --비공개검색키워드
+			, (CASE WHEN A.EMERGENCY_STATUS_CD = 1000 THEN 'N'
+					WHEN A.EMERGENCY_STATUS_CD = 2000 THEN 'Y'
+					ELSE ''
+				END) AS EMRG_YN
+			, '' AS EMRG_RSN
+			, 'N' AS DEL_YN
+			, B.MANAGER_NM AS WRTR_EMP_NM
+			, A.CRT_USER_ID AS WRTR_EMP_NO
+			, TO_CHAR(TO_DATE(SUBSTR(A.CRT_DTTM, 1, 10), 'RR/MM/DD'), 'YYYYMMDD') AS WRT_YMD
+			, B.MANAGER_DEPT_NM  AS WRT_DEPT_NM
+			, A.STAFF_ORG_CODE AS WRT_DEPT_NO
+			, B.MANAGER_NM AS MDFCN_EMP_NM
+			, A.CRT_USER_ID AS MDFCN_EMP_NO
+			, TO_CHAR(TO_DATE(SUBSTR(A.CRT_DTTM, 1, 10), 'RR/MM/DD'), 'YYYYMMDD') AS MDFCN_YMD
+			, B.MANAGER_DEPT_NM  AS MDFCN_DEPT_NM
+			, A.STAFF_ORG_CODE AS MDFCN_DEPT_NO
+			, '' AS EXCL_DMND_JDAF_CORP_NM
+			, '' AS DSCSN_TYPE_NM
+			, '' AS CNSTN_SE_NM
+			, (CASE WHEN A.REQUEST_WAY_CD = 1000 THEN NULL
+					ELSE 
+						(CASE WHEN A.REVIEW_COMMENT_CNTN IS NULL OR TRIM(A.REVIEW_COMMENT_CNTN) = '' THEN NULL
+								ELSE A.REVIEW_COMMENT_CNTN
+						END) 
+			END
+			) AS CNSTN_ANS_RVW_OPNN_CN
+			, A.REVIEW_COMMENT_CNTN AS RVW_OPNN_CN
+			, '' AS RVW_OPNN_REG_YMD
+			
+			, A.STAFF_USER_ID AS RVW_TKCG_EMP_NO
+			, D.STAFF_NM AS RVW_TKCG_EMP_NM
+
+			
+			, A.OPEN_YN
+
+<!-- 		아래는 ASIS에는 있지만 TOBE에는 없는 값들로 넣어야하는지 검토 필요한 부분 -->
+			, A.TLNO
+			, A.LAWYER_REVIEW_CD
+			, A.REF_DOCNO_ATTR
+			, A.CRT_IP
+			, A.CHG_DTTM
+			, A.CHG_USER_ID
+			, A.CHG_IP
+			, (CASE WHEN A.REQUEST_GUBUN_CD = 1000 THEN '법률자문' -- 기본 자문 의뢰 데이터?
+					WHEN A.REQUEST_GUBUN_CD = 2000 THEN '자문사례' -- 참고자료 메뉴의 법률자문 사례모음 메뉴의 데이터?
+					WHEN A.REQUEST_GUBUN_CD = 3000 THEN '자문과거자료' -- 자문 과거자료 메뉴의 데이터?
+					WHEN A.REQUEST_GUBUN_CD = 5000 THEN '의회동의필요여부' -- 의회동의 필요여부에 대한 자문 데이터?
+					ELSE ''
+				END) AS REQUEST_GUBUN_CD
+			, A.CASE_SEND_YN -- '사례전송여부(메일)' : Y,N으로 들어가 있음,사용 안하는 값일 것 같음 / 대리님께서도 미사용이라고 적어두심.
+			, A.CASE_TYPE_CD -- '사례유형코드' : null 이랑 "공탁" 만 있음,사용 안하는 값일 것 같음 / 대리님께서도 미사용이라고 적어두심.
+			, A.CNTN -- 협약에 관련된 값인 것 같음. 값이 들어가있는게 146개 밖에 안된다..
+			, A.REQ_TYPE -- LAW와 CONT로 들어가있음.
+		FROM 
+			LA_REQUEST A  
+			LEFT JOIN (SELECT * FROM LA_REQUEST_MANAGER WHERE MANAGER_GUBUN_CD = 1000) B ON A.REQUEST_SQNO = B.REQUEST_SQNO
+			LEFT JOIN (SELECT * FROM LA_REQUEST_MANAGER WHERE MANAGER_GUBUN_CD = 2000) C ON A.REQUEST_SQNO = C.REQUEST_SQNO
+			LEFT JOIN LA_STAFF D ON A.STAFF_USER_ID = D.STAFF_USER_ID
+		WHERE 
+			A.REQUEST_GUBUN_CD = '3000'
+		ORDER BY A.REQUEST_SQNO, A.CRT_DTTM
+		) TMP
+<!-- 		WHERE 11 > ROWNUM -->
+	</select>
+	
+	<select id="getConsultInfo3" resultType="HashMap"> 
+<!-- 	데이터 조회해보고 나오는 결과 좀 분석해서 올바르게 들어가도록 해주기 -->
+		/* oldDataSql.getConsultInfo3_자문사례*/
+		SELECT
+			CNSTN_MNG_NO
+			, MENU_MNG_NO
+			, CNSTN_DOC_NO
+			, PRGRS_STTS_SE_NM
+			, REQUEST_STATUS_CD
+			, RLS_YN
+			, INSD_OTSD_TASK_SE
+			, OTSD_RQST_RSN
+			, CNSTN_TTL
+			, CNSTN_RQST_EMP_NO
+			, CNSTN_RQST_EMP_NM
+			, CNSTN_RQST_DEPT_NO
+			, CNSTN_RQST_DEPT_NM
+			, CNSTN_RQST_DEPT_TMLDR_EMP_NO
+			, CNSTN_RQST_DEPT_TMLDR_NM
+			, RQST_DEPT_LAST_APRVR_JBPS_NM
+			, CNSTN_RQST_REG_YMD
+			, CNSTN_RQST_YMD
+			, CNSTN_RQST_CN
+			, CNSTN_RQST_SUBST_CN
+			, RMRK_CN
+			, CNSTN_HOPE_RPLY_YMD
+			, CNSTN_RCPT_YMD
+			, CNSTN_TKCG_EMP_NO
+			, CNSTN_TKCG_EMP_NM
+			, CNSTN_RPLY_YMD
+			, CNSTN_CMPTN_YMD
+			, PRVT_SRCH_KYWD_CN
+			, EMRG_YN
+			, EMRG_RSN
+			, DEL_YN
+			, WRTR_EMP_NM
+			, WRTR_EMP_NO
+			, WRT_YMD
+			, WRT_DEPT_NM
+			, WRT_DEPT_NO
+			, MDFCN_EMP_NM
+			, MDFCN_EMP_NO
+			, MDFCN_YMD
+			, MDFCN_DEPT_NM
+			, MDFCN_DEPT_NO
+			, EXCL_DMND_JDAF_CORP_NM
+			, DSCSN_TYPE_NM
+			, CNSTN_SE_NM
+			, CNSTN_ANS_RVW_OPNN_CN
+			, RVW_OPNN_CN
+			, RVW_OPNN_REG_YMD
+			
+			, RVW_TKCG_EMP_NO -- 검토담당자 위한 값
+			, RVW_TKCG_EMP_NM -- 검토담당자 위한 값
+
+			, OPEN_YN -- 사용여부
+		FROM
+			(
+			SELECT 
+			A.REQUEST_SQNO AS CNSTN_MNG_NO
+			, '100000131' AS MENU_MNG_NO
+			, '자문사례-'||A.DOCNO_NM AS CNSTN_DOC_NO
+			, (CASE WHEN A.REQUEST_STATUS_CD = 1000 THEN '법률자문 의뢰'
+					WHEN A.REQUEST_STATUS_CD = 1100 THEN '접수대기'
+					WHEN A.REQUEST_STATUS_CD = 1200 THEN '내부검토중'
+					WHEN A.REQUEST_STATUS_CD = 1300 THEN '외부검토중'
+					WHEN A.REQUEST_STATUS_CD = 1400 THEN '과장결재중'
+					WHEN A.REQUEST_STATUS_CD = 1410 THEN '팀장결재중'
+<!-- 					WHEN A.REQUEST_STATUS_CD = '1400' OR A.REQUEST_STATUS_CD = '1410' THEN '결재중' -->
+					WHEN A.REQUEST_STATUS_CD = 1500 THEN '철회'
+<!-- 					WHEN A.REQUEST_STATUS_CD = 1600 THEN '종료-과장' -->
+<!-- 					WHEN A.REQUEST_STATUS_CD = 1610 THEN '종료-팀장' -->
+					WHEN A.REQUEST_STATUS_CD = '1600' OR A.REQUEST_STATUS_CD = '1610' THEN '완료'
+					WHEN A.REQUEST_STATUS_CD = 9999 THEN '9999'
+					ELSE ''
+			END) AS PRGRS_STTS_SE_NM
+			, A.REQUEST_STATUS_CD AS REQUEST_STATUS_CD
+			, (CASE WHEN A.VIEW_CD = 1000 THEN 'Y'
+					WHEN A.VIEW_CD = 1100 THEN 'N'
+					ELSE 'Y'
+				END) AS RLS_YN
+			, (CASE WHEN A.REQUEST_WAY_CD = 1000 THEN 'I'
+					WHEN A.REQUEST_WAY_CD = 2000 THEN 'O'
+					WHEN A.REQUEST_WAY_CD = 3000 THEN ''
+					WHEN A.REQUEST_WAY_CD = 1010 THEN '1010'
+					WHEN A.REQUEST_WAY_CD = 1200 THEN '1200'
+					WHEN A.REQUEST_WAY_CD = 1300 THEN '1300'
+					ELSE ''
+				END) AS INSD_OTSD_TASK_SE
+			, (CASE WHEN A.REQUEST_WAY_SUB_CD = 1000 THEN '특수분야 전문지식 필요'
+				WHEN A.REQUEST_WAY_SUB_CD = 2000 THEN '외부의 객관적 시각 필요'
+				WHEN A.REQUEST_WAY_SUB_CD = 3000 THEN '기타'
+				ELSE ''
+			END) AS OTSD_RQST_RSN
+			, A.REQUEST_NM AS CNSTN_TTL
+			, A.CRT_USER_ID AS CNSTN_RQST_EMP_NO
+			, B.MANAGER_NM AS CNSTN_RQST_EMP_NM
+			, B.MANAGER_DEPT_CD AS CNSTN_RQST_DEPT_NO
+			, B.MANAGER_DEPT_NM  AS CNSTN_RQST_DEPT_NM
+			, C.CRT_USER_ID AS CNSTN_RQST_DEPT_TMLDR_EMP_NO
+			, C.MANAGER_NM AS CNSTN_RQST_DEPT_TMLDR_NM
+			, (CASE WHEN A.REVIEW_STATUS_CD = 1000 THEN '과장'
+					WHEN A.REVIEW_STATUS_CD = 2000 THEN '팀장'
+					ELSE ''
+				END) AS RQST_DEPT_LAST_APRVR_JBPS_NM
+			, TO_CHAR(TO_DATE(SUBSTR(A.CRT_DTTM, 1, 10), 'RR/MM/DD'), 'YYYYMMDD') AS CNSTN_RQST_REG_YMD
+			, TO_CHAR(TO_DATE(SUBSTR(A.CRT_DTTM, 1, 10), 'RR/MM/DD'), 'YYYYMMDD') AS CNSTN_RQST_YMD
+			, A.REQUEST_PURPOSE_CNTN AS CNSTN_RQST_CN
+			, A.REQUEST_SUMMARY_CNTN AS CNSTN_RQST_SUBST_CN
+			, '' AS RMRK_CN
+			, A.REPLY_WISH_DTTM AS CNSTN_HOPE_RPLY_YMD
+			, TO_CHAR(TO_DATE(SUBSTR(A.CRT_DTTM, 1, 10), 'RR/MM/DD'), 'YYYYMMDD') AS CNSTN_RCPT_YMD -- tobe에서는 자문의 접수요청을 받아들인 일자를 자문접수일자로 하려고 했느데 asis에는 해당 값이 없어서.. AS의 등록일시를 일단 넣얻줌.. 빈값으로 해야할지?
+			, A.STAFF_USER_ID AS CNSTN_TKCG_EMP_NO
+			, D.STAFF_NM AS CNSTN_TKCG_EMP_NM
+			, '' AS CNSTN_RPLY_YMD -- 자문회신일자도 없는듯
+			, TO_CHAR(TO_DATE(SUBSTR(A.APPROVAL_DTTM, 1, 10), 'RR/MM/DD'), 'YYYYMMDD') AS CNSTN_CMPTN_YMD -- 자문완료일자도 애매한데, 대리님은 완료일자에 넣어주신것 같아서 일단 이쪽으로 넣어줌, APPROVAL_DTTM가 어떤 날짜인지 확인 더 필요
+			, '' AS PRVT_SRCH_KYWD_CN --비공개검색키워드
+			, (CASE WHEN A.EMERGENCY_STATUS_CD = 1000 THEN 'N'
+					WHEN A.EMERGENCY_STATUS_CD = 2000 THEN 'Y'
+					ELSE ''
+				END) AS EMRG_YN
+			, '' AS EMRG_RSN
+			, 'N' AS DEL_YN
+			, B.MANAGER_NM AS WRTR_EMP_NM
+			, A.CRT_USER_ID AS WRTR_EMP_NO
+			, TO_CHAR(TO_DATE(SUBSTR(A.CRT_DTTM, 1, 10), 'RR/MM/DD'), 'YYYYMMDD') AS WRT_YMD
+			, B.MANAGER_DEPT_NM  AS WRT_DEPT_NM
+			, A.STAFF_ORG_CODE AS WRT_DEPT_NO
+			, B.MANAGER_NM AS MDFCN_EMP_NM
+			, A.CRT_USER_ID AS MDFCN_EMP_NO
+			, TO_CHAR(TO_DATE(SUBSTR(A.CRT_DTTM, 1, 10), 'RR/MM/DD'), 'YYYYMMDD') AS MDFCN_YMD
+			, B.MANAGER_DEPT_NM  AS MDFCN_DEPT_NM
+			, A.STAFF_ORG_CODE AS MDFCN_DEPT_NO
+			, '' AS EXCL_DMND_JDAF_CORP_NM
+			, '' AS DSCSN_TYPE_NM
+			, '' AS CNSTN_SE_NM
+			, A.REVIEW_COMMENT_CNTN AS CNSTN_ANS_RVW_OPNN_CN -- 검토의견내용 컬럼
+			, A.REVIEW_COMMENT_CNTN AS RVW_OPNN_CN
+			, '' AS RVW_OPNN_REG_YMD
+			
+			, A.STAFF_USER_ID AS RVW_TKCG_EMP_NO
+			, D.STAFF_NM AS RVW_TKCG_EMP_NM
+
+			
+			, A.OPEN_YN
+
+<!-- 		아래는 ASIS에는 있지만 TOBE에는 없는 값들로 넣어야하는지 검토 필요한 부분 -->
+			, A.TLNO
+			, A.LAWYER_REVIEW_CD
+			, A.REF_DOCNO_ATTR
+			, A.CRT_IP
+			, A.CHG_DTTM
+			, A.CHG_USER_ID
+			, A.CHG_IP
+			, (CASE WHEN A.REQUEST_GUBUN_CD = 1000 THEN '법률자문' -- 기본 자문 의뢰 데이터?
+					WHEN A.REQUEST_GUBUN_CD = 2000 THEN '자문사례' -- 참고자료 메뉴의 법률자문 사례모음 메뉴의 데이터?
+					WHEN A.REQUEST_GUBUN_CD = 3000 THEN '자문과거자료' -- 자문 과거자료 메뉴의 데이터?
+					WHEN A.REQUEST_GUBUN_CD = 5000 THEN '의회동의필요여부' -- 의회동의 필요여부에 대한 자문 데이터?
+					ELSE ''
+				END) AS REQUEST_GUBUN_CD
+			, A.CASE_SEND_YN -- '사례전송여부(메일)' : Y,N으로 들어가 있음,사용 안하는 값일 것 같음 / 대리님께서도 미사용이라고 적어두심.
+			, A.CASE_TYPE_CD -- '사례유형코드' : null 이랑 "공탁" 만 있음,사용 안하는 값일 것 같음 / 대리님께서도 미사용이라고 적어두심.
+			, A.CNTN -- 협약에 관련된 값인 것 같음. 값이 들어가있는게 146개 밖에 안된다..
+			, A.REQ_TYPE -- LAW와 CONT로 들어가있음.
+		FROM 
+			LA_REQUEST A  
+			LEFT JOIN (SELECT * FROM LA_REQUEST_MANAGER WHERE MANAGER_GUBUN_CD = 1000) B ON A.REQUEST_SQNO = B.REQUEST_SQNO
+			LEFT JOIN (SELECT * FROM LA_REQUEST_MANAGER WHERE MANAGER_GUBUN_CD = 2000) C ON A.REQUEST_SQNO = C.REQUEST_SQNO
+			LEFT JOIN LA_STAFF D ON A.STAFF_USER_ID = D.STAFF_USER_ID
+		WHERE 
+			A.REQUEST_GUBUN_CD = '2000'
+		ORDER BY A.REQUEST_SQNO, A.CRT_DTTM
+		) TMP
+<!-- 		WHERE 11 > ROWNUM -->
+	</select>
+	
+	<insert id="insertConsultInfo1" parameterType="HashMap">
+		/* oldDataSql."insertConsultInfo1" */
+		INSERT INTO TB_CNSTN_MNG (
+			CNSTN_MNG_NO
+			, MENU_MNG_NO
+			, CNSTN_DOC_NO
+			, PRGRS_STTS_SE_NM
+			, RLS_YN
+			, INSD_OTSD_TASK_SE
+			, OTSD_RQST_RSN
+			, CNSTN_TTL
+			, CNSTN_RQST_EMP_NO
+			, CNSTN_RQST_EMP_NM
+			, CNSTN_RQST_DEPT_NO
+			, CNSTN_RQST_DEPT_NM
+			, CNSTN_RQST_DEPT_TMLDR_EMP_NO
+			, CNSTN_RQST_DEPT_TMLDR_NM
+			, RQST_DEPT_LAST_APRVR_JBPS_NM
+			, CNSTN_RQST_REG_YMD
+			, CNSTN_RQST_YMD
+			, CNSTN_RQST_CN
+			, CNSTN_RQST_SUBST_CN
+			, RMRK_CN
+			, CNSTN_HOPE_RPLY_YMD
+			, CNSTN_RCPT_YMD
+			, CNSTN_TKCG_EMP_NO
+			, CNSTN_TKCG_EMP_NM
+			, CNSTN_RPLY_YMD
+			, CNSTN_CMPTN_YMD
+			, PRVT_SRCH_KYWD_CN
+			, EMRG_YN
+			, EMRG_RSN
+			, DEL_YN
+			, WRTR_EMP_NM
+			, WRTR_EMP_NO
+			, WRT_YMD
+			, WRT_DEPT_NM
+			, WRT_DEPT_NO
+			, MDFCN_EMP_NM
+			, MDFCN_EMP_NO
+			, MDFCN_YMD
+			, MDFCN_DEPT_NM
+			, MDFCN_DEPT_NO
+			, EXCL_DMND_JDAF_CORP_NM
+			, DSCSN_TYPE_NM
+			, CNSTN_SE_NM
+			, CNSTN_ANS_RVW_OPNN_CN
+			, RVW_OPNN_REG_YMD
+			, OPEN_YN
+		) VALUES (
+			#{CNSTN_MNG_NO}
+			, #{MENU_MNG_NO}
+			, #{CNSTN_DOC_NO}
+			, #{PRGRS_STTS_SE_NM}
+			, #{RLS_YN}
+			, #{INSD_OTSD_TASK_SE}
+			, #{OTSD_RQST_RSN}
+			, #{CNSTN_TTL}
+			, #{CNSTN_RQST_EMP_NO}
+			, #{CNSTN_RQST_EMP_NM}
+			, #{CNSTN_RQST_DEPT_NO}
+			, #{CNSTN_RQST_DEPT_NM}
+			, #{CNSTN_RQST_DEPT_TMLDR_EMP_NO}
+			, #{CNSTN_RQST_DEPT_TMLDR_NM}
+			, #{RQST_DEPT_LAST_APRVR_JBPS_NM}
+			, #{CNSTN_RQST_REG_YMD}
+			, #{CNSTN_RQST_YMD}
+			, #{CNSTN_RQST_CN}
+			, #{CNSTN_RQST_SUBST_CN}
+			, #{RMRK_CN}
+			, #{CNSTN_HOPE_RPLY_YMD}
+			, #{CNSTN_RCPT_YMD}
+			, #{CNSTN_TKCG_EMP_NO}
+			, #{CNSTN_TKCG_EMP_NM}
+			, #{CNSTN_RPLY_YMD}
+			, #{CNSTN_CMPTN_YMD}
+			, #{PRVT_SRCH_KYWD_CN}
+			, #{EMRG_YN}
+			, #{EMRG_RSN}
+			, #{DEL_YN}
+			, #{WRTR_EMP_NM}
+			, #{WRTR_EMP_NO}
+			, #{WRT_YMD}
+			, #{WRT_DEPT_NM}
+			, #{WRT_DEPT_NO}
+			, #{MDFCN_EMP_NM}
+			, #{MDFCN_EMP_NO}
+			, #{MDFCN_YMD}
+			, #{MDFCN_DEPT_NM}
+			, #{MDFCN_DEPT_NO}
+			, #{EXCL_DMND_JDAF_CORP_NM}
+			, #{DSCSN_TYPE_NM}
+			, #{CNSTN_SE_NM}
+			, #{CNSTN_ANS_RVW_OPNN_CN}
+			, #{RVW_OPNN_REG_YMD}
+			, #{OPEN_YN}
+		)
+	</insert>
+	
+	<insert id="insertConsultRvwPic1" parameterType="HashMap">
+		/* oldDataSql.insertConsultRvwPic1 */
+<!-- 		<selectKey keyProperty="RVW_TKCG_MNG_NO" resultType="String" order="BEFORE"> -->
+<!-- 			SELECT KEYID.NEXTVAL FROM DUAL -->
+<!-- 		</selectKey> -->
+		INSERT INTO TB_CNSTN_RVW_PIC (
+			RVW_TKCG_MNG_NO
+			, CNSTN_MNG_NO
+			, RVW_OPNN_MNG_NO
+			, INSD_OTSD_TASK_SE
+			, RVW_TKCG_EMP_NO
+			, RVW_TKCG_EMP_NM
+			, DEL_YN
+			, WRTR_EMP_NM
+			, WRTR_EMP_NO
+			, WRT_YMD
+			, WRT_DEPT_NM
+			, WRT_DEPT_NO
+			, MDFCN_EMP_NM
+			, MDFCN_EMP_NO
+			, MDFCN_YMD
+			, MDFCN_DEPT_NM
+			, MDFCN_DEPT_NO
+			, PRSL_PSBLTY_YN
+		) VALUES (
+			#{RVW_TKCG_MNG_NO}
+			, #{CNSTN_MNG_NO}
+			, #{RVW_OPNN_MNG_NO}
+			, #{INSD_OTSD_TASK_SE}
+			, #{RVW_TKCG_EMP_NO}
+			, #{RVW_TKCG_EMP_NM}
+			, #{DEL_YN}
+			, #{WRTR_EMP_NM}
+			, #{WRTR_EMP_NO}
+			, #{WRT_YMD}
+			, #{WRT_DEPT_NM}
+			, #{WRT_DEPT_NO}
+			, #{MDFCN_EMP_NM}
+			, #{MDFCN_EMP_NO}
+			, #{MDFCN_YMD}
+			, #{MDFCN_DEPT_NM}
+			, #{MDFCN_DEPT_NO}
+			, 'Y'
+		)
+	</insert>
+	
+	<insert id="insertConsultRvwOpnn1" parameterType="HashMap">
+		/* oldDataSql.insertConsultRvwOpnn1 */
+<!-- 		<selectKey keyProperty="RVW_OPNN_MNG_NO" resultType="String" order="BEFORE"> -->
+<!-- 			SELECT KEYID.NEXTVAL FROM DUAL -->
+<!-- 		</selectKey> -->
+		INSERT INTO TB_CNSTN_RVW_OPNN (
+			RVW_OPNN_MNG_NO
+			, CNSTN_MNG_NO
+			, RVW_TKCG_MNG_NO
+			, RVW_OPNN_REG_YMD
+			, RVW_OPNN_CMPTN_YMD
+			, RVW_OPNN_CMPTN_YN
+			, RVW_OPNN_CN
+			, RMRK_CN
+			, DEL_YN
+			, WRTR_EMP_NM
+			, WRTR_EMP_NO
+			, WRT_YMD
+			, WRT_DEPT_NM
+			, WRT_DEPT_NO
+			, MDFCN_EMP_NM
+			, MDFCN_EMP_NO
+			, MDFCN_YMD
+			, MDFCN_DEPT_NM
+			, MDFCN_DEPT_NO
+		) VALUES (
+			#{RVW_OPNN_MNG_NO}
+			, #{CNSTN_MNG_NO}
+			, #{RVW_TKCG_MNG_NO}
+			, #{RVW_OPNN_REG_YMD}
+			, #{RVW_OPNN_CMPTN_YMD}
+			<choose>
+				<when test="REQUEST_STATUS_CD != '' and REQUEST_STATUS_CD != null and @java.lang.Integer@parseInt(REQUEST_STATUS_CD) gt 1300">
+				, 'Y'
+				</when>
+				<otherwise>
+				, 'N'
+				</otherwise>
+			</choose>
+			, #{RVW_OPNN_CN}
+			, #{RMRK_CN}
+			, 'N'
+			, #{WRTR_EMP_NM}
+			, #{WRTR_EMP_NO}
+			, #{WRT_YMD}
+			, #{WRT_DEPT_NM}
+			, #{WRT_DEPT_NO}
+			, #{MDFCN_EMP_NM}
+			, #{MDFCN_EMP_NO}
+			, #{MDFCN_YMD}
+			, #{MDFCN_DEPT_NM}
+			, #{MDFCN_DEPT_NO}
+		)
+	</insert>
+	
+	<select id="getAgreeInfo1" resultType="HashMap">
+		/* oldDataSql.getAgreeInfo1_필수심사 */
+			
+		SELECT 
+			CVTN_MNG_NO
+			, CONTRACT_REVIEW_SQNO
+			, MENU_MNG_NO
+			, CVTN_DOC_NO
+			, CVTN_INTL_DOC_NO
+			, CVTN_SE
+			, PRGRS_STTS_SE_NM
+			, RLS_YN
+			, INSD_OTSD_TASK_SE
+			, OTSD_RQST_RSN
+			, EMRG_YN
+			, EMRG_RQST_RSN
+			, CVTN_CTRT_TYPE_CD_NM
+			, CVTN_TTL
+			, CVTN_RQST_EMP_NO
+			, CVTN_RQST_EMP_NM
+			, CVTN_RQST_DEPT_NO
+			, CVTN_RQST_DEPT_NM
+			, CVTN_RQST_REG_YMD
+			, CVTN_RQST_YMD
+			, CVTN_RQST_LAST_ATRZ_JBPS_SE
+			, CVTN_RQST_LAST_APRVR_NM
+			, CVTN_RQST_LAST_APRVR_NO
+			, CVTN_RQST_CN
+			, CVTN_SRNG_DMND_CN
+			, RMRK_CN
+			, BIZ_OTLN
+			, PJTCO_CN
+			, BIZ_PRD_NM
+			, BSS_STT_CN
+			, BFHD_PRCD_IMPLT_CN
+			, MAIN_CTRT_CN
+			, HCFH_PLAN_CN
+			, CVTN_CNCLS_PRNMNT_YMD
+			, EXCL_DMND_JDAF_CORP_NM
+			, CVTN_HOPE_RPLY_YMD
+			, CVTN_RCPT_YMD
+			, CVTN_TKCG_EMP_NO
+			, CVTN_TKCG_EMP_NM
+			, CVTN_RPLY_YMD
+			, CVTN_CMPTN_YMD
+			, PRVT_SRCH_KYWD_CN
+			, RFLT_YN_RSLT_REG_YN
+			, RFLT_YN_RSLT_WRTR_EMP_NO
+			, RFLT_YN_RSLT_WRTR_EMP_NM
+			, RFLT_YN_RSLT_REG_YMD
+			, RFLT_YN_RSLT_TTL
+			, RFLT_YN_RSLT_CN
+			, DEL_YN
+			, WRTR_EMP_NM
+			, WRTR_EMP_NO
+			, WRT_YMD
+			, WRT_DEPT_NM
+			, WRT_DEPT_NO
+			, MDFCN_EMP_NM
+			, MDFCN_EMP_NO
+			, MDFCN_YMD
+			, MDFCN_DEPT_NM
+			, MDFCN_DEPT_NO
+			, AGRE_YN
+			, CVTN_ANS_RVW_OPNN_CN
+			, RVW_OPNN_REG_YMD
+			
+			, RVW_TKCG_EMP_NO -- 검토담당자 위한 값
+			, RVW_TKCG_EMP_NM -- 검토담당자 위한 값
+		FROM
+		(
+		SELECT
+			A.CONTRACT_TYPE_CD||A.CONTRACT_REVIEW_SQNO AS CVTN_MNG_NO
+			, CONTRACT_REVIEW_SQNO
+			, (CASE 
+					WHEN A.CONTRACT_TYPE_CD = '1000' THEN (SELECT Z.MENU_MNG_NO FROM TB_COM_MENU Z WHERE Z.MENU_TTL = '민간투자')
+					WHEN A.CONTRACT_TYPE_CD = '1100' THEN (SELECT Z.MENU_MNG_NO FROM TB_COM_MENU Z WHERE Z.MENU_TTL = '민간위탁')
+					WHEN A.CONTRACT_TYPE_CD = '1200' THEN (SELECT Z.MENU_MNG_NO FROM TB_COM_MENU Z WHERE Z.MENU_TTL = '일반계약') -- 이거 162건 안들어가는거 빼면 필수 심사 들어가야하는건 다 들어간다. 대리님께 일반계약 여쭤보기
+					WHEN A.CONTRACT_TYPE_CD = '1300' THEN (SELECT Z.MENU_MNG_NO FROM TB_COM_MENU Z WHERE Z.MENU_TTL = '공유재산')
+					WHEN A.CONTRACT_TYPE_CD = '1400' THEN (SELECT Z.MENU_MNG_NO FROM TB_COM_MENU Z WHERE Z.MENU_TTL = '임대차')
+					WHEN A.CONTRACT_TYPE_CD = '1500' THEN (SELECT Z.MENU_MNG_NO FROM TB_COM_MENU Z WHERE Z.MENU_TTL = '기타' AND MENU_SE_NM = 'AGREE')
+			  END) AS MENU_MNG_NO
+			, A.ACCEPTANCE_NO AS CVTN_DOC_NO -- 관리번호 컬럼인데 형식이 "2016.11.30." 이런식이다.
+			, '' AS CVTN_INTL_DOC_NO -- 없음, 전부 내부라고 했었으니까 빈값으로 넣어주기
+			, '일반' AS CVTN_SE -- 없음, 전부 내부라고 했었으니까 일반으로 넣어주기
+			, '완료' AS PRGRS_STTS_SE_NM -- 진행상태가 따로 없어서 전부 완료로 일단 넣어주기
+			, (CASE 
+					WHEN A.VIEW_CD = '1000' THEN 'Y'
+					WHEN A.VIEW_CD = '1100' THEN 'N'
+			  END) AS RLS_YN
+			, 'I' AS INSD_OTSD_TASK_SE -- 전부 내부로 보면됨
+			, '' AS OTSD_RQST_RSN -- 외부의뢰사유 없음
+			, 'N' AS EMRG_YN -- 긴급여부도 없음
+			, '' AS EMRG_RQST_RSN -- 긴급여부사유도 없음
+			, (CASE 
+					WHEN A.CONTRACT_TYPE_CD = '1000' THEN '민간투자'
+					WHEN A.CONTRACT_TYPE_CD = '1100' THEN '민간위탁'
+					WHEN A.CONTRACT_TYPE_CD = '1200' THEN '일반계약'
+					WHEN A.CONTRACT_TYPE_CD = '1300' THEN '공유재산'
+					WHEN A.CONTRACT_TYPE_CD = '1400' THEN '임대차'
+					WHEN A.CONTRACT_TYPE_CD = '1500' THEN '기타'
+			  END) AS CVTN_CTRT_TYPE_CD_NM
+			, A.CONTRACT_REVIEW_NM AS CVTN_TTL
+			, A.CRT_USER_ID AS CVTN_RQST_EMP_NO
+			, B.STAFF_NM AS CVTN_RQST_EMP_NM
+			, '' AS CVTN_RQST_DEPT_NO -- 부서정보는 들어가 있는게 LA_STAFF 테이블의 직원부서명 컬럼 밖에는 없다.
+			, B.STAFF_DEPT_NM AS CVTN_RQST_DEPT_NM 
+			, TO_CHAR(A.CRT_DTTM, 'YYYYMMDD') AS CVTN_RQST_REG_YMD
+			, TO_CHAR(A.CRT_DTTM, 'YYYYMMDD') AS CVTN_RQST_YMD
+			, '' AS CVTN_RQST_LAST_ATRZ_JBPS_SE
+			, '' AS CVTN_RQST_LAST_APRVR_NM
+			, '' AS CVTN_RQST_LAST_APRVR_NO
+			, '' AS CVTN_RQST_CN
+			, '' AS CVTN_SRNG_DMND_CN
+			, '' AS RMRK_CN
+			, '' AS BIZ_OTLN
+			, '' AS PJTCO_CN
+			, '' AS BIZ_PRD_NM
+			, '' AS BSS_STT_CN
+			, '' AS BFHD_PRCD_IMPLT_CN
+			, '' AS MAIN_CTRT_CN
+			, '' AS HCFH_PLAN_CN
+			, '' AS CVTN_CNCLS_PRNMNT_YMD
+			, '' AS EXCL_DMND_JDAF_CORP_NM
+			, '' AS CVTN_HOPE_RPLY_YMD
+			, TO_CHAR(A.CRT_DTTM, 'YYYYMMDD') AS CVTN_RCPT_YMD
+			, A.CRT_USER_ID AS CVTN_TKCG_EMP_NO
+			, B.STAFF_NM AS CVTN_TKCG_EMP_NM
+			, TO_CHAR(A.CRT_DTTM, 'YYYYMMDD') AS CVTN_RPLY_YMD
+			, TO_CHAR(A.CRT_DTTM, 'YYYYMMDD') AS CVTN_CMPTN_YMD
+			, '' AS PRVT_SRCH_KYWD_CN
+			, '' AS RFLT_YN_RSLT_REG_YN -- 이게 진짜 등록을 했는지 안했는지에 대한 여부면 해당 첨부파일이 등록되어있느지를 따져야할 것 같다.
+			, '' AS RFLT_YN_RSLT_WRTR_EMP_NO
+			, '' AS RFLT_YN_RSLT_WRTR_EMP_NM
+			, '' AS RFLT_YN_RSLT_REG_YMD
+			, '' AS RFLT_YN_RSLT_TTL
+			, '' AS RFLT_YN_RSLT_CN
+			, 'N' AS DEL_YN
+			, B.STAFF_NM AS WRTR_EMP_NM
+			, A.CRT_USER_ID AS WRTR_EMP_NO
+			, TO_CHAR(A.CRT_DTTM, 'YYYYMMDD') AS WRT_YMD
+			, B.STAFF_DEPT_NM AS WRT_DEPT_NM
+			, '' AS WRT_DEPT_NO
+			, B.STAFF_NM AS MDFCN_EMP_NM
+			, A.CRT_USER_ID AS MDFCN_EMP_NO
+			, TO_CHAR(A.CRT_DTTM, 'YYYYMMDD') AS MDFCN_YMD
+			, B.STAFF_DEPT_NM AS MDFCN_DEPT_NM
+			, '' AS MDFCN_DEPT_NO
+			, '' AS AGRE_YN -- 시의회 동의 여부 내부의 경우 모두 다 Y가 맞다고 보면 될지
+			, '' AS CVTN_ANS_RVW_OPNN_CN
+			, '' AS RVW_OPNN_REG_YMD
+			
+			, A.CRT_USER_ID AS RVW_TKCG_EMP_NO
+			, B.STAFF_NM AS RVW_TKCG_EMP_NM
+		FROM 
+			LA_CONTRACT_REVIEW A
+			LEFT JOIN LA_STAFF B ON A.CRT_USER_ID = B.STAFF_USER_ID
+		ORDER BY A.CONTRACT_REVIEW_SQNO, A.CRT_DTTM
+		) TMP
+<!-- 		WHERE 11 > ROWNUM -->
+	</select>
+	
+	<select id="getAgreeInfo2" resultType="HashMap">
+		/* oldDataSql.getAgreeInfo2_기타계약*/
+			
+		SELECT 
+			CVTN_MNG_NO
+			, MENU_MNG_NO
+			, CVTN_DOC_NO
+			, CVTN_INTL_DOC_NO
+			, CVTN_SE
+			, PRGRS_STTS_SE_NM
+			, RLS_YN
+			, INSD_OTSD_TASK_SE
+			, OTSD_RQST_RSN
+			, EMRG_YN
+			, EMRG_RQST_RSN
+			, CVTN_CTRT_TYPE_CD_NM
+			, CVTN_TTL
+			, CVTN_RQST_EMP_NO
+			, CVTN_RQST_EMP_NM
+			, CVTN_RQST_DEPT_NO
+			, CVTN_RQST_DEPT_NM
+			, CVTN_RQST_REG_YMD
+			, CVTN_RQST_YMD
+			, CVTN_RQST_LAST_ATRZ_JBPS_SE
+			, CVTN_RQST_LAST_APRVR_NM
+			, CVTN_RQST_LAST_APRVR_NO
+			, CVTN_RQST_CN
+			, CVTN_SRNG_DMND_CN
+			, RMRK_CN
+			, BIZ_OTLN
+			, PJTCO_CN
+			, BIZ_PRD_NM
+			, BSS_STT_CN
+			, BFHD_PRCD_IMPLT_CN
+			, MAIN_CTRT_CN
+			, HCFH_PLAN_CN
+			, CVTN_CNCLS_PRNMNT_YMD
+			, EXCL_DMND_JDAF_CORP_NM
+			, CVTN_HOPE_RPLY_YMD
+			, CVTN_RCPT_YMD
+			, CVTN_TKCG_EMP_NO
+			, CVTN_TKCG_EMP_NM
+			, CVTN_RPLY_YMD
+			, CVTN_CMPTN_YMD
+			, PRVT_SRCH_KYWD_CN
+			, RFLT_YN_RSLT_REG_YN
+			, RFLT_YN_RSLT_WRTR_EMP_NO
+			, RFLT_YN_RSLT_WRTR_EMP_NM
+			, RFLT_YN_RSLT_REG_YMD
+			, RFLT_YN_RSLT_TTL
+			, RFLT_YN_RSLT_CN
+			, DEL_YN
+			, WRTR_EMP_NM
+			, WRTR_EMP_NO
+			, WRT_YMD
+			, WRT_DEPT_NM
+			, WRT_DEPT_NO
+			, MDFCN_EMP_NM
+			, MDFCN_EMP_NO
+			, MDFCN_YMD
+			, MDFCN_DEPT_NM
+			, MDFCN_DEPT_NO
+			, AGRE_YN
+			, CVTN_ANS_RVW_OPNN_CN
+			, RVW_OPNN_REG_YMD
+			
+			, RVW_TKCG_EMP_NO -- 검토담당자 위한 값
+			, RVW_TKCG_EMP_NM -- 검토담당자 위한 값
+		FROM
+		(
+		SELECT
+			A.REQUEST_SQNO AS CVTN_MNG_NO
+			, '100000595' AS MENU_MNG_NO
+			, A.DOCNO_NM AS CVTN_DOC_NO
+			, '' AS CVTN_INTL_DOC_NO -- 협약국제문서번호 어떻게 부여되는지 어떻게 분류되는지 모르겠음..
+			, '일반' AS CVTN_SE -- 일반 인지 국제 인지 어디서 분류되는지 모르겠음.. 우선 일반으로 넣어줌
+			, (CASE WHEN A.REQUEST_STATUS_CD = 1000 THEN '법률자문 의뢰'
+					WHEN A.REQUEST_STATUS_CD = 1100 THEN '접수대기'
+					WHEN A.REQUEST_STATUS_CD = 1200 THEN '내부검토중'
+					WHEN A.REQUEST_STATUS_CD = 1300 THEN '외부검토중'
+					WHEN A.REQUEST_STATUS_CD = 1400 THEN '과장결재중'
+					WHEN A.REQUEST_STATUS_CD = 1410 THEN '팀장결재중'
+<!-- 					WHEN A.REQUEST_STATUS_CD = '1400' OR A.REQUEST_STATUS_CD = '1410' THEN '결재' -->
+					WHEN A.REQUEST_STATUS_CD = 1500 THEN '철회'
+					WHEN A.REQUEST_STATUS_CD = '1600' OR A.REQUEST_STATUS_CD = '1610' THEN '완료'
+					WHEN A.REQUEST_STATUS_CD = 9999 THEN '9999'
+					ELSE ''
+			END) AS PRGRS_STTS_SE_NM
+			, (CASE 
+					WHEN A.VIEW_CD = '1000' THEN 'Y'
+					WHEN A.VIEW_CD = '1100' THEN 'N'
+			  END) AS RLS_YN
+			, (CASE WHEN A.REQUEST_WAY_CD = 1000 THEN 'I'
+					WHEN A.REQUEST_WAY_CD = 2000 THEN 'O'
+					WHEN A.REQUEST_WAY_CD = 3000 THEN ''
+					WHEN A.REQUEST_WAY_CD = 1010 THEN '1010'
+					WHEN A.REQUEST_WAY_CD = 1200 THEN '1200'
+					WHEN A.REQUEST_WAY_CD = 1300 THEN '1300'
+					ELSE ''
+				END) AS INSD_OTSD_TASK_SE
+			, (CASE WHEN A.REQUEST_WAY_SUB_CD = 1000 THEN '특수분야 전문지식 필요'
+				WHEN A.REQUEST_WAY_SUB_CD = 2000 THEN '외부의 객관적 시각 필요'
+				WHEN A.REQUEST_WAY_SUB_CD = 3000 THEN '기타'
+				ELSE ''
+			END) AS OTSD_RQST_RSN
+			, (CASE WHEN A.EMERGENCY_STATUS_CD = 1000 THEN 'N'
+					WHEN A.EMERGENCY_STATUS_CD = 2000 THEN 'Y'
+					ELSE 'N'
+				END) AS EMRG_YN
+			, '' AS EMRG_RQST_RSN -- 긴급여부사유도 없음
+			, '기타계약' AS CVTN_CTRT_TYPE_CD_NM
+			, A.REQUEST_NM AS CVTN_TTL
+			, A.CRT_USER_ID AS CVTN_RQST_EMP_NO
+			, B.MANAGER_NM AS CVTN_RQST_EMP_NM
+			, B.MANAGER_DEPT_CD AS CVTN_RQST_DEPT_NO
+			, B.MANAGER_DEPT_NM AS CVTN_RQST_DEPT_NM 
+			, TO_CHAR(TO_DATE(SUBSTR(A.CRT_DTTM, 1, 10), 'RR/MM/DD'), 'YYYYMMDD') AS CVTN_RQST_REG_YMD
+			, TO_CHAR(TO_DATE(SUBSTR(A.CRT_DTTM, 1, 10), 'RR/MM/DD'), 'YYYYMMDD') AS CVTN_RQST_YMD
+			, (CASE WHEN A.REVIEW_STATUS_CD = 1000 THEN '과장'
+					WHEN A.REVIEW_STATUS_CD = 2000 THEN '팀장'
+					ELSE ''
+				END) AS CVTN_RQST_LAST_ATRZ_JBPS_SE
+			, C.MANAGER_NM AS CVTN_RQST_LAST_APRVR_NM
+			, C.CRT_USER_ID AS CVTN_RQST_LAST_APRVR_NO
+			, A.REQUEST_PURPOSE_CNTN AS CVTN_RQST_CN
+			, A.REQUEST_SUMMARY_CNTN AS CVTN_SRNG_DMND_CN
+			, '' AS RMRK_CN
+			, '' AS BIZ_OTLN
+			, '' AS PJTCO_CN
+			, '' AS BIZ_PRD_NM
+			, '' AS BSS_STT_CN
+			, '' AS BFHD_PRCD_IMPLT_CN
+			, '' AS MAIN_CTRT_CN
+			, '' AS HCFH_PLAN_CN
+			, '' AS CVTN_CNCLS_PRNMNT_YMD -- 협약체결예정일 화면에는 추가 됐지만 기존 DB에는 없는듯
+			, '' AS EXCL_DMND_JDAF_CORP_NM -- 제외요청법무법인명도 없을듯
+			, A.REPLY_WISH_DTTM AS CVTN_HOPE_RPLY_YMD
+			, TO_CHAR(TO_DATE(SUBSTR(A.CRT_DTTM, 1, 10), 'RR/MM/DD'), 'YYYYMMDD') AS CVTN_RCPT_YMD
+			, A.STAFF_USER_ID AS CVTN_TKCG_EMP_NO
+			, D.STAFF_NM AS CVTN_TKCG_EMP_NM
+			, '' AS CVTN_RPLY_YMD --협약회신일자 못찾겠음
+			, TO_CHAR(TO_DATE(SUBSTR(A.APPROVAL_DTTM, 1, 10), 'RR/MM/DD'), 'YYYYMMDD') AS CVTN_CMPTN_YMD -- 협약완료일자 APPROVAL_DTTM 인지 애매한데 일단 대리님 넣어두시는거 보고 넣어둠
+			, '' AS PRVT_SRCH_KYWD_CN
+			, '' AS RFLT_YN_RSLT_REG_YN -- 이게 진짜 등록을 했는지 안했는지에 대한 여부면 해당 첨부파일이 등록되어있느지를 따져야할 것 같다.
+			, '' AS RFLT_YN_RSLT_WRTR_EMP_NO
+			, '' AS RFLT_YN_RSLT_WRTR_EMP_NM
+			, '' AS RFLT_YN_RSLT_REG_YMD
+			, '' AS RFLT_YN_RSLT_TTL
+			, '' AS RFLT_YN_RSLT_CN
+			, 'N' AS DEL_YN
+			, B.MANAGER_NM AS WRTR_EMP_NM
+			, A.CRT_USER_ID AS WRTR_EMP_NO
+			, TO_CHAR(TO_DATE(SUBSTR(A.CRT_DTTM, 1, 10), 'RR/MM/DD'), 'YYYYMMDD') AS WRT_YMD
+			, B.MANAGER_DEPT_NM  AS WRT_DEPT_NM
+			, A.STAFF_ORG_CODE AS WRT_DEPT_NO
+			, B.MANAGER_NM AS MDFCN_EMP_NM
+			, A.CRT_USER_ID AS MDFCN_EMP_NO
+			, TO_CHAR(TO_DATE(SUBSTR(A.CRT_DTTM, 1, 10), 'RR/MM/DD'), 'YYYYMMDD') AS MDFCN_YMD
+			, B.MANAGER_DEPT_NM  AS MDFCN_DEPT_NM
+			, A.STAFF_ORG_CODE AS MDFCN_DEPT_NO
+			, '' AS AGRE_YN -- 시의회 동의 여부 내부의 경우 모두 다 Y가 맞다고 보면 될지
+			, '' AS CVTN_ANS_RVW_OPNN_CN
+			, '' AS RVW_OPNN_REG_YMD
+			
+			, A.STAFF_USER_ID AS RVW_TKCG_EMP_NO
+			, D.STAFF_NM AS RVW_TKCG_EMP_NM
+			
+			, A.TLNO
+			, A.LAWYER_REVIEW_CD
+			, A.REF_DOCNO_ATTR
+			, A.CRT_IP
+			, A.CHG_DTTM
+			, A.CHG_USER_ID
+			, A.CHG_IP
+			, A.OPEN_YN
+			, (CASE WHEN A.REQUEST_GUBUN_CD = 1000 THEN '법률자문' -- 기본 자문 의뢰 데이터?
+					WHEN A.REQUEST_GUBUN_CD = 2000 THEN '자문사례' -- 참고자료 메뉴의 법률자문 사례모음 메뉴의 데이터?
+					WHEN A.REQUEST_GUBUN_CD = 3000 THEN '자문과거자료' -- 자문 과거자료 메뉴의 데이터?
+					WHEN A.REQUEST_GUBUN_CD = 5000 THEN '의회동의필요여부' -- 의회동의 필요여부에 대한 자문 데이터?
+					ELSE ''
+				END) AS REQUEST_GUBUN_CD
+			, A.CASE_SEND_YN -- '사례전송여부(메일)' : Y,N으로 들어가 있음,사용 안하는 값일 것 같음 / 대리님께서도 미사용이라고 적어두심.
+			, A.CASE_TYPE_CD -- '사례유형코드' : null 이랑 "공탁" 만 있음,사용 안하는 값일 것 같음 / 대리님께서도 미사용이라고 적어두심.
+			, A.CNTN -- 협약에 관련된 값인 것 같음. 값이 들어가있는게 146개 밖에 안된다..
+			, A.REQ_TYPE -- LAW와 CONT로 들어가있음.
+		FROM 
+			LA_REQUEST A  
+			LEFT JOIN (SELECT * FROM LA_REQUEST_MANAGER WHERE MANAGER_GUBUN_CD = 1000) B ON A.REQUEST_SQNO = B.REQUEST_SQNO
+			LEFT JOIN (SELECT * FROM LA_REQUEST_MANAGER WHERE MANAGER_GUBUN_CD = 2000) C ON A.REQUEST_SQNO = C.REQUEST_SQNO
+			LEFT JOIN LA_STAFF D ON A.STAFF_USER_ID = D.STAFF_USER_ID
+		WHERE 
+			A.REQUEST_GUBUN_CD = '1000' 
+			AND A.REQUEST_STATUS_CD != '9999' 
+			AND A.REQ_TYPE = 'CONT'
+		ORDER BY A.REQUEST_SQNO, A.CRT_DTTM
+		) TMP
+<!-- 		WHERE 11 > ROWNUM -->
+	</select>
+	
+	<select id="getAgreeInfo3" resultType="HashMap">
+		/* oldDataSql.getAgreeInfo3_시의회 사전동의 여부 검토 */
+			
+		SELECT 
+			CVTN_MNG_NO
+			, MENU_MNG_NO
+			, CVTN_DOC_NO
+			, CVTN_INTL_DOC_NO
+			, CVTN_SE
+			, PRGRS_STTS_SE_NM
+			, RLS_YN
+			, INSD_OTSD_TASK_SE
+			, OTSD_RQST_RSN
+			, EMRG_YN
+			, EMRG_RQST_RSN
+			, CVTN_CTRT_TYPE_CD_NM
+			, CVTN_TTL
+			, CVTN_RQST_EMP_NO
+			, CVTN_RQST_EMP_NM
+			, CVTN_RQST_DEPT_NO
+			, CVTN_RQST_DEPT_NM
+			, CVTN_RQST_REG_YMD
+			, CVTN_RQST_YMD
+			, CVTN_RQST_LAST_ATRZ_JBPS_SE
+			, CVTN_RQST_LAST_APRVR_NM
+			, CVTN_RQST_LAST_APRVR_NO
+			, CVTN_RQST_CN
+			, CVTN_SRNG_DMND_CN
+			, RMRK_CN
+			, BIZ_OTLN
+			, PJTCO_CN
+			, BIZ_PRD_NM
+			, BSS_STT_CN
+			, BFHD_PRCD_IMPLT_CN
+			, MAIN_CTRT_CN
+			, HCFH_PLAN_CN
+			, CVTN_CNCLS_PRNMNT_YMD
+			, EXCL_DMND_JDAF_CORP_NM
+			, CVTN_HOPE_RPLY_YMD
+			, CVTN_RCPT_YMD
+			, CVTN_TKCG_EMP_NO
+			, CVTN_TKCG_EMP_NM
+			, CVTN_RPLY_YMD
+			, CVTN_CMPTN_YMD
+			, PRVT_SRCH_KYWD_CN
+			, RFLT_YN_RSLT_REG_YN
+			, RFLT_YN_RSLT_WRTR_EMP_NO
+			, RFLT_YN_RSLT_WRTR_EMP_NM
+			, RFLT_YN_RSLT_REG_YMD
+			, RFLT_YN_RSLT_TTL
+			, RFLT_YN_RSLT_CN
+			, DEL_YN
+			, WRTR_EMP_NM
+			, WRTR_EMP_NO
+			, WRT_YMD
+			, WRT_DEPT_NM
+			, WRT_DEPT_NO
+			, MDFCN_EMP_NM
+			, MDFCN_EMP_NO
+			, MDFCN_YMD
+			, MDFCN_DEPT_NM
+			, MDFCN_DEPT_NO
+			, AGRE_YN
+			, CVTN_ANS_RVW_OPNN_CN
+			, RVW_OPNN_REG_YMD
+			
+			, RVW_TKCG_EMP_NO -- 검토담당자 위한 값
+			, RVW_TKCG_EMP_NM -- 검토담당자 위한 값
+		FROM
+		(
+		SELECT
+			A.REQUEST_SQNO AS CVTN_MNG_NO
+			, '100000596' AS MENU_MNG_NO
+			, A.DOCNO_NM AS CVTN_DOC_NO
+			, '' AS CVTN_INTL_DOC_NO -- 협약국제문서번호 어떻게 부여되는지 어떻게 분류되는지 모르겠음..
+			, '일반' AS CVTN_SE -- 일반 인지 국제 인지 어디서 분류되는지 모르겠음.. 우선 일반으로 넣어줌
+			, (CASE WHEN A.REQUEST_WAY_CD = 1010 THEN '접수대기'
+					WHEN A.REQUEST_WAY_CD = 1000 THEN '내부검토중'
+					WHEN A.REQUEST_WAY_CD = 1100 THEN '과장결재중'
+					WHEN A.REQUEST_WAY_CD = 1200 THEN '완료'
+					WHEN A.REQUEST_WAY_CD = 1300 THEN '철회'
+					ELSE ''
+			END) AS PRGRS_STTS_SE_NM -- jsp 파일 보니까 시의회동의쪽은 REQUEST_WAY_CD 값을 처리상태 값으로 쓰고 있다. 일단 jsp 대로 작성했는데 어떻게 처리해야 좋을지 대리님께 여쭤보기.
+			, (CASE 
+					WHEN A.VIEW_CD = '1000' THEN 'Y'
+					WHEN A.VIEW_CD = '1100' THEN 'N'
+			  END) AS RLS_YN
+			, 'I' AS INSD_OTSD_TASK_SE -- 의회동의여부는 어차피 다 내부 
+			, '' AS OTSD_RQST_RSN -- 외부의뢰사유 없음
+			, (CASE WHEN A.EMERGENCY_STATUS_CD = 1000 THEN 'N'
+					WHEN A.EMERGENCY_STATUS_CD = 2000 THEN 'Y'
+					ELSE 'N'
+				END) AS EMRG_YN
+			, '' AS EMRG_RQST_RSN -- 긴급여부사유도 없음
+			, '의회 동의 여부 사전검토' AS CVTN_CTRT_TYPE_CD_NM
+			, A.REQUEST_NM AS CVTN_TTL
+			, A.CRT_USER_ID AS CVTN_RQST_EMP_NO
+			, B.MANAGER_NM AS CVTN_RQST_EMP_NM
+			, B.MANAGER_DEPT_CD AS CVTN_RQST_DEPT_NO
+			, B.MANAGER_DEPT_NM AS CVTN_RQST_DEPT_NM 
+			, TO_CHAR(TO_DATE(SUBSTR(A.CRT_DTTM, 1, 10), 'RR/MM/DD'), 'YYYYMMDD') AS CVTN_RQST_REG_YMD
+			, TO_CHAR(TO_DATE(SUBSTR(A.CRT_DTTM, 1, 10), 'RR/MM/DD'), 'YYYYMMDD') AS CVTN_RQST_YMD
+			, (CASE WHEN A.REVIEW_STATUS_CD = 1000 THEN '과장'
+					WHEN A.REVIEW_STATUS_CD = 2000 THEN '팀장'
+					ELSE ''
+				END) AS CVTN_RQST_LAST_ATRZ_JBPS_SE
+			, C.MANAGER_NM AS CVTN_RQST_LAST_APRVR_NM
+			, C.CRT_USER_ID AS CVTN_RQST_LAST_APRVR_NO
+			, A.REQUEST_PURPOSE_CNTN AS CVTN_RQST_CN
+			, A.REQUEST_SUMMARY_CNTN AS CVTN_SRNG_DMND_CN
+			, '' AS RMRK_CN
+			, '' AS BIZ_OTLN
+			, '' AS PJTCO_CN
+			, '' AS BIZ_PRD_NM
+			, '' AS BSS_STT_CN
+			, '' AS BFHD_PRCD_IMPLT_CN
+			, '' AS MAIN_CTRT_CN
+			, '' AS HCFH_PLAN_CN
+			, '' AS CVTN_CNCLS_PRNMNT_YMD -- 협약체결예정일 화면에는 추가 됐지만 기존 DB에는 없는듯
+			, '' AS EXCL_DMND_JDAF_CORP_NM -- 제외요청법무법인명도 없을듯
+			, A.REPLY_WISH_DTTM AS CVTN_HOPE_RPLY_YMD
+			, TO_CHAR(TO_DATE(SUBSTR(A.CRT_DTTM, 1, 10), 'RR/MM/DD'), 'YYYYMMDD') AS CVTN_RCPT_YMD
+			, A.STAFF_USER_ID AS CVTN_TKCG_EMP_NO
+			, D.STAFF_NM AS CVTN_TKCG_EMP_NM
+			, '' AS CVTN_RPLY_YMD --협약회신일자 못찾겠음
+			, TO_CHAR(TO_DATE(SUBSTR(A.APPROVAL_DTTM, 1, 10), 'RR/MM/DD'), 'YYYYMMDD') AS CVTN_CMPTN_YMD -- 협약완료일자 APPROVAL_DTTM 인지 애매한데 일단 대리님 넣어두시는거 보고 넣어둠
+			, '' AS PRVT_SRCH_KYWD_CN
+			, '' AS RFLT_YN_RSLT_REG_YN -- 이게 진짜 등록을 했는지 안했는지에 대한 여부면 해당 첨부파일이 등록되어있느지를 따져야할 것 같다.
+			, '' AS RFLT_YN_RSLT_WRTR_EMP_NO
+			, '' AS RFLT_YN_RSLT_WRTR_EMP_NM
+			, '' AS RFLT_YN_RSLT_REG_YMD
+			, '' AS RFLT_YN_RSLT_TTL
+			, '' AS RFLT_YN_RSLT_CN
+			, 'N' AS DEL_YN
+			, B.MANAGER_NM AS WRTR_EMP_NM
+			, A.CRT_USER_ID AS WRTR_EMP_NO
+			, TO_CHAR(TO_DATE(SUBSTR(A.CRT_DTTM, 1, 10), 'RR/MM/DD'), 'YYYYMMDD') AS WRT_YMD
+			, B.MANAGER_DEPT_NM  AS WRT_DEPT_NM
+			, A.STAFF_ORG_CODE AS WRT_DEPT_NO
+			, B.MANAGER_NM AS MDFCN_EMP_NM
+			, A.CRT_USER_ID AS MDFCN_EMP_NO
+			, TO_CHAR(TO_DATE(SUBSTR(A.CRT_DTTM, 1, 10), 'RR/MM/DD'), 'YYYYMMDD') AS MDFCN_YMD
+			, B.MANAGER_DEPT_NM  AS MDFCN_DEPT_NM
+			, A.STAFF_ORG_CODE AS MDFCN_DEPT_NO
+			, A.OPEN_YN AS AGRE_YN -- 시의회 동의 여부 내부의 경우 모두 다 Y가 맞다고 보면 될지
+			, A.CNTN AS CVTN_ANS_RVW_OPNN_CN -- 시의회 쪽에만 있는 자문의견이라는 항목의 값인것 같은데. 답변 검토 의견쪽으로 넣어주는게 맞을것 같음.
+			, TO_CHAR(TO_DATE(SUBSTR(A.APPROVAL_DTTM, 1, 10), 'RR/MM/DD'), 'YYYYMMDD') AS RVW_OPNN_REG_YMD
+
+			, A.STAFF_USER_ID AS RVW_TKCG_EMP_NO
+			, D.STAFF_NM AS RVW_TKCG_EMP_NM			
+
+			, A.OPEN_YN
+
+			, A.TLNO
+			, A.LAWYER_REVIEW_CD
+			, A.REF_DOCNO_ATTR
+			, A.CRT_IP
+			, A.CHG_DTTM
+			, A.CHG_USER_ID
+			, A.CHG_IP
+			, (CASE WHEN A.REQUEST_GUBUN_CD = 1000 THEN '법률자문' -- 기본 자문 의뢰 데이터?
+					WHEN A.REQUEST_GUBUN_CD = 2000 THEN '자문사례' -- 참고자료 메뉴의 법률자문 사례모음 메뉴의 데이터?
+					WHEN A.REQUEST_GUBUN_CD = 3000 THEN '자문과거자료' -- 자문 과거자료 메뉴의 데이터?
+					WHEN A.REQUEST_GUBUN_CD = 5000 THEN '의회동의필요여부' -- 의회동의 필요여부에 대한 자문 데이터?
+					ELSE ''
+				END) AS REQUEST_GUBUN_CD
+			, A.CASE_SEND_YN -- '사례전송여부(메일)' : Y,N으로 들어가 있음,사용 안하는 값일 것 같음 / 대리님께서도 미사용이라고 적어두심.
+			, A.CASE_TYPE_CD -- '사례유형코드' : null 이랑 "공탁" 만 있음,사용 안하는 값일 것 같음 / 대리님께서도 미사용이라고 적어두심.
+			, A.REQUEST_WAY_SUB_CD -- 1000, 2000, 3000, null 이 들어가 있는데 무슨 값인지 모르겠음. 외부의뢰사유 임
+			, A.REQ_TYPE -- LAW와 CONT로 들어가있음.
+		FROM 
+			LA_REQUEST A  
+			LEFT JOIN (SELECT * FROM LA_REQUEST_MANAGER WHERE MANAGER_GUBUN_CD = 1000) B ON A.REQUEST_SQNO = B.REQUEST_SQNO
+			LEFT JOIN (SELECT * FROM LA_REQUEST_MANAGER WHERE MANAGER_GUBUN_CD = 2000) C ON A.REQUEST_SQNO = C.REQUEST_SQNO
+			LEFT JOIN LA_STAFF D ON A.STAFF_USER_ID = D.STAFF_USER_ID
+		WHERE 
+			A.REQUEST_GUBUN_CD = '5000'
+		ORDER BY A.REQUEST_SQNO, A.CRT_DTTM
+		) TMP
+<!-- 		WHERE 11 > ROWNUM -->
+	</select>
+	
+	<insert id="insertAgreeInfo1" parameterType="HashMap">
+		/* oldDataSql.insertAgreeInfo1 */
+		INSERT INTO TB_CVTN_MNG (
+			CVTN_MNG_NO
+			, MENU_MNG_NO
+			, CVTN_DOC_NO
+			, CVTN_INTL_DOC_NO
+			, CVTN_SE
+			, PRGRS_STTS_SE_NM
+			, RLS_YN
+			, INSD_OTSD_TASK_SE
+			, OTSD_RQST_RSN
+			, EMRG_YN
+			, EMRG_RQST_RSN
+			, CVTN_CTRT_TYPE_CD_NM
+			, CVTN_TTL
+			, CVTN_RQST_EMP_NO
+			, CVTN_RQST_EMP_NM
+			, CVTN_RQST_DEPT_NO
+			, CVTN_RQST_DEPT_NM
+			, CVTN_RQST_REG_YMD
+			, CVTN_RQST_YMD
+			, CVTN_RQST_LAST_ATRZ_JBPS_SE
+			, CVTN_RQST_LAST_APRVR_NM
+			, CVTN_RQST_LAST_APRVR_NO
+			, CVTN_RQST_CN
+			, CVTN_SRNG_DMND_CN
+			, RMRK_CN
+			, BIZ_OTLN
+			, PJTCO_CN
+			, BIZ_PRD_NM
+			, BSS_STT_CN
+			, BFHD_PRCD_IMPLT_CN
+			, MAIN_CTRT_CN
+			, HCFH_PLAN_CN
+			, CVTN_CNCLS_PRNMNT_YMD
+			, EXCL_DMND_JDAF_CORP_NM
+			, CVTN_HOPE_RPLY_YMD
+			, CVTN_RCPT_YMD
+			, CVTN_TKCG_EMP_NO
+			, CVTN_TKCG_EMP_NM
+			, CVTN_RPLY_YMD
+			, CVTN_CMPTN_YMD
+			, PRVT_SRCH_KYWD_CN
+			, RFLT_YN_RSLT_REG_YN
+			, RFLT_YN_RSLT_WRTR_EMP_NO
+			, RFLT_YN_RSLT_WRTR_EMP_NM
+			, RFLT_YN_RSLT_REG_YMD
+			, RFLT_YN_RSLT_TTL
+			, RFLT_YN_RSLT_CN
+			, DEL_YN
+			, WRTR_EMP_NM
+			, WRTR_EMP_NO
+			, WRT_YMD
+			, WRT_DEPT_NM
+			, WRT_DEPT_NO
+			, MDFCN_EMP_NM
+			, MDFCN_EMP_NO
+			, MDFCN_YMD
+			, MDFCN_DEPT_NM
+			, MDFCN_DEPT_NO
+			, AGRE_YN
+			, CVTN_ANS_RVW_OPNN_CN
+			, RVW_OPNN_REG_YMD
+		) VALUES (
+			#{CVTN_MNG_NO}
+			, #{MENU_MNG_NO}
+			, #{CVTN_DOC_NO}
+			, #{CVTN_INTL_DOC_NO}
+			, #{CVTN_SE}
+			, #{PRGRS_STTS_SE_NM}
+			, #{RLS_YN}
+			, #{INSD_OTSD_TASK_SE}
+			, #{OTSD_RQST_RSN}
+			, #{EMRG_YN}
+			, #{EMRG_RQST_RSN}
+			, #{CVTN_CTRT_TYPE_CD_NM}
+			, #{CVTN_TTL}
+			, #{CVTN_RQST_EMP_NO}
+			, #{CVTN_RQST_EMP_NM}
+			, #{CVTN_RQST_DEPT_NO}
+			, #{CVTN_RQST_DEPT_NM}
+			, #{CVTN_RQST_REG_YMD}
+			, #{CVTN_RQST_YMD}
+			, #{CVTN_RQST_LAST_ATRZ_JBPS_SE}
+			, #{CVTN_RQST_LAST_APRVR_NM}
+			, #{CVTN_RQST_LAST_APRVR_NO}
+			, #{CVTN_RQST_CN}
+			, #{CVTN_SRNG_DMND_CN}
+			, #{RMRK_CN}
+			, #{BIZ_OTLN}
+			, #{PJTCO_CN}
+			, #{BIZ_PRD_NM}
+			, #{BSS_STT_CN}
+			, #{BFHD_PRCD_IMPLT_CN}
+			, #{MAIN_CTRT_CN}
+			, #{HCFH_PLAN_CN}
+			, #{CVTN_CNCLS_PRNMNT_YMD}
+			, #{EXCL_DMND_JDAF_CORP_NM}
+			, #{CVTN_HOPE_RPLY_YMD}
+			, #{CVTN_RCPT_YMD}
+			, #{CVTN_TKCG_EMP_NO}
+			, #{CVTN_TKCG_EMP_NM}
+			, #{CVTN_RPLY_YMD}
+			, #{CVTN_CMPTN_YMD}
+			, #{PRVT_SRCH_KYWD_CN}
+			, #{RFLT_YN_RSLT_REG_YN}
+			, #{RFLT_YN_RSLT_WRTR_EMP_NO}
+			, #{RFLT_YN_RSLT_WRTR_EMP_NM}
+			, #{RFLT_YN_RSLT_REG_YMD}
+			, #{RFLT_YN_RSLT_TTL}
+			, #{RFLT_YN_RSLT_CN}
+			, #{DEL_YN}
+			, #{WRTR_EMP_NM}
+			, #{WRTR_EMP_NO}
+			, #{WRT_YMD}
+			, #{WRT_DEPT_NM}
+			, #{WRT_DEPT_NO}
+			, #{MDFCN_EMP_NM}
+			, #{MDFCN_EMP_NO}
+			, #{MDFCN_YMD}
+			, #{MDFCN_DEPT_NM}
+			, #{MDFCN_DEPT_NO}
+			, #{AGRE_YN}
+			, #{CVTN_ANS_RVW_OPNN_CN}
+			, #{RVW_OPNN_REG_YMD}
+		)
+	</insert>
+	
+	<insert id="insertFile1" parameterType="HashMap">
+		/* oldDataSql.insertFile1 */
+		INSERT INTO TB_CNSTN_FILE (
+			FILE_MNG_NO
+			, CNSTN_MNG_NO
+			, TRGT_PST_MNG_NO
+			, FILE_SE_NM
+			, DWNLD_FILE_NM
+			, SRVR_FILE_NM
+			, PHYS_FILE_NM
+			, FILE_EXTN_NM
+			, FILE_SZ
+			, TRGT_PST_TBL_NM
+			, SORT_SEQ
+			, DOC_FORM_MNG_NO
+			, DEL_YN
+			, WRTR_EMP_NM
+			, WRTR_EMP_NO
+			, WRT_YMD
+			, WRT_DEPT_NM
+			, WRT_DEPT_NO
+			, MDFCN_EMP_NM
+			, MDFCN_EMP_NO
+			, MDFCN_YMD
+			, MDFCN_DEPT_NM
+			, MDFCN_DEPT_NO
+		) VALUES (
+			#{FILE_MNG_NO}
+			, #{CNSTN_MNG_NO}
+			, #{TRGT_PST_MNG_NO}
+			, #{FILE_SE_NM}
+			, #{DWNLD_FILE_NM}
+			, #{SRVR_FILE_NM}
+			, #{PHYS_FILE_NM}
+			, #{FILE_EXTN_NM}
+			, #{FILE_SZ}
+			, #{TRGT_PST_TBL_NM}
+			, #{SORT_SEQ}
+			, #{DOC_FORM_MNG_NO}
+			, #{DEL_YN}
+			, #{WRTR_EMP_NM}
+			, #{WRTR_EMP_NO}
+			, #{WRT_YMD}
+			, #{WRT_DEPT_NM}
+			, #{WRT_DEPT_NO}
+			, #{MDFCN_EMP_NM}
+			, #{MDFCN_EMP_NO}
+			, #{MDFCN_YMD}
+			, #{MDFCN_DEPT_NM}
+			, #{MDFCN_DEPT_NO}
+		)
+	</insert>
+	
+	<insert id="insertFile2" parameterType="HashMap">
+		/* oldDataSql.insertFile2 */
+		INSERT INTO TB_CVTN_FILE (
+			FILE_MNG_NO
+			, CVTN_MNG_NO
+			, TRGT_PST_MNG_NO
+			, FILE_SE_NM
+			, DWNLD_FILE_NM
+			, SRVR_FILE_NM
+			, PHYS_FILE_NM
+			, FILE_EXTN_NM
+			, FILE_SZ
+			, TRGT_PST_TBL_NM
+			, SORT_SEQ
+			, DOC_FORM_MNG_NO
+			, DEL_YN
+			, WRTR_EMP_NM
+			, WRTR_EMP_NO
+			, WRT_YMD
+			, WRT_DEPT_NM
+			, WRT_DEPT_NO
+			, MDFCN_EMP_NM
+			, MDFCN_EMP_NO
+			, MDFCN_YMD
+			, MDFCN_DEPT_NM
+			, MDFCN_DEPT_NO
+		) VALUES (
+			#{FILE_MNG_NO}
+			, #{CVTN_MNG_NO}
+			, #{TRGT_PST_MNG_NO}
+			, #{FILE_SE_NM}
+			, #{DWNLD_FILE_NM}
+			, #{SRVR_FILE_NM}
+			, #{PHYS_FILE_NM}
+			, #{FILE_EXTN_NM}
+			, #{FILE_SZ}
+			, #{TRGT_PST_TBL_NM}
+			, #{SORT_SEQ}
+			, #{DOC_FORM_MNG_NO}
+			, #{DEL_YN}
+			, #{WRTR_EMP_NM}
+			, #{WRTR_EMP_NO}
+			, #{WRT_YMD}
+			, #{WRT_DEPT_NM}
+			, #{WRT_DEPT_NO}
+			, #{MDFCN_EMP_NM}
+			, #{MDFCN_EMP_NO}
+			, #{MDFCN_YMD}
+			, #{MDFCN_DEPT_NM}
+			, #{MDFCN_DEPT_NO}
+		)
+	</insert>
+	
+	
+	<select id="getConsultMemo1" resultType="HashMap">
+		/* oldDataSql.getConsultMemo1_자문의뢰 메모 */
+   		SELECT
+			A.RCOMMENT_SQNO AS CNSTN_MEMO_MNG_NO
+			, A.REQUEST_SQNO AS CNSTN_MNG_NO
+			, '구버전 댓글 데이터-'||A.RCOMMENT_SQNO AS MEMO_TTL
+			, A.MEMO_CNTN AS MEMO_CN
+			, 'N' AS DEL_YN
+			, A.WRITER_NM AS WRTR_EMP_NM
+			, A.CRT_USER_ID AS WRTR_EMP_NO
+			, TO_CHAR(TO_DATE(SUBSTR(A.CRT_DTTM, 1, 10), 'RR/MM/DD'), 'YYYYMMDD') AS WRT_YMD
+			, B.MANAGER_DEPT_NM AS WRT_DEPT_NM
+			, B.MANAGER_DEPT_CD AS WRT_DEPT_NO
+			, '' AS MDFCN_EMP_NM
+			, A.CHG_USER_ID AS MDFCN_EMP_NO
+			, TO_CHAR(TO_DATE(SUBSTR(A.CHG_DTTM, 1, 10), 'RR/MM/DD'), 'YYYYMMDD') AS MDFCN_YMD
+			, '' AS MDFCN_DEPT_NM
+			, '' AS MDFCN_DEPT_NO
+			, 'CMEMO' AS CNSTN_DOC_SE_NM
+			, A.WRITER_GRADE_NM
+			
+			, A.WRITER_TLNO -- 다 null
+			, A.WRITER_EMAIL_ADDR -- 다 null
+			, A.CHG_IP
+		FROM
+			LA_REQUEST_COMMENT A LEFT JOIN (SELECT * FROM LA_REQUEST_MANAGER WHERE MANAGER_GUBUN_CD = 1000) B ON A.REQUEST_SQNO = B.REQUEST_SQNO
+		WHERE 
+			A.REQUEST_SQNO = #{CNSTN_MNG_NO}
+	</select>
+	
+		<insert id="insertConsultMemo1" parameterType="HashMap">
+		/* oldDataSql.insertConsultMemo1 */
+		INSERT INTO TB_CNSTN_MEMO (
+			CNSTN_MEMO_MNG_NO
+			, CNSTN_MNG_NO
+			, MEMO_TTL
+			, MEMO_CN
+			, DEL_YN
+			, WRTR_EMP_NM
+			, WRTR_EMP_NO
+			, WRT_YMD
+			, WRT_DEPT_NM
+			, WRT_DEPT_NO
+			, MDFCN_EMP_NM
+			, MDFCN_EMP_NO
+			, MDFCN_YMD
+			, MDFCN_DEPT_NM
+			, MDFCN_DEPT_NO
+			, CNSTN_DOC_SE_NM
+		) VALUES (
+			#{CNSTN_MEMO_MNG_NO}
+			, #{CNSTN_MNG_NO}
+			, #{MEMO_TTL}
+			, #{MEMO_CN}
+			, #{DEL_YN}
+			, #{WRTR_EMP_NM}
+			, #{WRTR_EMP_NO}
+			, #{WRT_YMD}
+			, #{WRT_DEPT_NM}
+			, #{WRT_DEPT_NO}
+			, #{MDFCN_EMP_NM}
+			, #{MDFCN_EMP_NO}
+			, #{MDFCN_YMD}
+			, #{MDFCN_DEPT_NM}
+			, #{MDFCN_DEPT_NO}
+			, #{CNSTN_DOC_SE_NM}
+		)
+	</insert>
+	
+	<select id="getConsultMemoFile1" resultType="HashMap">
+		/* oldDataSql.getConsultMemoFile1_자문의뢰 메모파일 */
+		SELECT
+			A.ATTACH_SQNO as FILE_MNG_NO
+			, A.REF_SQNO as CNSTN_MNG_NO
+			, '' as TRGT_PST_MNG_NO
+			, 'CMEMO' as FILE_SE_NM
+			, A.ORG_FILE_NM as DWNLD_FILE_NM
+			, A.SAVE_FILE_NM as SRVR_FILE_NM
+			, A.ORG_FILE_NM as PHYS_FILE_NM
+<!-- 			, SUBSTR(A.SAVE_FILE_NM, INSTR(A.SAVE_FILE_NM, '.', -1) + 1) AS FILE_EXTN_NM -->
+			, CASE 	WHEN INSTR(A.SAVE_FILE_NM, '.', -1) > 0 AND LENGTH(SUBSTR(A.SAVE_FILE_NM, INSTR(A.SAVE_FILE_NM, '.', -1)+1, LENGTH(A.SAVE_FILE_NM))) > 5 THEN ''
+					WHEN INSTR(A.SAVE_FILE_NM, '.', -1) > 0 THEN SUBSTR(A.SAVE_FILE_NM, INSTR(A.SAVE_FILE_NM, '.', -1)+1, LENGTH(A.SAVE_FILE_NM))
+					ELSE ''
+			  END AS FILE_EXTN_NM
+			, '0' as FILE_SZ
+			, '' as TRGT_PST_TBL_NM
+			, A.SORT_NO as SORT_SEQ
+			, '' as DOC_FORM_MNG_NO
+			, 'N' as DEL_YN
+			, B.MANAGER_NM as WRTR_EMP_NM
+			, B.CRT_USER_ID as WRTR_EMP_NO
+			, TO_CHAR(TO_DATE(SUBSTR(A.CRT_DTTM, 1, 10), 'RR/MM/DD'), 'YYYYMMDD') AS WRT_YMD
+			, B.MANAGER_DEPT_NM as WRT_DEPT_NM
+			, B.MANAGER_DEPT_CD as WRT_DEPT_NO
+			, B.MANAGER_NM as MDFCN_EMP_NM
+			, B.CRT_USER_ID as MDFCN_EMP_NO
+			,TO_CHAR(TO_DATE(SUBSTR(A.CRT_DTTM, 1, 10), 'RR/MM/DD'), 'YYYYMMDD') AS MDFCN_YMD
+			, B.MANAGER_DEPT_NM as MDFCN_DEPT_NM
+			, B.MANAGER_DEPT_CD as MDFCN_DEPT_NO
+		FROM 
+			LA_ATTACH A LEFT JOIN LA_REQUEST_MANAGER B ON A.CRT_USER_ID = B.CRT_USER_ID and B.REQUEST_SQNO = A.REF_SQNO AND B.MANAGER_GUBUN_CD = 1000 
+		WHERE 
+			A.REF_SQNO = #{CNSTN_MEMO_MNG_NO}
+			AND A.REF_TABLE_NM = 'la_request_comment'
+	</select>
+	
+	<insert id="insertConsultMemoFile1" parameterType="HashMap">
+		/* oldDataSql.insertConsultMemoFile1 */
+		INSERT INTO TB_CNSTN_FILE (
+			FILE_MNG_NO
+			, CNSTN_MNG_NO
+			, TRGT_PST_MNG_NO
+			, FILE_SE_NM
+			, DWNLD_FILE_NM
+			, SRVR_FILE_NM
+			, PHYS_FILE_NM
+			, FILE_EXTN_NM
+			, FILE_SZ
+			, TRGT_PST_TBL_NM
+			, SORT_SEQ
+			, DOC_FORM_MNG_NO
+			, DEL_YN
+			, WRTR_EMP_NM
+			, WRTR_EMP_NO
+			, WRT_YMD
+			, WRT_DEPT_NM
+			, WRT_DEPT_NO
+			, MDFCN_EMP_NM
+			, MDFCN_EMP_NO
+			, MDFCN_YMD
+			, MDFCN_DEPT_NM
+			, MDFCN_DEPT_NO
+		) VALUES (
+			#{FILE_MNG_NO}
+			, #{CNSTN_MNG_NO}
+			, #{TRGT_PST_MNG_NO}
+			, #{FILE_SE_NM}
+			, #{DWNLD_FILE_NM}
+			, #{SRVR_FILE_NM}
+			, #{PHYS_FILE_NM}
+			, #{FILE_EXTN_NM}
+			, #{FILE_SZ}
+			, #{TRGT_PST_TBL_NM}
+			, #{SORT_SEQ}
+			, #{DOC_FORM_MNG_NO}
+			, #{DEL_YN}
+			, #{WRTR_EMP_NM}
+			, #{WRTR_EMP_NO}
+			, #{WRT_YMD}
+			, #{WRT_DEPT_NM}
+			, #{WRT_DEPT_NO}
+			, #{MDFCN_EMP_NM}
+			, #{MDFCN_EMP_NO}
+			, #{MDFCN_YMD}
+			, #{MDFCN_DEPT_NM}
+			, #{MDFCN_DEPT_NO}
+		)
+	</insert>
+	
+	<select id="getConsultFile1" resultType="HashMap">
+		/* oldDataSql.getConsultFile1_자문 의뢰서 기본 첨부파일 쿼리 */
+		select
+		A.ATTACH_SQNO as FILE_MNG_NO
+		, A.REF_SQNO as CNSTN_MNG_NO
+		, '' as TRGT_PST_MNG_NO
+		, 'CONSULT' as FILE_SE_NM
+		, A.ORG_FILE_NM as DWNLD_FILE_NM
+		, A.SAVE_FILE_NM as SRVR_FILE_NM
+		, A.ORG_FILE_NM as PHYS_FILE_NM
+<!-- 		, SUBSTR(A.SAVE_FILE_NM, INSTR(A.SAVE_FILE_NM, '.', -1) + 1) AS FILE_EXTN_NM -->
+		, CASE 	WHEN INSTR(A.SAVE_FILE_NM, '.', -1) > 0 AND LENGTH(SUBSTR(A.SAVE_FILE_NM, INSTR(A.SAVE_FILE_NM, '.', -1)+1, LENGTH(A.SAVE_FILE_NM))) > 5 THEN ''
+					WHEN INSTR(A.SAVE_FILE_NM, '.', -1) > 0 THEN SUBSTR(A.SAVE_FILE_NM, INSTR(A.SAVE_FILE_NM, '.', -1)+1, LENGTH(A.SAVE_FILE_NM))
+					ELSE ''
+			  END AS FILE_EXTN_NM
+		, '0' as FILE_SZ
+		, '' as TRGT_PST_BL_NM
+		, A.SORT_NO as SORT_SEQ
+		, '' as DOC_FORM_MNG_NO
+		, 'N' as DEL_YN
+		, B.MANAGER_NM as WRTR_EMP_NM
+		, B.CRT_USER_ID as WRTR_EMP_NO
+		, TO_CHAR(TO_DATE(SUBSTR(A.CRT_DTTM, 1, 10), 'RR/MM/DD'), 'YYYYMMDD') AS WRT_YMD
+		, B.MANAGER_DEPT_NM as WRT_DEPT_NM
+		, B.MANAGER_DEPT_CD as WRT_DEPT_NO
+		, B.MANAGER_NM as MDFCN_EMP_NM
+		, B.CRT_USER_ID as MDFCN_EMP_NO
+		,TO_CHAR(TO_DATE(SUBSTR(A.CRT_DTTM, 1, 10), 'RR/MM/DD'), 'YYYYMMDD') AS MDFCN_YMD
+		, B.MANAGER_DEPT_NM as MDFCN_DEPT_NM
+		, B.MANAGER_DEPT_CD as MDFCN_DEPT_NO
+		FROM la_attach A LEFT JOIN LA_REQUEST_MANAGER B ON A.CRT_USER_ID = B.CRT_USER_ID and B.REQUEST_SQNO = A.REF_SQNO AND B.MANAGER_GUBUN_CD = 1000 
+		WHERE ref_sqno IN (
+		    SELECT request_sqno
+		    FROM la_request
+		    WHERE request_gubun_cd = '1000'
+		      AND request_status_cd != '9999'
+		      AND req_type = 'LAW'
+		)
+		and gubun_cd = 10
+		and ref_table_nm = 'la_request'
+	</select>
+
+	<select id="getConsultFile2" resultType="HashMap">
+		/* oldDataSql.getConsultFile2_자문 답변 or 검토의견 첨부파일 쿼리 */
+		select
+			A.ATTACH_SQNO as FILE_MNG_NO
+			, A.REF_SQNO as CNSTN_MNG_NO
+			, '' as TRGT_PST_MNG_NO
+			, 'ANSWER' as FILE_SE_NM
+			, A.ORG_FILE_NM as DWNLD_FILE_NM
+			, A.SAVE_FILE_NM as SRVR_FILE_NM
+			, A.ORG_FILE_NM as PHYS_FILE_NM
+<!-- 			, SUBSTR(A.SAVE_FILE_NM, INSTR(A.SAVE_FILE_NM, '.', -1) + 1) AS FILE_EXTN_NM -->
+			, CASE 	WHEN INSTR(A.SAVE_FILE_NM, '.', -1) > 0 AND LENGTH(SUBSTR(A.SAVE_FILE_NM, INSTR(A.SAVE_FILE_NM, '.', -1)+1, LENGTH(A.SAVE_FILE_NM))) > 5 THEN ''
+					WHEN INSTR(A.SAVE_FILE_NM, '.', -1) > 0 THEN SUBSTR(A.SAVE_FILE_NM, INSTR(A.SAVE_FILE_NM, '.', -1)+1, LENGTH(A.SAVE_FILE_NM))
+					ELSE ''
+			  END AS FILE_EXTN_NM
+			, '0' as FILE_SZ
+			, '' as TRGT_PST_TBL_NM
+			, A.SORT_NO as SORT_SEQ
+			, '' as DOC_FORM_MNG_NO
+			, 'N' as DEL_YN
+			, B.MANAGER_NM as WRTR_EMP_NM
+			, B.CRT_USER_ID as WRTR_EMP_NO
+			, TO_CHAR(TO_DATE(SUBSTR(A.CRT_DTTM, 1, 10), 'RR/MM/DD'), 'YYYYMMDD') AS WRT_YMD
+			, B.MANAGER_DEPT_NM as WRT_DEPT_NM
+			, B.MANAGER_DEPT_CD as WRT_DEPT_NO
+			, B.MANAGER_NM as MDFCN_EMP_NM
+			, B.CRT_USER_ID as MDFCN_EMP_NO
+			,TO_CHAR(TO_DATE(SUBSTR(A.CRT_DTTM, 1, 10), 'RR/MM/DD'), 'YYYYMMDD') AS MDFCN_YMD
+			, B.MANAGER_DEPT_NM as MDFCN_DEPT_NM
+			, B.MANAGER_DEPT_CD as MDFCN_DEPT_NO
+			FROM la_attach A LEFT JOIN LA_REQUEST_MANAGER B ON A.CRT_USER_ID = B.CRT_USER_ID and B.REQUEST_SQNO = A.REF_SQNO AND B.MANAGER_GUBUN_CD = 1000 
+		WHERE ref_sqno IN (
+		    SELECT request_sqno
+		    FROM la_request
+		    WHERE request_gubun_cd = '1000'
+		      AND request_status_cd != '9999'
+		      AND req_type = 'LAW'
+		)
+		and gubun_cd = 20
+		and ref_table_nm = 'la_request'
+		and REF_SQNO = #{CNSTN_MNG_NO}
+	</select>
+	
+	<select id="getConsultFile3" resultType="HashMap">
+		/* oldDataSql.getConsultFile3_자문 과거사례 의뢰 기본 첨부파일 쿼리 */
+		select
+			A.ATTACH_SQNO as FILE_MNG_NO
+			, A.REF_SQNO as CNSTN_MNG_NO
+			, '' as TRGT_PST_MNG_NO
+			, 'CONSULT' as FILE_SE_NM
+			, A.ORG_FILE_NM as DWNLD_FILE_NM
+			, A.SAVE_FILE_NM as SRVR_FILE_NM
+			, A.ORG_FILE_NM as PHYS_FILE_NM
+<!-- 			, SUBSTR(A.SAVE_FILE_NM, INSTR(A.SAVE_FILE_NM, '.', -1) + 1) AS FILE_EXTN_NM -->
+			, CASE 	WHEN INSTR(A.SAVE_FILE_NM, '.', -1) > 0 AND LENGTH(SUBSTR(A.SAVE_FILE_NM, INSTR(A.SAVE_FILE_NM, '.', -1)+1, LENGTH(A.SAVE_FILE_NM))) > 5 THEN ''
+					WHEN INSTR(A.SAVE_FILE_NM, '.', -1) > 0 THEN SUBSTR(A.SAVE_FILE_NM, INSTR(A.SAVE_FILE_NM, '.', -1)+1, LENGTH(A.SAVE_FILE_NM))
+					ELSE ''
+			  END AS FILE_EXTN_NM
+			, '0' as FILE_SZ
+			, '' as TRGT_PST_TBL_NM
+			, A.SORT_NO as SORT_SEQ
+			, '' as DOC_FORM_MNG_NO
+			, 'N' as DEL_YN
+			, B.MANAGER_NM as WRTR_EMP_NM
+			, B.CRT_USER_ID as WRTR_EMP_NO
+			, TO_CHAR(TO_DATE(SUBSTR(A.CRT_DTTM, 1, 10), 'RR/MM/DD'), 'YYYYMMDD') AS WRT_YMD
+			, B.MANAGER_DEPT_NM as WRT_DEPT_NM
+			, B.MANAGER_DEPT_CD as WRT_DEPT_NO
+			, B.MANAGER_NM as MDFCN_EMP_NM
+			, B.CRT_USER_ID as MDFCN_EMP_NO
+			,TO_CHAR(TO_DATE(SUBSTR(A.CRT_DTTM, 1, 10), 'RR/MM/DD'), 'YYYYMMDD') AS MDFCN_YMD
+			, B.MANAGER_DEPT_NM as MDFCN_DEPT_NM
+			, B.MANAGER_DEPT_CD as MDFCN_DEPT_NO
+		FROM la_attach A LEFT JOIN LA_REQUEST_MANAGER B ON A.CRT_USER_ID = B.CRT_USER_ID and B.REQUEST_SQNO = A.REF_SQNO AND B.MANAGER_GUBUN_CD = 1000 
+		WHERE ref_sqno IN (
+		    SELECT request_sqno
+		    FROM la_request
+		    WHERE request_gubun_cd = '3000'
+		)
+		and ref_table_nm = 'la_request'
+		and gubun_cd = 10
+	</select>
+	
+	<select id="getConsultFile4" resultType="HashMap">
+		/* oldDataSql.getConsultFile4_자문 사례 기본 첨부파일 쿼리 */
+		select
+			A.ATTACH_SQNO as FILE_MNG_NO
+			, A.REF_SQNO as CNSTN_MNG_NO
+			, '' as TRGT_PST_MNG_NO
+			, 'CONSULT' as FILE_SE_NM
+			, A.ORG_FILE_NM as DWNLD_FILE_NM
+			, A.SAVE_FILE_NM as SRVR_FILE_NM
+			, A.ORG_FILE_NM as PHYS_FILE_NM
+<!-- 			, SUBSTR(A.SAVE_FILE_NM, INSTR(A.SAVE_FILE_NM, '.', -1) + 1) AS FILE_EXTN_NM -->
+			, CASE 	WHEN INSTR(A.SAVE_FILE_NM, '.', -1) > 0 AND LENGTH(SUBSTR(A.SAVE_FILE_NM, INSTR(A.SAVE_FILE_NM, '.', -1)+1, LENGTH(A.SAVE_FILE_NM))) > 5 THEN ''
+					WHEN INSTR(A.SAVE_FILE_NM, '.', -1) > 0 THEN SUBSTR(A.SAVE_FILE_NM, INSTR(A.SAVE_FILE_NM, '.', -1)+1, LENGTH(A.SAVE_FILE_NM))
+					ELSE ''
+			  END AS FILE_EXTN_NM
+			, '0' as FILE_SZ
+			, '' as TRGT_PST_TBL_NM
+			, A.SORT_NO as SORT_SEQ
+			, '' as DOC_FORM_MNG_NO
+			, 'N' as DEL_YN
+			, B.MANAGER_NM as WRTR_EMP_NM
+			, B.CRT_USER_ID as WRTR_EMP_NO
+			, TO_CHAR(TO_DATE(SUBSTR(A.CRT_DTTM, 1, 10), 'RR/MM/DD'), 'YYYYMMDD') AS WRT_YMD
+			, B.MANAGER_DEPT_NM as WRT_DEPT_NM
+			, B.MANAGER_DEPT_CD as WRT_DEPT_NO
+			, B.MANAGER_NM as MDFCN_EMP_NM
+			, B.CRT_USER_ID as MDFCN_EMP_NO
+			,TO_CHAR(TO_DATE(SUBSTR(A.CRT_DTTM, 1, 10), 'RR/MM/DD'), 'YYYYMMDD') AS MDFCN_YMD
+			, B.MANAGER_DEPT_NM as MDFCN_DEPT_NM
+			, B.MANAGER_DEPT_CD as MDFCN_DEPT_NO
+		FROM la_attach A LEFT JOIN LA_REQUEST_MANAGER B ON A.CRT_USER_ID = B.CRT_USER_ID and B.REQUEST_SQNO = A.REF_SQNO AND B.MANAGER_GUBUN_CD = 1000 
+		WHERE ref_sqno IN (
+		    SELECT request_sqno
+		    FROM la_request
+		    WHERE request_gubun_cd = '2000'
+		)
+		and ref_table_nm = 'la_request'
+		and gubun_cd = 10
+	</select>
+
+	<insert id="insertConsultFile1" parameterType="HashMap">
+		/* oldDataSql.insertConsultFile1 */
+		INSERT INTO TB_CNSTN_FILE (
+			FILE_MNG_NO
+			, CNSTN_MNG_NO
+			, TRGT_PST_MNG_NO
+			, FILE_SE_NM
+			, DWNLD_FILE_NM
+			, SRVR_FILE_NM
+			, PHYS_FILE_NM
+			, FILE_EXTN_NM
+			, FILE_SZ
+			, TRGT_PST_TBL_NM
+			, SORT_SEQ
+			, DOC_FORM_MNG_NO
+			, DEL_YN
+			, WRTR_EMP_NM
+			, WRTR_EMP_NO
+			, WRT_YMD
+			, WRT_DEPT_NM
+			, WRT_DEPT_NO
+			, MDFCN_EMP_NM
+			, MDFCN_EMP_NO
+			, MDFCN_YMD
+			, MDFCN_DEPT_NM
+			, MDFCN_DEPT_NO
+		) VALUES (
+			#{FILE_MNG_NO}
+			, #{CNSTN_MNG_NO}
+			, #{TRGT_PST_MNG_NO}
+			, #{FILE_SE_NM}
+			, #{DWNLD_FILE_NM}
+			, #{SRVR_FILE_NM}
+			, #{PHYS_FILE_NM}
+			, #{FILE_EXTN_NM}
+			, #{FILE_SZ}
+			, #{TRGT_PST_TBL_NM}
+			, #{SORT_SEQ}
+			, #{DOC_FORM_MNG_NO}
+			, #{DEL_YN}
+			, #{WRTR_EMP_NM}
+			, #{WRTR_EMP_NO}
+			, #{WRT_YMD}
+			, #{WRT_DEPT_NM}
+			, #{WRT_DEPT_NO}
+			, #{MDFCN_EMP_NM}
+			, #{MDFCN_EMP_NO}
+			, #{MDFCN_YMD}
+			, #{MDFCN_DEPT_NM}
+			, #{MDFCN_DEPT_NO}
+		)
+	</insert>
+	
+	<insert id="insertConsultFile2" parameterType="HashMap">
+		/* oldDataSql.insertConsultFile2 */
+		INSERT INTO TB_CNSTN_FILE (
+			FILE_MNG_NO
+			, CNSTN_MNG_NO
+			, TRGT_PST_MNG_NO
+			, FILE_SE_NM
+			, DWNLD_FILE_NM
+			, SRVR_FILE_NM
+			, PHYS_FILE_NM
+			, FILE_EXTN_NM
+			, FILE_SZ
+			, TRGT_PST_TBL_NM
+			, SORT_SEQ
+			, DOC_FORM_MNG_NO
+			, DEL_YN
+			, WRTR_EMP_NM
+			, WRTR_EMP_NO
+			, WRT_YMD
+			, WRT_DEPT_NM
+			, WRT_DEPT_NO
+			, MDFCN_EMP_NM
+			, MDFCN_EMP_NO
+			, MDFCN_YMD
+			, MDFCN_DEPT_NM
+			, MDFCN_DEPT_NO
+		) VALUES (
+			#{FILE_MNG_NO}
+			, #{CNSTN_MNG_NO}
+			, #{RVW_OPNN_MNG_NO}
+			, #{FILE_SE_NM}
+			, #{DWNLD_FILE_NM}
+			, #{SRVR_FILE_NM}
+			, #{PHYS_FILE_NM}
+			, #{FILE_EXTN_NM}
+			, #{FILE_SZ}
+			, #{TRGT_PST_TBL_NM}
+			, #{SORT_SEQ}
+			, #{DOC_FORM_MNG_NO}
+			, #{DEL_YN}
+			, #{WRTR_EMP_NM}
+			, #{WRTR_EMP_NO}
+			, #{WRT_YMD}
+			, #{WRT_DEPT_NM}
+			, #{WRT_DEPT_NO}
+			, #{MDFCN_EMP_NM}
+			, #{MDFCN_EMP_NO}
+			, #{MDFCN_YMD}
+			, #{MDFCN_DEPT_NM}
+			, #{MDFCN_DEPT_NO}
+		)
+	</insert>
+	
+	<insert id="insertAgreeRvwPic1" parameterType="HashMap">
+		/* oldDataSql.insertAgreeRvwPic1 */
+<!-- 		<selectKey keyProperty="RVW_TKCG_MNG_NO" resultType="String" order="BEFORE"> -->
+<!-- 			SELECT KEYID.NEXTVAL FROM DUAL -->
+<!-- 		</selectKey> -->
+		INSERT INTO TB_CVTN_RVW_PIC (
+			RVW_TKCG_MNG_NO
+			, CVTN_MNG_NO
+			, RVW_OPNN_MNG_NO
+			, INSD_OTSD_TASK_SE
+			, RVW_TKCG_EMP_NO
+			, RVW_TKCG_EMP_NM
+			, DEL_YN
+			, WRTR_EMP_NM
+			, WRTR_EMP_NO
+			, WRT_YMD
+			, WRT_DEPT_NM
+			, WRT_DEPT_NO
+			, MDFCN_EMP_NM
+			, MDFCN_EMP_NO
+			, MDFCN_YMD
+			, MDFCN_DEPT_NM
+			, MDFCN_DEPT_NO
+			, PRSL_PSBLTY_YN
+		) VALUES (
+			#{RVW_TKCG_MNG_NO}
+			, #{CVTN_MNG_NO}
+			, #{RVW_OPNN_MNG_NO}
+			, #{INSD_OTSD_TASK_SE}
+			, #{RVW_TKCG_EMP_NO}
+			, #{RVW_TKCG_EMP_NM}
+			, #{DEL_YN}
+			, #{WRTR_EMP_NM}
+			, #{WRTR_EMP_NO}
+			, #{WRT_YMD}
+			, #{WRT_DEPT_NM}
+			, #{WRT_DEPT_NO}
+			, #{MDFCN_EMP_NM}
+			, #{MDFCN_EMP_NO}
+			, #{MDFCN_YMD}
+			, #{MDFCN_DEPT_NM}
+			, #{MDFCN_DEPT_NO}
+			, 'Y'
+		)
+	</insert>
+	
+	<insert id="insertAgreeRvwOpnn1" parameterType="HashMap">
+		/* oldDataSql.insertAgreeRvwOpnn1 */
+<!-- 		<selectKey keyProperty="RVW_OPNN_MNG_NO" resultType="String" order="BEFORE"> -->
+<!-- 			SELECT KEYID.NEXTVAL FROM DUAL -->
+<!-- 		</selectKey> -->
+		INSERT INTO TB_CVTN_RVW_OPNN (
+			RVW_OPNN_MNG_NO
+			, CVTN_MNG_NO
+			, RVW_TKCG_MNG_NO
+			, RVW_OPNN_REG_YMD
+			, RVW_OPNN_CMPTN_YMD
+			, RVW_OPNN_CMPTN_YN
+			, RVW_OPNN_CN
+			, RMRK_CN
+			, DEL_YN
+			, WRTR_EMP_NM
+			, WRTR_EMP_NO
+			, WRT_YMD
+			, WRT_DEPT_NM
+			, WRT_DEPT_NO
+			, MDFCN_EMP_NM
+			, MDFCN_EMP_NO
+			, MDFCN_YMD
+			, MDFCN_DEPT_NM
+			, MDFCN_DEPT_NO
+		) VALUES (
+			#{RVW_OPNN_MNG_NO}
+			, #{CVTN_MNG_NO}
+			, #{RVW_TKCG_MNG_NO}
+			, #{RVW_OPNN_REG_YMD}
+			, #{RVW_OPNN_CMPTN_YMD}
+			<choose>
+				<when test="REQUEST_STATUS_CD != '' and REQUEST_STATUS_CD != null and @java.lang.Integer@parseInt(REQUEST_STATUS_CD) gt 1300">
+				, 'Y'
+				</when>
+				<otherwise>
+				, 'N'
+				</otherwise>
+			</choose>
+			, #{RVW_OPNN_CN}
+			, #{RMRK_CN}
+			, 'N'
+			, #{WRTR_EMP_NM}
+			, #{WRTR_EMP_NO}
+			, #{WRT_YMD}
+			, #{WRT_DEPT_NM}
+			, #{WRT_DEPT_NO}
+			, #{MDFCN_EMP_NM}
+			, #{MDFCN_EMP_NO}
+			, #{MDFCN_YMD}
+			, #{MDFCN_DEPT_NM}
+			, #{MDFCN_DEPT_NO}
+		)
+	</insert>
+	
+	<select id="getAgreeFile1" resultType="HashMap">
+		/* oldDataSql.getAgreeFile1_필수심사 의뢰 기본 첨부파일*/
+		SELECT
+			A.ATTACH_SQNO as FILE_MNG_NO
+			, C.CONTRACT_TYPE_CD||C.CONTRACT_REVIEW_SQNO as CVTN_MNG_NO
+			, C.CONTRACT_TYPE_CD||C.CONTRACT_REVIEW_SQNO as TRGT_PST_MNG_NO
+			, 'RQST' as FILE_SE_NM
+			, A.ORG_FILE_NM as DWNLD_FILE_NM
+			, A.SAVE_FILE_NM as SRVR_FILE_NM
+			, A.ORG_FILE_NM as PHYS_FILE_NM
+	<!-- 		, SUBSTR(A.SAVE_FILE_NM, INSTR(A.SAVE_FILE_NM, '.', -1) + 1) AS FILE_EXTN_NM -->
+<!-- 			, SUBSTR(REPLACE(A.SAVE_FILE_NM, '$ENC$PV', ''), INSTR(REPLACE(A.SAVE_FILE_NM, '$ENC$PV', ''), '.', -1) + 1) AS FILE_EXTN_NM -->
+			, CASE 	WHEN INSTR(A.SAVE_FILE_NM, '.', -1) > 0 AND LENGTH(SUBSTR(A.SAVE_FILE_NM, INSTR(A.SAVE_FILE_NM, '.', -1)+1, LENGTH(A.SAVE_FILE_NM))) > 5 THEN ''
+					WHEN INSTR(A.SAVE_FILE_NM, '.', -1) > 0 THEN SUBSTR(A.SAVE_FILE_NM, INSTR(A.SAVE_FILE_NM, '.', -1)+1, LENGTH(A.SAVE_FILE_NM))
+					ELSE ''
+			  END AS FILE_EXTN_NM
+			, '0' as FILE_SZ
+			, 'TB_CVTN_MNG' as TRGT_PST_TBL_NM
+			, A.SORT_NO as SORT_SEQ
+			, '' as DOC_FORM_MNG_NO
+			, 'N' as DEL_YN
+			, B.MANAGER_NM as WRTR_EMP_NM
+			, B.CRT_USER_ID as WRTR_EMP_NO
+			, TO_CHAR(TO_DATE(SUBSTR(A.CRT_DTTM, 1, 10), 'RR/MM/DD'), 'YYYYMMDD') AS WRT_YMD
+			, B.MANAGER_DEPT_NM as WRT_DEPT_NM
+			, B.MANAGER_DEPT_CD as WRT_DEPT_NO
+			, B.MANAGER_NM as MDFCN_EMP_NM
+			, B.CRT_USER_ID as MDFCN_EMP_NO
+			,TO_CHAR(TO_DATE(SUBSTR(A.CRT_DTTM, 1, 10), 'RR/MM/DD'), 'YYYYMMDD') AS MDFCN_YMD
+			, B.MANAGER_DEPT_NM as MDFCN_DEPT_NM
+			, B.MANAGER_DEPT_CD as MDFCN_DEPT_NO
+		FROM la_attach A LEFT JOIN LA_REQUEST_MANAGER B ON A.CRT_USER_ID = B.CRT_USER_ID and B.REQUEST_SQNO = A.REF_SQNO AND B.MANAGER_GUBUN_CD = 1000 
+						 LEFT JOIN LA_CONTRACT_REVIEW C ON C.CONTRACT_REVIEW_SQNO = A.REF_SQNO
+		WHERE REF_SQNO IN (
+		    SELECT CONTRACT_REVIEW_SQNO
+		    FROM LA_CONTRACT_REVIEW
+		)
+		AND REF_TABLE_NM = 'la_contract_review'
+		AND GUBUN_CD = 20
+	</select>
+	
+	<select id="getAgreeFile2" resultType="HashMap">
+		/* oldDataSql.getAgreeFile2_필수심사 담변(심사보고서) 첨부파일*/
+		SELECT
+			A.ATTACH_SQNO as FILE_MNG_NO
+			, A.REF_SQNO as CVTN_MNG_NO
+			, A.REF_SQNO as TRGT_PST_MNG_NO
+			, 'OPNN' as FILE_SE_NM
+			, A.ORG_FILE_NM as DWNLD_FILE_NM
+			, A.SAVE_FILE_NM as SRVR_FILE_NM
+			, A.ORG_FILE_NM as PHYS_FILE_NM
+	<!-- 		, SUBSTR(A.SAVE_FILE_NM, INSTR(A.SAVE_FILE_NM, '.', -1) + 1) AS FILE_EXTN_NM -->
+<!-- 			, SUBSTR(REPLACE(A.SAVE_FILE_NM, '$ENC$PV', ''), INSTR(REPLACE(A.SAVE_FILE_NM, '$ENC$PV', ''), '.', -1) + 1) AS FILE_EXTN_NM -->
+			, CASE 	WHEN INSTR(A.SAVE_FILE_NM, '.', -1) > 0 AND LENGTH(SUBSTR(A.SAVE_FILE_NM, INSTR(A.SAVE_FILE_NM, '.', -1)+1, LENGTH(A.SAVE_FILE_NM))) > 5 THEN ''
+					WHEN INSTR(A.SAVE_FILE_NM, '.', -1) > 0 THEN SUBSTR(A.SAVE_FILE_NM, INSTR(A.SAVE_FILE_NM, '.', -1)+1, LENGTH(A.SAVE_FILE_NM))
+					ELSE ''
+			  END AS FILE_EXTN_NM
+			, '0' as FILE_SZ
+			, 'TB_CVTN_RVW_OPNN' as TRGT_PST_TBL_NM
+			, A.SORT_NO as SORT_SEQ
+			, '' as DOC_FORM_MNG_NO
+			, 'N' as DEL_YN
+			, B.MANAGER_NM as WRTR_EMP_NM
+			, B.CRT_USER_ID as WRTR_EMP_NO
+			, TO_CHAR(TO_DATE(SUBSTR(A.CRT_DTTM, 1, 10), 'RR/MM/DD'), 'YYYYMMDD') AS WRT_YMD
+			, B.MANAGER_DEPT_NM as WRT_DEPT_NM
+			, B.MANAGER_DEPT_CD as WRT_DEPT_NO
+			, B.MANAGER_NM as MDFCN_EMP_NM
+			, B.CRT_USER_ID as MDFCN_EMP_NO
+			,TO_CHAR(TO_DATE(SUBSTR(A.CRT_DTTM, 1, 10), 'RR/MM/DD'), 'YYYYMMDD') AS MDFCN_YMD
+			, B.MANAGER_DEPT_NM as MDFCN_DEPT_NM
+			, B.MANAGER_DEPT_CD as MDFCN_DEPT_NO
+		FROM la_attach A LEFT JOIN LA_REQUEST_MANAGER B ON A.CRT_USER_ID = B.CRT_USER_ID and B.REQUEST_SQNO = A.REF_SQNO AND B.MANAGER_GUBUN_CD = 1000 
+						 LEFT JOIN LA_CONTRACT_REVIEW C ON C.CONTRACT_REVIEW_SQNO = A.REF_SQNO
+		WHERE ref_sqno IN (
+		    select CONTRACT_REVIEW_SQNO
+		    from LA_CONTRACT_REVIEW
+		)
+		and ref_table_nm = 'la_contract_review'
+		and gubun_cd = 30
+		and REF_SQNO = #{CONTRACT_REVIEW_SQNO}
+	</select>
+	
+	<select id="getAgreeFile3" resultType="HashMap">
+		/* oldDataSql.getAgreeFile3_필수심사 의뢰 반영여부결과서 첨부파일*/
+		SELECT
+			A.ATTACH_SQNO as FILE_MNG_NO
+			, C.CONTRACT_TYPE_CD||C.CONTRACT_REVIEW_SQNO as CVTN_MNG_NO
+			, C.CONTRACT_TYPE_CD||C.CONTRACT_REVIEW_SQNO as TRGT_PST_MNG_NO
+			, 'RES' as FILE_SE_NM
+			, A.ORG_FILE_NM as DWNLD_FILE_NM
+			, A.SAVE_FILE_NM as SRVR_FILE_NM
+			, A.ORG_FILE_NM as PHYS_FILE_NM
+	<!-- 		, SUBSTR(A.SAVE_FILE_NM, INSTR(A.SAVE_FILE_NM, '.', -1) + 1) AS FILE_EXTN_NM -->
+<!-- 			, SUBSTR(REPLACE(A.SAVE_FILE_NM, '$ENC$PV', ''), INSTR(REPLACE(A.SAVE_FILE_NM, '$ENC$PV', ''), '.', -1) + 1) AS FILE_EXTN_NM -->
+			, CASE 	WHEN INSTR(A.SAVE_FILE_NM, '.', -1) > 0 AND LENGTH(SUBSTR(A.SAVE_FILE_NM, INSTR(A.SAVE_FILE_NM, '.', -1)+1, LENGTH(A.SAVE_FILE_NM))) > 5 THEN ''
+					WHEN INSTR(A.SAVE_FILE_NM, '.', -1) > 0 THEN SUBSTR(A.SAVE_FILE_NM, INSTR(A.SAVE_FILE_NM, '.', -1)+1, LENGTH(A.SAVE_FILE_NM))
+					ELSE ''
+			  END AS FILE_EXTN_NM
+			, '0' as FILE_SZ
+			, 'TB_CVTN_MNG' as TRGT_PST_TBL_NM
+			, A.SORT_NO as SORT_SEQ
+			, '' as DOC_FORM_MNG_NO
+			, 'N' as DEL_YN
+			, B.MANAGER_NM as WRTR_EMP_NM
+			, B.CRT_USER_ID as WRTR_EMP_NO
+			, TO_CHAR(TO_DATE(SUBSTR(A.CRT_DTTM, 1, 10), 'RR/MM/DD'), 'YYYYMMDD') AS WRT_YMD
+			, B.MANAGER_DEPT_NM as WRT_DEPT_NM
+			, B.MANAGER_DEPT_CD as WRT_DEPT_NO
+			, B.MANAGER_NM as MDFCN_EMP_NM
+			, B.CRT_USER_ID as MDFCN_EMP_NO
+			,TO_CHAR(TO_DATE(SUBSTR(A.CRT_DTTM, 1, 10), 'RR/MM/DD'), 'YYYYMMDD') AS MDFCN_YMD
+			, B.MANAGER_DEPT_NM as MDFCN_DEPT_NM
+			, B.MANAGER_DEPT_CD as MDFCN_DEPT_NO
+		FROM la_attach A LEFT JOIN LA_REQUEST_MANAGER B ON A.CRT_USER_ID = B.CRT_USER_ID and B.REQUEST_SQNO = A.REF_SQNO AND B.MANAGER_GUBUN_CD = 1000 
+						 LEFT JOIN LA_CONTRACT_REVIEW C ON C.CONTRACT_REVIEW_SQNO = A.REF_SQNO
+		WHERE REF_SQNO IN (
+		    SELECT CONTRACT_REVIEW_SQNO
+		    FROM LA_CONTRACT_REVIEW
+		)
+		AND REF_TABLE_NM = 'la_contract_review'
+		AND GUBUN_CD = 10
+	</select>
+	
+	
+	<insert id="insertAgreeFile1" parameterType="HashMap">
+		/* oldDataSql.insertAgreeFile1 */
+		INSERT INTO TB_CVTN_FILE (
+			FILE_MNG_NO
+			, CVTN_MNG_NO
+			, TRGT_PST_MNG_NO
+			, FILE_SE_NM
+			, DWNLD_FILE_NM
+			, SRVR_FILE_NM
+			, PHYS_FILE_NM
+			, FILE_EXTN_NM
+			, FILE_SZ
+			, TRGT_PST_TBL_NM
+			, SORT_SEQ
+			, DOC_FORM_MNG_NO
+			, DEL_YN
+			, WRTR_EMP_NM
+			, WRTR_EMP_NO
+			, WRT_YMD
+			, WRT_DEPT_NM
+			, WRT_DEPT_NO
+			, MDFCN_EMP_NM
+			, MDFCN_EMP_NO
+			, MDFCN_YMD
+			, MDFCN_DEPT_NM
+			, MDFCN_DEPT_NO
+		) VALUES (
+			#{FILE_MNG_NO}
+			, #{CVTN_MNG_NO}
+			, #{RVW_OPNN_MNG_NO}
+			, #{FILE_SE_NM}
+			, #{DWNLD_FILE_NM}
+			, #{SRVR_FILE_NM}
+			, #{PHYS_FILE_NM}
+			, #{FILE_EXTN_NM}
+			, #{FILE_SZ}
+			, #{TRGT_PST_TBL_NM}
+			, #{SORT_SEQ}
+			, #{DOC_FORM_MNG_NO}
+			, #{DEL_YN}
+			, #{WRTR_EMP_NM}
+			, #{WRTR_EMP_NO}
+			, #{WRT_YMD}
+			, #{WRT_DEPT_NM}
+			, #{WRT_DEPT_NO}
+			, #{MDFCN_EMP_NM}
+			, #{MDFCN_EMP_NO}
+			, #{MDFCN_YMD}
+			, #{MDFCN_DEPT_NM}
+			, #{MDFCN_DEPT_NO}
+		)
+	</insert>
+	
+	<insert id="insertAgreeFile2" parameterType="HashMap">
+		/* oldDataSql.insertAgreeFile2 */
+		INSERT INTO TB_CVTN_FILE (
+			FILE_MNG_NO
+			, CVTN_MNG_NO
+			, TRGT_PST_MNG_NO
+			, FILE_SE_NM
+			, DWNLD_FILE_NM
+			, SRVR_FILE_NM
+			, PHYS_FILE_NM
+			, FILE_EXTN_NM
+			, FILE_SZ
+			, TRGT_PST_TBL_NM
+			, SORT_SEQ
+			, DOC_FORM_MNG_NO
+			, DEL_YN
+			, WRTR_EMP_NM
+			, WRTR_EMP_NO
+			, WRT_YMD
+			, WRT_DEPT_NM
+			, WRT_DEPT_NO
+			, MDFCN_EMP_NM
+			, MDFCN_EMP_NO
+			, MDFCN_YMD
+			, MDFCN_DEPT_NM
+			, MDFCN_DEPT_NO
+		) VALUES (
+			#{FILE_MNG_NO}
+			, #{CVTN_MNG_NO}
+			, #{TRGT_PST_MNG_NO}
+			, #{FILE_SE_NM}
+			, #{DWNLD_FILE_NM}
+			, #{SRVR_FILE_NM}
+			, #{PHYS_FILE_NM}
+			, #{FILE_EXTN_NM}
+			, #{FILE_SZ}
+			, #{TRGT_PST_TBL_NM}
+			, #{SORT_SEQ}
+			, #{DOC_FORM_MNG_NO}
+			, #{DEL_YN}
+			, #{WRTR_EMP_NM}
+			, #{WRTR_EMP_NO}
+			, #{WRT_YMD}
+			, #{WRT_DEPT_NM}
+			, #{WRT_DEPT_NO}
+			, #{MDFCN_EMP_NM}
+			, #{MDFCN_EMP_NO}
+			, #{MDFCN_YMD}
+			, #{MDFCN_DEPT_NM}
+			, #{MDFCN_DEPT_NO}
+		)
+	</insert>
+	
+	<select id="getAgreeMemo1" resultType="HashMap">
+		/* oldDataSql.getAgreeMemo1_협약의뢰 메모 */
+   		SELECT
+			A.RCOMMENT_SQNO AS CVTN_MEMO_MNG_NO
+			, A.REQUEST_SQNO AS CVTN_MNG_NO
+			, '구버전 댓글 데이터-'||A.RCOMMENT_SQNO AS MEMO_TTL
+			, A.MEMO_CNTN AS MEMO_CN
+			, 'N' AS DEL_YN
+			, A.WRITER_NM AS WRTR_EMP_NM
+			, A.CRT_USER_ID AS WRTR_EMP_NO
+			, TO_CHAR(TO_DATE(SUBSTR(A.CRT_DTTM, 1, 10), 'RR/MM/DD'), 'YYYYMMDD') AS WRT_YMD
+			, B.MANAGER_DEPT_NM AS WRT_DEPT_NM
+			, B.MANAGER_DEPT_CD AS WRT_DEPT_NO
+			, '' AS MDFCN_EMP_NM
+			, A.CHG_USER_ID AS MDFCN_EMP_NO
+			, TO_CHAR(TO_DATE(SUBSTR(A.CHG_DTTM, 1, 10), 'RR/MM/DD'), 'YYYYMMDD') AS MDFCN_YMD
+			, '' AS MDFCN_DEPT_NM
+			, '' AS MDFCN_DEPT_NO
+<!-- 			, 'CMEMO' AS CVTN_DOC_SE_NM -->
+			, A.WRITER_GRADE_NM
+			
+			, A.WRITER_TLNO -- 다 null
+			, A.WRITER_EMAIL_ADDR -- 다 null
+			, A.CHG_IP
+		FROM
+			LA_REQUEST_COMMENT A LEFT JOIN (SELECT * FROM LA_REQUEST_MANAGER WHERE MANAGER_GUBUN_CD = 1000) B ON A.REQUEST_SQNO = B.REQUEST_SQNO
+		WHERE 
+			A.REQUEST_SQNO = #{CVTN_MNG_NO}
+	</select>
+	
+		<insert id="insertAgreeMemo1" parameterType="HashMap">
+		/* oldDataSql.insertAgreeMemo1 */
+		INSERT INTO TB_CVTN_MEMO (
+			CVTN_MEMO_MNG_NO
+			, CVTN_MNG_NO
+			, MEMO_TTL
+			, MEMO_CN
+			, DEL_YN
+			, WRTR_EMP_NM
+			, WRTR_EMP_NO
+			, WRT_YMD
+			, WRT_DEPT_NM
+			, WRT_DEPT_NO
+			, MDFCN_EMP_NM
+			, MDFCN_EMP_NO
+			, MDFCN_YMD
+			, MDFCN_DEPT_NM
+			, MDFCN_DEPT_NO
+<!-- 			, CVTN_DOC_SE_NM -->
+		) VALUES (
+			#{CVTN_MEMO_MNG_NO}
+			, #{CVTN_MNG_NO}
+			, #{MEMO_TTL}
+			, #{MEMO_CN}
+			, #{DEL_YN}
+			, #{WRTR_EMP_NM}
+			, #{WRTR_EMP_NO}
+			, #{WRT_YMD}
+			, #{WRT_DEPT_NM}
+			, #{WRT_DEPT_NO}
+			, #{MDFCN_EMP_NM}
+			, #{MDFCN_EMP_NO}
+			, #{MDFCN_YMD}
+			, #{MDFCN_DEPT_NM}
+			, #{MDFCN_DEPT_NO}
+<!-- 			, #{CVTN_DOC_SE_NM} -->
+		)
+	</insert>
+	
+	<select id="getAgreeMemoFile1" resultType="HashMap">
+		/* oldDataSql.getAgreeMemoFile1_협약의뢰 메모파일 */
+		SELECT
+			A.ATTACH_SQNO as FILE_MNG_NO
+			, A.REF_SQNO as CVTN_MNG_NO
+			, '' as TRGT_PST_MNG_NO
+			, '' as FILE_SE_NM
+			, A.ORG_FILE_NM as DWNLD_FILE_NM
+			, A.SAVE_FILE_NM as SRVR_FILE_NM
+			, A.ORG_FILE_NM as PHYS_FILE_NM
+	<!-- 		, SUBSTR(A.SAVE_FILE_NM, INSTR(A.SAVE_FILE_NM, '.', -1) + 1) AS FILE_EXTN_NM -->
+<!-- 			, SUBSTR(REPLACE(A.SAVE_FILE_NM, '$ENC$PV', ''), INSTR(REPLACE(A.SAVE_FILE_NM, '$ENC$PV', ''), '.', -1) + 1) AS FILE_EXTN_NM -->
+			, CASE 	WHEN INSTR(A.SAVE_FILE_NM, '.', -1) > 0 AND LENGTH(SUBSTR(A.SAVE_FILE_NM, INSTR(A.SAVE_FILE_NM, '.', -1)+1, LENGTH(A.SAVE_FILE_NM))) > 5 THEN ''
+					WHEN INSTR(A.SAVE_FILE_NM, '.', -1) > 0 THEN SUBSTR(A.SAVE_FILE_NM, INSTR(A.SAVE_FILE_NM, '.', -1)+1, LENGTH(A.SAVE_FILE_NM))
+					ELSE ''
+			  END AS FILE_EXTN_NM
+			, '0' as FILE_SZ
+			, '' as TRGT_PST_TBL_NM
+			, A.SORT_NO as SORT_SEQ
+			, '' as DOC_FORM_MNG_NO
+			, 'N' as DEL_YN
+			, B.MANAGER_NM as WRTR_EMP_NM
+			, B.CRT_USER_ID as WRTR_EMP_NO
+			, TO_CHAR(TO_DATE(SUBSTR(A.CRT_DTTM, 1, 10), 'RR/MM/DD'), 'YYYYMMDD') AS WRT_YMD
+			, B.MANAGER_DEPT_NM as WRT_DEPT_NM
+			, B.MANAGER_DEPT_CD as WRT_DEPT_NO
+			, B.MANAGER_NM as MDFCN_EMP_NM
+			, B.CRT_USER_ID as MDFCN_EMP_NO
+			,TO_CHAR(TO_DATE(SUBSTR(A.CRT_DTTM, 1, 10), 'RR/MM/DD'), 'YYYYMMDD') AS MDFCN_YMD
+			, B.MANAGER_DEPT_NM as MDFCN_DEPT_NM
+			, B.MANAGER_DEPT_CD as MDFCN_DEPT_NO
+		FROM 
+			LA_ATTACH A LEFT JOIN LA_REQUEST_MANAGER B ON A.CRT_USER_ID = B.CRT_USER_ID and B.REQUEST_SQNO = A.REF_SQNO AND B.MANAGER_GUBUN_CD = 1000 
+		WHERE 
+			A.REF_SQNO = #{CVTN_MEMO_MNG_NO}
+			AND A.REF_TABLE_NM = 'la_request_comment'
+	</select>
+	
+	<insert id="insertAgreeMemoFile1" parameterType="HashMap">
+		/* oldDataSql.insertAgreeMemoFile1 */
+		INSERT INTO TB_CVTN_FILE (
+			FILE_MNG_NO
+			, CVTN_MNG_NO
+			, TRGT_PST_MNG_NO
+			, FILE_SE_NM
+			, DWNLD_FILE_NM
+			, SRVR_FILE_NM
+			, PHYS_FILE_NM
+			, FILE_EXTN_NM
+			, FILE_SZ
+			, TRGT_PST_TBL_NM
+			, SORT_SEQ
+			, DOC_FORM_MNG_NO
+			, DEL_YN
+			, WRTR_EMP_NM
+			, WRTR_EMP_NO
+			, WRT_YMD
+			, WRT_DEPT_NM
+			, WRT_DEPT_NO
+			, MDFCN_EMP_NM
+			, MDFCN_EMP_NO
+			, MDFCN_YMD
+			, MDFCN_DEPT_NM
+			, MDFCN_DEPT_NO
+		) VALUES (
+			#{FILE_MNG_NO}
+			, #{CVTN_MNG_NO_1}
+			, #{TRGT_PST_MNG_NO_1}
+			, #{FILE_SE_NM}
+			, #{DWNLD_FILE_NM}
+			, #{SRVR_FILE_NM}
+			, #{PHYS_FILE_NM}
+			, #{FILE_EXTN_NM}
+			, #{FILE_SZ}
+			, #{TRGT_PST_TBL_NM}
+			, #{SORT_SEQ}
+			, #{DOC_FORM_MNG_NO}
+			, #{DEL_YN}
+			, #{WRTR_EMP_NM}
+			, #{WRTR_EMP_NO}
+			, #{WRT_YMD}
+			, #{WRT_DEPT_NM}
+			, #{WRT_DEPT_NO}
+			, #{MDFCN_EMP_NM}
+			, #{MDFCN_EMP_NO}
+			, #{MDFCN_YMD}
+			, #{MDFCN_DEPT_NM}
+			, #{MDFCN_DEPT_NO}
+		)
+	</insert>
+	
+		
+	<select id="getAgreeFile4" resultType="HashMap">
+		/* oldDataSql.getAgreeFile4_기타계약 담변(검토의견서) 첨부파일*/
+		SELECT
+			A.ATTACH_SQNO as FILE_MNG_NO
+			, A.REF_SQNO as CVTN_MNG_NO
+			, A.REF_SQNO as TRGT_PST_MNG_NO
+			, 'OPNN' as FILE_SE_NM
+			, A.ORG_FILE_NM as DWNLD_FILE_NM
+			, A.SAVE_FILE_NM as SRVR_FILE_NM
+			, A.ORG_FILE_NM as PHYS_FILE_NM
+	<!-- 		, SUBSTR(A.SAVE_FILE_NM, INSTR(A.SAVE_FILE_NM, '.', -1) + 1) AS FILE_EXTN_NM -->
+<!-- 			, SUBSTR(REPLACE(A.SAVE_FILE_NM, '$ENC$PV', ''), INSTR(REPLACE(A.SAVE_FILE_NM, '$ENC$PV', ''), '.', -1) + 1) AS FILE_EXTN_NM -->
+			, CASE 	WHEN INSTR(A.SAVE_FILE_NM, '.', -1) > 0 AND LENGTH(SUBSTR(A.SAVE_FILE_NM, INSTR(A.SAVE_FILE_NM, '.', -1)+1, LENGTH(A.SAVE_FILE_NM))) > 5 THEN ''
+					WHEN INSTR(A.SAVE_FILE_NM, '.', -1) > 0 THEN SUBSTR(A.SAVE_FILE_NM, INSTR(A.SAVE_FILE_NM, '.', -1)+1, LENGTH(A.SAVE_FILE_NM))
+					ELSE ''
+			  END AS FILE_EXTN_NM
+			, '0' as FILE_SZ
+			, 'TB_CVTN_RVW_OPNN' as TRGT_PST_TBL_NM
+			, A.SORT_NO as SORT_SEQ
+			, '' as DOC_FORM_MNG_NO
+			, 'N' as DEL_YN
+			, B.MANAGER_NM as WRTR_EMP_NM
+			, B.CRT_USER_ID as WRTR_EMP_NO
+			, TO_CHAR(TO_DATE(SUBSTR(A.CRT_DTTM, 1, 10), 'RR/MM/DD'), 'YYYYMMDD') AS WRT_YMD
+			, B.MANAGER_DEPT_NM as WRT_DEPT_NM
+			, B.MANAGER_DEPT_CD as WRT_DEPT_NO
+			, B.MANAGER_NM as MDFCN_EMP_NM
+			, B.CRT_USER_ID as MDFCN_EMP_NO
+			,TO_CHAR(TO_DATE(SUBSTR(A.CRT_DTTM, 1, 10), 'RR/MM/DD'), 'YYYYMMDD') AS MDFCN_YMD
+			, B.MANAGER_DEPT_NM as MDFCN_DEPT_NM
+			, B.MANAGER_DEPT_CD as MDFCN_DEPT_NO
+		FROM la_attach A LEFT JOIN LA_REQUEST_MANAGER B ON A.CRT_USER_ID = B.CRT_USER_ID and B.REQUEST_SQNO = A.REF_SQNO AND B.MANAGER_GUBUN_CD = 1000
+		WHERE ref_sqno IN (
+		    SELECT request_sqno
+		    FROM la_request
+		    WHERE request_gubun_cd = '1000' and request_status_cd != '9999' and req_type = 'CONT'
+		)
+		and gubun_cd = 20
+		and ref_table_nm = 'la_request'
+		and REF_SQNO = #{CVTN_MNG_NO}
+	</select>
+	
+	<select id="getAgreeFile5" resultType="HashMap">
+		/* oldDataSql.getAgreeFile5_기타계약 기본 첨부파일*/
+		SELECT
+			A.ATTACH_SQNO as FILE_MNG_NO
+			, A.REF_SQNO as CVTN_MNG_NO
+			, A.REF_SQNO as TRGT_PST_MNG_NO
+			, 'RQST' as FILE_SE_NM
+			, A.ORG_FILE_NM as DWNLD_FILE_NM
+			, A.SAVE_FILE_NM as SRVR_FILE_NM
+			, A.ORG_FILE_NM as PHYS_FILE_NM
+	<!-- 		, SUBSTR(A.SAVE_FILE_NM, INSTR(A.SAVE_FILE_NM, '.', -1) + 1) AS FILE_EXTN_NM -->
+<!-- 			, SUBSTR(REPLACE(A.SAVE_FILE_NM, '$ENC$PV', ''), INSTR(REPLACE(A.SAVE_FILE_NM, '$ENC$PV', ''), '.', -1) + 1) AS FILE_EXTN_NM -->
+			, CASE 	WHEN INSTR(A.SAVE_FILE_NM, '.', -1) > 0 AND LENGTH(SUBSTR(A.SAVE_FILE_NM, INSTR(A.SAVE_FILE_NM, '.', -1)+1, LENGTH(A.SAVE_FILE_NM))) > 5 THEN ''
+					WHEN INSTR(A.SAVE_FILE_NM, '.', -1) > 0 THEN SUBSTR(A.SAVE_FILE_NM, INSTR(A.SAVE_FILE_NM, '.', -1)+1, LENGTH(A.SAVE_FILE_NM))
+					ELSE ''
+			  END AS FILE_EXTN_NM
+			, '0' as FILE_SZ
+			, 'TB_CVTN_MNG' as TRGT_PST_TBL_NM
+			, A.SORT_NO as SORT_SEQ
+			, '' as DOC_FORM_MNG_NO
+			, 'N' as DEL_YN
+			, B.MANAGER_NM as WRTR_EMP_NM
+			, B.CRT_USER_ID as WRTR_EMP_NO
+			, TO_CHAR(TO_DATE(SUBSTR(A.CRT_DTTM, 1, 10), 'RR/MM/DD'), 'YYYYMMDD') AS WRT_YMD
+			, B.MANAGER_DEPT_NM as WRT_DEPT_NM
+			, B.MANAGER_DEPT_CD as WRT_DEPT_NO
+			, B.MANAGER_NM as MDFCN_EMP_NM
+			, B.CRT_USER_ID as MDFCN_EMP_NO
+			,TO_CHAR(TO_DATE(SUBSTR(A.CRT_DTTM, 1, 10), 'RR/MM/DD'), 'YYYYMMDD') AS MDFCN_YMD
+			, B.MANAGER_DEPT_NM as MDFCN_DEPT_NM
+			, B.MANAGER_DEPT_CD as MDFCN_DEPT_NO
+		FROM la_attach A LEFT JOIN LA_REQUEST_MANAGER B ON A.CRT_USER_ID = B.CRT_USER_ID and B.REQUEST_SQNO = A.REF_SQNO AND B.MANAGER_GUBUN_CD = 1000
+		WHERE ref_sqno IN (
+		    SELECT request_sqno
+		    FROM la_request
+		    WHERE request_gubun_cd = '1000' and request_status_cd != '9999' and req_type = 'CONT'
+		)
+		and gubun_cd = 10
+		and ref_table_nm = 'la_request'
+	</select>
+	
+	<select id="getAgreeFile6" resultType="HashMap">
+		/* oldDataSql.getAgreeFile6_ 시의회 담변(검토) 첨부파일*/
+		select
+			A.ATTACH_SQNO as FILE_MNG_NO
+			, A.REF_SQNO as CNSTN_MNG_NO
+			, A.REF_SQNO as TRGT_PST_MNG_NO
+			, 'OPNN' as FILE_SE_NM
+			, A.ORG_FILE_NM as DWNLD_FILE_NM
+			, A.SAVE_FILE_NM as SRVR_FILE_NM
+			, A.ORG_FILE_NM as PHYS_FILE_NM
+	<!-- 		, SUBSTR(A.SAVE_FILE_NM, INSTR(A.SAVE_FILE_NM, '.', -1) + 1) AS FILE_EXTN_NM -->
+<!-- 			, SUBSTR(REPLACE(A.SAVE_FILE_NM, '$ENC$PV', ''), INSTR(REPLACE(A.SAVE_FILE_NM, '$ENC$PV', ''), '.', -1) + 1) AS FILE_EXTN_NM -->
+			, CASE 	WHEN INSTR(A.SAVE_FILE_NM, '.', -1) > 0 AND LENGTH(SUBSTR(A.SAVE_FILE_NM, INSTR(A.SAVE_FILE_NM, '.', -1)+1, LENGTH(A.SAVE_FILE_NM))) > 5 THEN ''
+					WHEN INSTR(A.SAVE_FILE_NM, '.', -1) > 0 THEN SUBSTR(A.SAVE_FILE_NM, INSTR(A.SAVE_FILE_NM, '.', -1)+1, LENGTH(A.SAVE_FILE_NM))
+					ELSE ''
+			  END AS FILE_EXTN_NM
+			, '0' as FILE_SZ
+			, 'TB_CVTN_RVW_OPNN' as TRGT_PST_TBL_NM
+			, A.SORT_NO as SORT_SEQ
+			, '' as DOC_FORM_MNG_NO
+			, 'N' as DEL_YN
+			, B.MANAGER_NM as WRTR_EMP_NM
+			, B.CRT_USER_ID as WRTR_EMP_NO
+			, TO_CHAR(TO_DATE(SUBSTR(A.CRT_DTTM, 1, 10), 'RR/MM/DD'), 'YYYYMMDD') AS WRT_YMD
+			, B.MANAGER_DEPT_NM as WRT_DEPT_NM
+			, B.MANAGER_DEPT_CD as WRT_DEPT_NO
+			, B.MANAGER_NM as MDFCN_EMP_NM
+			, B.CRT_USER_ID as MDFCN_EMP_NO
+			,TO_CHAR(TO_DATE(SUBSTR(A.CRT_DTTM, 1, 10), 'RR/MM/DD'), 'YYYYMMDD') AS MDFCN_YMD
+			, B.MANAGER_DEPT_NM as MDFCN_DEPT_NM
+			, B.MANAGER_DEPT_CD as MDFCN_DEPT_NO
+		FROM la_attach A LEFT JOIN LA_REQUEST_MANAGER B ON A.CRT_USER_ID = B.CRT_USER_ID and B.REQUEST_SQNO = A.REF_SQNO AND B.MANAGER_GUBUN_CD = 1000 
+		WHERE ref_sqno IN (
+		    SELECT request_sqno
+		    FROM la_request
+		    WHERE request_gubun_cd = '5000'
+		)
+		and ref_table_nm = 'la_request_council'
+		and ATTACH_SQNO in (
+		    select ATTACH_SQNO
+		    from
+		    (
+		    select 
+		    ATTACH_SQNO
+		    from la_attach
+		    where org_file_nm like '%(의%-%)%'
+		    and ref_table_nm = 'la_request_council'
+		    and gubun_cd = 10
+		    union all
+		    select 
+		    ATTACH_SQNO
+		    from la_attach
+		    where org_file_nm like '%(20%-%)%'
+		    and org_file_nm not like '%(의%-%)%'
+		    and org_file_nm not like '%의뢰서%'
+		    and ref_table_nm = 'la_request_council'
+		    and gubun_cd = 10
+		    union all
+		    select 
+		    ATTACH_SQNO
+		    from la_attach
+		    where org_file_nm like '%[%20%-%]%'
+		    and org_file_nm not like '%(의%-%)%'
+		    and org_file_nm not like '%의뢰서%'
+		    and ref_table_nm = 'la_request_council'
+		    and gubun_cd = 10
+		    )
+		)
+		and REF_SQNO = #{CVTN_MNG_NO}
+	</select>
+	
+	<select id="getAgreeFile7" resultType="HashMap">
+		/* oldDataSql.getAgreeFile6_ 시의회 기본(답변제외) 첨부파일*/
+		select
+			A.ATTACH_SQNO as FILE_MNG_NO
+			, A.REF_SQNO as CNSTN_MNG_NO
+			, A.REF_SQNO as TRGT_PST_MNG_NO
+			, 'RQST' as FILE_SE_NM
+			, A.ORG_FILE_NM as DWNLD_FILE_NM
+			, A.SAVE_FILE_NM as SRVR_FILE_NM
+			, A.ORG_FILE_NM as PHYS_FILE_NM
+	<!-- 		, SUBSTR(A.SAVE_FILE_NM, INSTR(A.SAVE_FILE_NM, '.', -1) + 1) AS FILE_EXTN_NM -->
+<!-- 			, SUBSTR(REPLACE(A.SAVE_FILE_NM, '$ENC$PV', ''), INSTR(REPLACE(A.SAVE_FILE_NM, '$ENC$PV', ''), '.', -1) + 1) AS FILE_EXTN_NM -->
+			, CASE 	WHEN INSTR(A.SAVE_FILE_NM, '.', -1) > 0 AND LENGTH(SUBSTR(A.SAVE_FILE_NM, INSTR(A.SAVE_FILE_NM, '.', -1)+1, LENGTH(A.SAVE_FILE_NM))) > 5 THEN ''
+					WHEN INSTR(A.SAVE_FILE_NM, '.', -1) > 0 THEN SUBSTR(A.SAVE_FILE_NM, INSTR(A.SAVE_FILE_NM, '.', -1)+1, LENGTH(A.SAVE_FILE_NM))
+					ELSE ''
+			  END AS FILE_EXTN_NM
+			, '0' as FILE_SZ
+			, 'TB_CVTN_MNG' as TRGT_PST_TBL_NM
+			, A.SORT_NO as SORT_SEQ
+			, '' as DOC_FORM_MNG_NO
+			, 'N' as DEL_YN
+			, B.MANAGER_NM as WRTR_EMP_NM
+			, B.CRT_USER_ID as WRTR_EMP_NO
+			, TO_CHAR(TO_DATE(SUBSTR(A.CRT_DTTM, 1, 10), 'RR/MM/DD'), 'YYYYMMDD') AS WRT_YMD
+			, B.MANAGER_DEPT_NM as WRT_DEPT_NM
+			, B.MANAGER_DEPT_CD as WRT_DEPT_NO
+			, B.MANAGER_NM as MDFCN_EMP_NM
+			, B.CRT_USER_ID as MDFCN_EMP_NO
+			,TO_CHAR(TO_DATE(SUBSTR(A.CRT_DTTM, 1, 10), 'RR/MM/DD'), 'YYYYMMDD') AS MDFCN_YMD
+			, B.MANAGER_DEPT_NM as MDFCN_DEPT_NM
+			, B.MANAGER_DEPT_CD as MDFCN_DEPT_NO
+		FROM la_attach A LEFT JOIN LA_REQUEST_MANAGER B ON A.CRT_USER_ID = B.CRT_USER_ID and B.REQUEST_SQNO = A.REF_SQNO AND B.MANAGER_GUBUN_CD = 1000 
+		WHERE ref_sqno IN (
+		    SELECT request_sqno
+		    FROM la_request
+		    WHERE request_gubun_cd = '5000'
+		)
+		and ref_table_nm = 'la_request_council'
+		and ATTACH_SQNO not in (
+		    select ATTACH_SQNO
+		    from
+		    (
+		    select 
+		    ATTACH_SQNO
+		    from la_attach
+		    where org_file_nm like '%(의%-%)%'
+		    and ref_table_nm = 'la_request_council'
+		    and gubun_cd = 10
+		    union all
+		    select 
+		    ATTACH_SQNO
+		    from la_attach
+		    where org_file_nm like '%(20%-%)%'
+		    and org_file_nm not like '%(의%-%)%'
+		    and org_file_nm not like '%의뢰서%'
+		    and ref_table_nm = 'la_request_council'
+		    and gubun_cd = 10
+		    union all
+		    select 
+		    ATTACH_SQNO
+		    from la_attach
+		    where org_file_nm like '%[%20%-%]%'
+		    and org_file_nm not like '%(의%-%)%'
+		    and org_file_nm not like '%의뢰서%'
+		    and ref_table_nm = 'la_request_council'
+		    and gubun_cd = 10
+		    )
+		)
+	</select>
+	
+	
+	<select id="getConferenceInfo1" resultType="HashMap">
+		/* oldDataSql.getConferenceInfo1_자문회의 데이터 게시판 테이블에 넣기 위해 읽어오기 */
+		SELECT 
+		    A.CONFERENCE_SQNO AS PST_MNG_NO
+		    , '0' AS UP_PST_MNG_NO
+		    , '100000133' AS MENU_MNG_NO
+		    , 'CON' AS BBS_SE
+		    , A.CONFERENCE_NM AS PST_TTL
+		    , A.AGENDA_CNTN AS PST_CN
+		    , 0 AS PST_INQ_CNT
+<!-- 		    ,  AS PST_NTC_YN -->
+		    , B.STAFF_NM AS WRTR_EMP_NM
+		    , A.CRT_USER_ID AS WRTR_EMP_NO
+		    , TO_CHAR(TO_DATE(SUBSTR(A.CRT_DTTM, 1, 10), 'RR/MM/DD'), 'YYYYMMDD') AS WRT_YMD
+		    , B.STAFF_DEPT_NM AS WRT_DEPT_NM
+<!-- 		    , A. AS WRT_DEPT_NO -->
+<!-- 		    , A. AS MDFCN_EMP_NM -->
+<!-- 		    , B.STAFF_USER_ID AS MDFCN_EMP_NO -->
+		    , TO_CHAR(TO_DATE(SUBSTR(A.CHG_DTTM, 1, 10), 'RR/MM/DD'), 'YYYYMMDD') AS MDFCN_YMD
+<!-- 		    , A. AS MDFCN_DEPT_NM -->
+<!-- 		    , A. AS MDFCN_DEPT_NO -->
+		    , A.SUMMARY_CNTN AS RMRK_CN
+		    , (CASE WHEN A.STATUS_CD = '1000' THEN '의뢰' 
+		    		WHEN A.STATUS_CD = '1100' THEN '대기' 
+		    		WHEN A.STATUS_CD = '1200' THEN '접수' 
+		    		WHEN A.STATUS_CD = '1300' THEN '종료' 
+		    END) AS PRCS_STTS_SE_NM
+<!-- 		    , A.STATUS_CD AS PRCS_STTS_SE_NM -->
+		    , A.DOCNO_NM AS DOC_MNG_NO
+		    , C.STAFF_NM AS TKCG_EMP_NM
+		FROM 
+<!-- 		    LA_CONFERENCE A LEFT JOIN LA_STAFF B ON A.CRT_USER_ID = B.STAFF_USER_ID -->
+		    LA_CONFERENCE A 
+		    LEFT JOIN LA_STAFF B ON A.CRT_USER_ID = B.STAFF_USER_ID
+		    LEFT JOIN LA_STAFF C ON A.STAFF_USER_ID = C.STAFF_USER_ID
+		WHERE 
+		    CONFERENCE_NM NOT LIKE '%관리대장%'
+	</select>
+	
+	<insert id="insertConferenceInfo1" parameterType="HashMap">
+		INSERT INTO TB_BBS_MNG (
+			PST_MNG_NO
+			, UP_PST_MNG_NO
+			, MENU_MNG_NO
+			, BBS_SE
+			, PST_TTL
+			, PST_CN
+			, PST_INQ_CNT
+<!-- 			, PST_NTC_YN -->
+			, WRTR_EMP_NM
+			, WRTR_EMP_NO
+			, WRT_YMD
+			, WRT_DEPT_NM
+<!-- 			, WRT_DEPT_NO -->
+<!-- 			, MDFCN_EMP_NM -->
+<!-- 			, MDFCN_EMP_NO -->
+<!-- 			, MDFCN_YMD -->
+<!-- 			, MDFCN_DEPT_NM -->
+<!-- 			, MDFCN_DEPT_NO -->
+			, RMRK_CN
+			, PRCS_STTS_SE_NM
+			, DOC_MNG_NO
+			
+			, TKCG_EMP_NM
+		) VALUES (
+			#{PST_MNG_NO}
+			, #{UP_PST_MNG_NO}
+			, #{MENU_MNG_NO}
+			, #{BBS_SE}
+			, #{PST_TTL}
+			, #{PST_CN}
+			, #{PST_INQ_CNT}
+<!-- 			, #{PST_NTC_YN} -->
+			, #{WRTR_EMP_NM}
+			, #{WRTR_EMP_NO}
+			, #{WRT_YMD}
+			, #{WRT_DEPT_NM}
+<!-- 			, #{WRT_DEPT_NO} -->
+<!-- 			, #{MDFCN_EMP_NM} -->
+<!-- 			, #{MDFCN_EMP_NO} -->
+<!-- 			, #{MDFCN_YMD} -->
+<!-- 			, #{MDFCN_DEPT_NM} -->
+<!-- 			, #{MDFCN_DEPT_NO} -->
+			, #{RMRK_CN}
+			, #{PRCS_STTS_SE_NM}
+			, #{DOC_MNG_NO}
+			
+			, #{TKCG_EMP_NM}
+		)
+	</insert>
+	
+	<select id="getConferenceFile1" resultType="HashMap">
+		SELECT
+            A.ATTACH_SQNO AS FILE_MNG_NO
+            , A.REF_SQNO AS PST_MNG_NO
+            , A.SAVE_FILE_NM as SRVR_FILE_NM
+            , A.ORG_FILE_NM as PHYS_FILE_NM
+  			, CASE 	WHEN INSTR(A.SAVE_FILE_NM, '.', -1) > 0 AND LENGTH(SUBSTR(A.SAVE_FILE_NM, INSTR(A.SAVE_FILE_NM, '.', -1)+1, LENGTH(A.SAVE_FILE_NM))) > 5 THEN ''
+					WHEN INSTR(A.SAVE_FILE_NM, '.', -1) > 0 THEN SUBSTR(A.SAVE_FILE_NM, INSTR(A.SAVE_FILE_NM, '.', -1)+1, LENGTH(A.SAVE_FILE_NM))
+					ELSE ''
+		  	END AS FILE_EXTN_NM
+            , 'CON' AS FILE_SE -- CON으로 해야할지 여쭤보기
+		FROM la_attach A LEFT JOIN LA_REQUEST_MANAGER B ON A.CRT_USER_ID = B.CRT_USER_ID and B.REQUEST_SQNO = A.REF_SQNO AND B.MANAGER_GUBUN_CD = 1000 
+						 LEFT JOIN LA_CONTRACT_REVIEW C ON C.CONTRACT_REVIEW_SQNO = A.REF_SQNO
+		WHERE 1=1
+		and ref_table_nm = 'la_conference'
+		and REF_SQNO = #{PST_MNG_NO}
+	</select>
+	
+		<insert id="insertConferenceFile1" parameterType="HashMap">
+		/* oldDataSql.insertConferenceFile1 */
+		INSERT INTO TB_BBS_FILE (
+			FILE_MNG_NO
+			, PST_MNG_NO
+			, SRVR_FILE_NM
+			, PHYS_FILE_NM
+			, FILE_EXTN_NM
+			, FILE_SE
+		) VALUES (
+			#{FILE_MNG_NO}
+			, #{PST_MNG_NO}
+			, #{SRVR_FILE_NM}
+			, #{PHYS_FILE_NM}
+			, #{FILE_EXTN_NM}
+			, #{FILE_SE}
+		)
+	</insert>
+	
+</mapper>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

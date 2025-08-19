@@ -1,0 +1,233 @@
+<html>
+<head>
+ <TITLE>표준보안API JAVA 메뉴얼</TITLE>
+</head>
+</html>
+
+<body>
+<br><br>
+<p>
+
+<table width="100%">
+<tr>
+ <td align=center valign=bottom>
+   <h1>경로 잡기</h1>
+ </td>
+</table>
+
+<p>
+<blockquote>
+
+<table border=0 width="82%" cellspacing=0 cellpadding=0>
+<tr>
+ <td width=20>
+   <img src="../img/check.gif">
+ </td>
+ <td align=left>
+  <font><b>클래스 경로 잡기</b></font>
+ </td>
+</tr>
+</table>
+
+
+<p>
+<blockquote>
+
+JAVA용 표준보안API (libgpkiapi_jni.jar)를 사용하기 위해서는 jar 파일이 클래스 경로에 잡혀있어야합니다.<br>
+클래스 경로를 잡을때는 두 가지 방법으로 잡을 수 있습니다. <br>
+<br>
+첫번째 : java 옵션 이용 (-classpath) <br>
+두번째 : 환경 변수 등록 <br>
+<br>
+
+<table border=1 width="82%" cellspacing=0 cellpadding=5>
+<tr>
+ <td align=center width=15% rowspan=2>
+  Windows인 경우
+ </td>
+ <td width=15%>
+  java 옵션 이용
+ </td>
+ <td align=left>
+  java -classpath jar_directory\libgpkiapi_jni.jar;. (두개 이상인 경우 세미콜론 ";"으로 연결)
+ </td>
+</tr>
+<tr>
+ <td width=10%>
+  환경 변수 등록
+ </td>
+ <td align=left>
+  "내 컴퓨터->속성->고급->환경변수"에서 "새로 만들기"를 클릭하여 classpath 변수를 등록한다.<br><br>
+ <img src="../img/win_classpath.jpg">
+ </td>
+</tr>
+<tr>
+ <td align=center width=15% rowspan=2>
+  Unix 계열인 경우
+ </td>
+ <td width=15%>
+  java 옵션 이용
+ </td>
+ <td align=left>
+  java -classpath jar_directory/libgpkiapi_jni.jar:. (두개 이상인 경우 콜론 ":"으로 연결)
+ </td>
+</tr>
+<tr>
+ <td width=10%>
+  환경 변수 등록
+ </td>
+ <td align=left>
+   set CLASSPATH=jar_directory/libgpkiapi_jni.jar:.
+ </td>
+</tr>
+<tr>
+</tr>
+</table>
+
+</blockquote>
+</blockquote>
+
+<p>
+<blockquote>
+
+<table border=0 width="82%" cellspacing=0 cellpadding=0>
+<tr>
+ <td width=20>
+  <img src="../img/check.gif">
+ </td>
+ <td align=left>
+  <font><b>라이브러리 경로 잡기</b></font>
+ </td>
+</tr>
+</table>
+
+
+<p>
+<blockquote>
+
+JAVA용 표준보안API에서 호출하는 JNI 파일의 경로를 잡아주어야 합니다.<br>
+이때, 이 JNI 파일은 C/C++용 표준보안API와 LDAP 라이브러리와 연결되어있어 이 두 라이브러리의 경로도 잡아주어야 합니다.<br>
+<br>
+
+<table border=1 width="82%" cellspacing=0 cellpadding=5>
+<tr>
+ <td align=center width=15%>
+  Windows인 경우
+ </td>
+ <td align=left colspan=2>
+  JNI를 비롯한 C/C++용 표준보안API와 LDAP 라이브러리가 위치해 있는 경로를 환경 변수에 등록합니다.<br>
+  "내 컴퓨터->속성->고급->환경변수"에서 기존 "path" 변수에 "라이브러리가 설치된 디렉토리"를 추가합니다.<br><br>
+  <img src="../img/win_path.jpg">
+ </td>
+</tr>
+<tr>
+ <td align=center width=15% rowspan=3>
+  Solaris, Linux, UnixWare 인 경우
+ </td>
+ <td align=left width=15%>
+  C 또는 TC shell
+ </td>
+ <td align=left>
+  setenv LD_LIBRARY_PATH "라이브러리가 설치된 디렉토리"
+ </td>
+</tr>
+<tr>
+ <td align=left>
+  Corn shell
+ </td>
+ <td align=left>
+  export LD_LIBRARY_PATH="라이브러리가 설치된 디렉토리"
+ </td>
+</tr>
+<tr>
+ <td align=left>
+  Born shell
+ </td>
+ <td align=left>
+  LD_LIBRARY_PATH="라이브러리가 설치된 디렉토리"<br>
+  export LD_LIBRARY_PATH
+ </td>
+</tr>
+<tr>
+ <td align=center width=15% rowspan=3>
+  IBM-AIX인 경우
+ </td>
+ <td align=left width=15%>
+  C 또는 TC shell
+ </td>
+ <td align=left>
+  setenv LIBPATH "라이브러리가 설치된 디렉토리"
+ </td>
+</tr>
+<tr>
+ <td align=left>
+  Corn shell
+ </td>
+ <td align=left>
+  export LIBPATH="라이브러리가 설치된 디렉토리"
+ </td>
+</tr>
+<tr>
+ <td align=left>
+  Born shell
+ </td>
+ <td align=left>
+  LIBPATH="라이브러리가 설치된 디렉토리"<br>
+  export LIBPATH
+ </td>
+</tr>
+<tr>
+ <td align=center width=15% rowspan=3>
+  HP-UX인 경우
+ </td>
+ <td align=left width=15%>
+  C 또는 TC shell
+ </td>
+ <td align=left>
+  setenv SHLIB_PATH "라이브러리가 설치된 디렉토리"
+ </td>
+</tr>
+<tr>
+ <td align=left>
+  Corn shell
+ </td>
+ <td align=left>
+  export SHLIB_PATH="라이브러리가 설치된 디렉토리"
+ </td>
+</tr>
+<tr>
+ <td align=left>
+  Born shell
+ </td>
+ <td align=left>
+  SHLIB_PATH="라이브러리가 설치된 디렉토리"<br>
+  export SHLIB_PATH
+ </td>
+</tr>
+</table>
+
+</blockquote>
+</blockquote>
+
+<br>
+<hr size=3 noshade>
+<br>
+<table width=100%>
+<tr>
+ <td align=left width=50% rowspan=2>
+   <a href="../index.html"><img src="../img/home.gif" border=0></a>
+ </td>
+ <td align=right width=50%>
+   <font size=2> Copyright &#169; 2003~2016 Government Computerization Center (GCC). </font>
+ </td>
+</tr>
+<tr>
+ <td align=right>
+   <font size=2> All Rights Reserved. </font>
+ </td>
+</tr>
+</table>
+</font>
+
+</body>
+</html>

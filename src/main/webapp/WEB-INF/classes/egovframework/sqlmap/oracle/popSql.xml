@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "/WEB-INF/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="popSql">
+	<select id="selectPopList" resultType="HashMap">
+		SELECT 
+	 			POPUP_MNG_NO,
+				POPUP_TTL,
+				POPUP_CN,
+				POPUP_PSTG_BGNG_YMD,
+				POPUP_PSTG_END_YMD,
+				POPUP_WDTH_SZ,
+				POPUP_VRTC_SZ 
+	 	FROM TB_COM_POPUP
+	 	ORDER BY POPUP_PSTG_BGNG_YMD DESC
+	</select>
+	
+	<insert id="insertPop">
+		<selectKey keyProperty="POPUP_MNG_NO" resultType="String" order="BEFORE">
+			SELECT KEYID.NEXTVAL FROM DUAL
+		</selectKey>
+	 	INSERT INTO TB_COM_POPUP
+	 		(
+	 			POPUP_MNG_NO,
+				POPUP_TTL, 
+				POPUP_CN,
+				POPUP_PSTG_BGNG_YMD,
+				POPUP_PSTG_END_YMD,
+				POPUP_WDTH_SZ,
+				POPUP_VRTC_SZ
+			)	
+		VALUES
+			(
+				#{POPUP_MNG_NO},
+				#{POPUP_TTL},
+				#{POPUP_CN},
+				REPLACE(#{POPUP_PSTG_BGNG_YMD}, '-', ''),
+				REPLACE(#{POPUP_PSTG_END_YMD}, '-', ''),
+				#{POPUP_WDTH_SZ},
+				#{POPUP_VRTC_SZ}
+			)
+	 </insert>
+	 
+	<delete id="deletePop">
+		DELETE FROM TB_COM_POPUP
+		WHERE POPUP_MNG_NO = #{POPUP_MNG_NO}
+	</delete>
+	
+	<select id="selectPop" resultType="HashMap">
+	 	SELECT 
+	 	<![CDATA[
+	 			POPUP_MNG_NO,
+				POPUP_TTL,
+				replace(POPUP_CN,'</br>','\n') as POPUP_CN,
+				POPUP_CN as CONT2,
+				POPUP_PSTG_BGNG_YMD,
+				POPUP_PSTG_END_YMD,
+				POPUP_WDTH_SZ,
+				POPUP_VRTC_SZ,
+				b.FILE_MNG_NO,
+				b.SRVR_FILE_NM,
+				b.PHYS_FILE_NM,
+				b.FILE_SE
+		]]>
+	 	FROM TB_COM_POPUP a, TB_BBS_FILE b
+	 	WHERE a.POPUP_MNG_NO = b.PST_MNG_NO(+) and POPUP_MNG_NO = #{POPUP_MNG_NO}
+	</select>
+	
+	<select id="todayPopList" resultType="HashMap">
+	 	SELECT 
+	 			POPUP_MNG_NO,
+				POPUP_TTL,
+				POPUP_CN,
+				POPUP_PSTG_BGNG_YMD,
+				POPUP_PSTG_END_YMD,
+				POPUP_WDTH_SZ,
+				POPUP_VRTC_SZ ,
+				b.FILE_MNG_NO,
+				b.SRVR_FILE_NM,
+				b.PHYS_FILE_NM,
+				b.FILE_SE
+		FROM TB_COM_POPUP a, TB_BBS_FILE b
+	 	WHERE a.POPUP_MNG_NO = b.PST_MNG_NO(+) and TO_DATE(TO_CHAR(SYSDATE,'YYYYMMDD')) BETWEEN POPUP_PSTG_BGNG_YMD AND POPUP_PSTG_END_YMD
+	</select>
+	
+	<update id="updatePop">
+		UPDATE TB_COM_POPUP SET
+			POPUP_TTL = #{POPUP_TTL}
+			,POPUP_CN = #{POPUP_CN}
+			,POPUP_PSTG_BGNG_YMD = REPLACE(#{POPUP_PSTG_BGNG_YMD}, '-', '')
+			,POPUP_PSTG_END_YMD = REPLACE(#{POPUP_PSTG_END_YMD}, '-', '')
+			,POPUP_WDTH_SZ = #{POPUP_WDTH_SZ}
+			,POPUP_VRTC_SZ = #{POPUP_VRTC_SZ}
+		WHERE POPUP_MNG_NO = #{POPUP_MNG_NO}
+	</update>
+</mapper>

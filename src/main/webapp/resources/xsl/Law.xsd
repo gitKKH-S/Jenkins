@@ -1,0 +1,264 @@
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <xsd:attributeGroup name="lawAtt">
+    <xsd:attribute name="revcha" use="required" type="xsd:int" />
+    <xsd:attribute name="subtitle" use="required" type="xsd:string" />
+    <xsd:attribute name="title" use="required" type="xsd:string" />
+  </xsd:attributeGroup>
+
+  <xsd:attributeGroup name="hisitemAtt">
+    <xsd:attribute name="title" use="required" type="xsd:string" />
+    <xsd:attribute name="bookcd" use="required" type="xsd:string" />
+    <xsd:attribute name="bookcode" use="required" type="xsd:string" />
+    <xsd:attribute name="bookid" use="required" type="xsd:string" />
+    <xsd:attribute name="obookid" use="required" type="xsd:string" />
+    <xsd:attribute name="otherlaw" use="required" type="xsd:string" />
+    <xsd:attribute name="deptname" use="required" type="xsd:string" />
+    <xsd:attribute name="enddt" use="required" type="xsd:string" />
+    <xsd:attribute name="startdt" use="required" type="xsd:string" />
+    <xsd:attribute name="promuldt" use="required" type="xsd:string" />
+    <xsd:attribute name="promulno" use="required" type="xsd:string" />
+    <xsd:attribute name="noformyn" use="required" type="xsd:string" />
+    <xsd:attribute name="revcd" use="required" type="xsd:string" />
+    <xsd:attribute name="revcha" use="required" type="xsd:int" />
+    <xsd:attribute name="statecd" use="required" type="xsd:string" />
+    <xsd:attribute name="xmlid" use="required" type="xsd:string" />
+  </xsd:attributeGroup>
+
+
+  <xsd:attributeGroup name="bonGujo">
+    <xsd:attribute name="startcha" use="required" type="xsd:int" />
+    <xsd:attribute name="endcha" use="required" type="xsd:int" />
+    <xsd:attribute name="contid" use="required" type="xsd:string" />
+    <xsd:attribute name="bcontid" use="required" type="xsd:string" />
+  </xsd:attributeGroup>
+
+  <xsd:attributeGroup name="gujoInfo">
+    <xsd:attribute name="contno" use="required" type="xsd:int" />
+    <xsd:attribute name="contsubno" use="required" type="xsd:string" />
+    <xsd:attribute name="title" use="required" type="xsd:string" />
+    <xsd:attribute name="startcha" use="required" type="xsd:int" />
+    <xsd:attribute name="endcha" use="required" type="xsd:int" />
+    <xsd:attribute name="contid" use="required" type="xsd:string" />
+    <xsd:attribute name="bcontid" use="required" type="xsd:string" />
+    <xsd:attribute name="createstate" use="optional" type="xsd:string" />
+    <xsd:attribute name="curstate" use="optional" type="xsd:string" />
+    <xsd:attribute name="f_contno" use="optional" type="xsd:int" />
+    <xsd:attribute name="f_contsubno" use="optional" type="xsd:string" />
+    <xsd:attribute name="f_title" use="optional" type="xsd:string" />
+    <xsd:attribute name="revisiontag" use="optional" type="xsd:string" />
+    <xsd:attribute name="movefrom" use="optional" type="xsd:string" />
+    <xsd:attribute name="moveto" use="optional" type="xsd:string" />
+    <xsd:attribute name="showtag" use="optional" type="xsd:string" />
+  </xsd:attributeGroup>
+
+  <xsd:attributeGroup name="byulAtt">
+    <xsd:attribute name="contno" use="required" type="xsd:int" />
+    <xsd:attribute name="contsubno" use="required" type="xsd:string" />
+    <xsd:attribute name="title" use="required" type="xsd:string" />
+    <xsd:attribute name="startcha" use="required" type="xsd:int" />
+    <xsd:attribute name="endcha" use="required" type="xsd:int" />
+    <xsd:attribute name="contid" use="required" type="xsd:string" />
+    <xsd:attribute name="bcontid" use="required" type="xsd:string" />
+    <xsd:attribute name="createstate" use="optional" type="xsd:string" />
+    <xsd:attribute name="curstate" use="optional" type="xsd:string" />
+    <xsd:attribute name="f_contno" use="optional" type="xsd:int" />
+    <xsd:attribute name=" f_contsubno" use="optional" type="xsd:string" />
+    <xsd:attribute name="f_title" use="optional" type="xsd:string" />
+    <xsd:attribute name="revisiontag" use="optional" type="xsd:string" />
+    <xsd:attribute name="fileid" use="required" type="xsd:string" />
+    <xsd:attribute name="serverfilename" use="required" type="xsd:string" />
+    <xsd:attribute name="pcfilename" use="required" type="xsd:string" />
+    <xsd:attribute name="byulcd" use="required" type="xsd:string" />
+    <xsd:attribute name="showtitle" use="required" type="xsd:string" />
+    <xsd:attribute name="showtag" use="optional" type="xsd:string" />
+  </xsd:attributeGroup>
+
+
+  <xsd:element name="law" type="lawType" />
+  <xsd:element name="bon" type="bonType" />
+  <xsd:element name="pyun" type="pyunType"/>
+  <xsd:element name="jang" type="jangType"/>
+  <xsd:element name="jeol" type="jeolType"/>
+  <xsd:element name="gwan" type="gwanType"/>
+  <xsd:element name="jo" type="joType"/>
+  <xsd:element name="buchicklist" type="buchicklistType"/>
+  <xsd:element name="buchick" type="buchickType"/>
+  <xsd:element name="byullist" type="byullistType"/>
+  <xsd:element name="byul" type="byulType"/>
+  <xsd:element name="byulji" type="byulType"/>
+  <xsd:element name="byulch" type="byulType"/>
+
+  <xsd:complexType name="lawType">
+    <xsd:sequence>
+      <xsd:element name="history" type="historyType" minOccurs="1" maxOccurs="1"/>
+      <xsd:element name="bon" type="bonType" minOccurs="1" maxOccurs="1"/>
+      <xsd:element name="pyun" type="pyunType" minOccurs="0" maxOccurs="unbounded"/>
+      <xsd:element name="jang" type="jangType" minOccurs="0" maxOccurs="unbounded"/>
+      <xsd:element name="jeol" type="jeolType" minOccurs="0" maxOccurs="unbounded"/>
+      <xsd:element name="gwan" type="gwanType" minOccurs="0" maxOccurs="unbounded"/>
+      <xsd:element name="jo" type="joType" minOccurs="0" maxOccurs="unbounded"/>
+      <xsd:element name="buchicklist" type="buchicklistType" minOccurs="0" maxOccurs="unbounded" />
+      <xsd:element name="byullist" type="byullistType" minOccurs="1" maxOccurs="unbounded"/>
+    </xsd:sequence>
+    <xsd:attributeGroup ref="lawAtt" />
+  </xsd:complexType>
+
+  <xsd:complexType name="historyType">
+    <xsd:sequence>
+      <xsd:element name="hisitem" type="hisitemType" minOccurs="1" maxOccurs="unbounded"/>
+    </xsd:sequence>
+  </xsd:complexType>
+
+  <xsd:complexType name="hisitemType">
+    <xsd:attributeGroup ref="hisitemAtt" />
+  </xsd:complexType>
+
+  <xsd:complexType name="bonType">
+    <xsd:sequence>
+      <xsd:element name="pyun" type="pyunType" minOccurs="0" maxOccurs="unbounded"/>
+      <xsd:element name="jang" type="jangType" minOccurs="0" maxOccurs="unbounded"/>
+      <xsd:element name="jeol" type="jeolType" minOccurs="0" maxOccurs="unbounded"/>
+      <xsd:element name="gwan" type="gwanType" minOccurs="0" maxOccurs="unbounded"/>
+      <xsd:element name="jo" type="joType" minOccurs="0" maxOccurs="unbounded"/>
+    </xsd:sequence>
+    <xsd:attributeGroup ref="bonGujo" />
+  </xsd:complexType>
+
+  <xsd:complexType name="pyunType">
+    <xsd:sequence>
+      <xsd:element name="jang" type="jangType" minOccurs="0" maxOccurs="unbounded"/>
+      <xsd:element name="jeol" type="jeolType" minOccurs="0" maxOccurs="unbounded"/>
+      <xsd:element name="gwan" type="gwanType" minOccurs="0" maxOccurs="unbounded"/>
+      <xsd:element name="jo" type="joType" minOccurs="1" maxOccurs="unbounded"/>
+    </xsd:sequence>
+    <xsd:attributeGroup ref="gujoInfo" />
+  </xsd:complexType>
+
+  <xsd:complexType name="jangType">
+    <xsd:sequence>
+      <xsd:element name="jeol" type="jeolType" minOccurs="0" maxOccurs="unbounded"/>
+      <xsd:element name="gwan" type="gwanType" minOccurs="0" maxOccurs="unbounded"/>
+      <xsd:element name="jo" type="joType" minOccurs="1" maxOccurs="unbounded"/>
+    </xsd:sequence>
+    <xsd:attributeGroup ref="gujoInfo" />
+  </xsd:complexType>
+
+  <xsd:complexType name="jeolType">
+    <xsd:sequence>
+      <xsd:element name="gwan" type="gwanType" minOccurs="0" maxOccurs="unbounded"/>
+      <xsd:element name="jo" type="joType" minOccurs="1" maxOccurs="unbounded"/>
+    </xsd:sequence>
+    <xsd:attributeGroup ref="gujoInfo" />
+  </xsd:complexType>
+
+  <xsd:complexType name="gwanType">
+    <xsd:sequence>
+      <xsd:element name="jo" type="joType" minOccurs="1" maxOccurs="unbounded"/>
+    </xsd:sequence>
+    <xsd:attributeGroup ref="gujoInfo" />
+  </xsd:complexType>
+
+  <xsd:complexType name="joType">
+    <xsd:sequence>
+      <xsd:element name="old" minOccurs="0" maxOccurs="1" />
+      <xsd:element name="new" minOccurs="0" maxOccurs="1" />
+      <xsd:element name="cont" type="contType" minOccurs="0" maxOccurs="unbounded" />
+      <xsd:element name="hang" type="hangType" minOccurs="0" maxOccurs="unbounded" />
+      <xsd:element name="ho" type="hoType" minOccurs="0" maxOccurs="unbounded" />
+      <xsd:element name="mok" type="mokType" minOccurs="0" maxOccurs="unbounded" />
+      <xsd:element name="dan" type="danType" minOccurs="0" maxOccurs="unbounded" />
+    </xsd:sequence>
+    <xsd:attributeGroup ref="gujoInfo" />
+  </xsd:complexType>
+
+  
+  <xsd:complexType name="byullistType">
+    <xsd:sequence>
+      <xsd:element name="byul" type="byulType" minOccurs="0" maxOccurs="unbounded"/>
+      <xsd:element name="byulji" type="byulType" minOccurs="0" maxOccurs="unbounded"/>
+      <xsd:element name="byulch" type="byulType" minOccurs="0" maxOccurs="unbounded"/>
+    </xsd:sequence>
+    <xsd:attributeGroup ref="bonGujo" />
+  </xsd:complexType>
+
+  <xsd:complexType name="byulType">
+    <xsd:sequence>
+      <xsd:element name="old" minOccurs="0" maxOccurs="1" />
+      <xsd:element name="new" minOccurs="0" maxOccurs="1" />
+      <xsd:element name="cont" type="contType" minOccurs="0" maxOccurs="unbounded" />
+    </xsd:sequence>
+    <xsd:attributeGroup ref="byulAtt" />
+  </xsd:complexType>
+
+  <xsd:complexType name="buchicklistType">
+    <xsd:sequence>
+      <xsd:element name="buchick" type="buchickType" minOccurs="0" maxOccurs="unbounded"/>
+    </xsd:sequence>
+    <xsd:attributeGroup ref="bonGujo" />
+  </xsd:complexType>
+
+  <xsd:complexType name="buchickType">
+    <xsd:sequence>
+      <xsd:element name="old" minOccurs="0" maxOccurs="1" />
+      <xsd:element name="new" minOccurs="0" maxOccurs="1" />
+      <xsd:element name="jo" type="joType" minOccurs="0" maxOccurs="unbounded"/>
+      <xsd:element name="cont" type="contType" minOccurs="0" maxOccurs="unbounded" />
+      <xsd:element name="hang" type="hangType" minOccurs="0" maxOccurs="unbounded" />
+      <xsd:element name="ho" type="hoType" minOccurs="0" maxOccurs="unbounded" />
+      <xsd:element name="mok" type="mokType" minOccurs="0" maxOccurs="unbounded" />
+      <xsd:element name="dan" type="danType" minOccurs="0" maxOccurs="unbounded" />
+    </xsd:sequence>
+    <xsd:attributeGroup ref="gujoInfo" />
+  </xsd:complexType>
+
+
+  <xsd:complexType name="hangType">
+    <xsd:sequence>
+      <xsd:element name="cont" type="contType" minOccurs="0" maxOccurs="unbounded" />
+      <xsd:element name="ho" type="hoType" minOccurs="0" maxOccurs="unbounded" />
+      <xsd:element name="mok" type="mokType" minOccurs="0" maxOccurs="unbounded" />
+      <xsd:element name="dan" type="danType" minOccurs="0" maxOccurs="unbounded" />
+    </xsd:sequence>
+    <xsd:attribute name="contno" use="required" type="xsd:string" />
+    <xsd:attribute name="tag" use="optional" type="xsd:string" />
+  </xsd:complexType>
+  <xsd:complexType name="hoType">
+    <xsd:sequence>
+      <xsd:element name="cont" type="contType" minOccurs="0" maxOccurs="unbounded" />
+      <xsd:element name="mok" type="mokType" minOccurs="0" maxOccurs="unbounded" />
+      <xsd:element name="dan" type="danType" minOccurs="0" maxOccurs="unbounded" />
+    </xsd:sequence>
+    <xsd:attribute name="contno" type="xsd:string" />
+    <xsd:attribute name="tag" use="optional" type="xsd:string" />
+  </xsd:complexType>
+  <xsd:complexType name="mokType">
+    <xsd:sequence>
+      <xsd:element name="cont" type="contType" minOccurs="0" maxOccurs="unbounded" />
+      <xsd:element name="dan" type="danType" minOccurs="0" maxOccurs="unbounded" />
+    </xsd:sequence>
+    <xsd:attribute name="contno" type="xsd:string" />
+  </xsd:complexType>
+  <xsd:complexType name="danType">
+    <xsd:sequence>
+      <xsd:element name="cont" type="contType" minOccurs="1" maxOccurs="unbounded" />
+    </xsd:sequence>
+    <xsd:attribute name="contno" type="xsd:string" />
+  </xsd:complexType>
+  <xsd:complexType mixed="true" name="contType">
+    <xsd:sequence>
+      <xsd:element name="image" type="imageType" minOccurs="0" maxOccurs="unbounded" />
+      <xsd:element name="IMG" type="imageType" minOccurs="0" maxOccurs="unbounded" />
+      <xsd:element name="a5b5" minOccurs="0" maxOccurs="unbounded" />
+    </xsd:sequence>
+    <xsd:attribute name="tag" use="optional" type="xsd:string" />
+    <xsd:attribute name="showtag" use="optional" type="xsd:string" />
+  </xsd:complexType>
+  <xsd:complexType name="imageType">
+    <xsd:attribute name="alt" use="optional" type="xsd:string" />
+    <xsd:attribute name="height" type="xsd:string" />
+    <xsd:attribute name="src" type="xsd:string" />
+    <xsd:attribute name="hspace" type="xsd:string" />
+    <xsd:attribute name="width" type="xsd:string" />
+    <xsd:attribute name="align" type="xsd:string" />
+  </xsd:complexType>
+</xsd:schema>

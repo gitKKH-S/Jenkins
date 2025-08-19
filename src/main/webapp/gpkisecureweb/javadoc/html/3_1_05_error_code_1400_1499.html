@@ -1,0 +1,405 @@
+<html>
+<head>
+ <TITLE>표준보안API JAVA 메뉴얼</TITLE>
+</head>
+</html>
+
+<body>
+<br><br>
+<p>
+
+<table width="100%">
+<tr>
+ <td align=center valign=bottom>
+   <h1>에러코드 (1400~1499)</h1>
+ </td>
+</table>
+
+<p>
+<blockquote>
+
+<table border=1 width=90% cellspacing=0 cellpadding=5>
+<tr>
+ <td width=100 align=center>에러코드</td>
+ <td>1400</td>
+</tr>
+<tr>
+ <td align=center>설명</td>
+ <td> 인증서를 저장매체에서 읽는데 실패</td>
+</tr>
+<tr>
+ <td align=center>해결방법</td>
+ <td>
+  1. 디스크에서 읽는 경우에는 해당 위치에 인증서 파일이 존재하는지, 해당 디렉토리의 읽기 권한이 있는지 확인한다. <br>
+  2. 동적 저장매체를 이용하여 읽는 경우에는 저장매체가 해당 시스템과 연결되어있는지 저장매체의 PIN값을 올바르게 입력하였는지를 확인한다.
+ </td>
+</tr>
+</table>
+
+<br>
+
+<table border=1 width=90% cellspacing=0 cellpadding=5>
+<tr>
+ <td width=100 align=center>에러코드</td>
+ <td>1401</td>
+</tr>
+<tr>
+ <td align=center>설명</td>
+ <td>개인키를 저장매체에서 읽는데 실패</td>
+</tr>
+<tr>
+ <td align=center>해결방법</td>
+ <td>
+  1. 디스크에서 읽는 경우에는 해당 위치에 개인키 파일이 존재하는지, 해당 디렉토리의 읽기 권한이 있는지 확인한다. <br>
+  2. 동적 저장매체를 이용하여 읽는 경우에는 저장매체가 해당 시스템과 연결되어있는지 저장매체의 PIN값을 올바르게 입력하였는지를 확인한다.
+</td>
+</tr>
+</table>
+
+<br>
+
+<table border=1 width=90% cellspacing=0 cellpadding=5>
+<tr>
+ <td width=100 align=center>에러코드</td>
+ <td>1402</td>
+</tr>
+<tr>
+ <td align=center>설명</td>
+ <td>해당 경로의 파일을 읽는데 실패</td>
+</tr>
+<tr>
+ <td align=center>해결방법</td>
+ <td>
+  1. 해당 경로에 파일이 존재하는지 확인한다. <br>
+  2. 해당 경로의 파일에 대한 읽기 권한이 있는지 확인한다. <br>
+</td>
+</tr>
+</table>
+
+<br>
+
+<table border=1 width=90% cellspacing=0 cellpadding=5>
+<tr>
+ <td width=100 align=center>에러코드</td>
+ <td>1403</td>
+</tr>
+<tr>
+ <td align=center>설명</td>
+ <td>해당 경로에 파일을 저장하는데 실패</td>
+</tr>
+<tr>
+ <td align=center>해결방법</td>
+ <td>
+  1. 해당 경로에 쓰기 권한이 있는지 확인한다. <br>
+  2. 해당 경로에 동일한 이름의 디렉토리가 없는지를 확인한다.
+</td>
+</tr>
+</table>
+
+<br>
+
+<table border=1 width=90% cellspacing=0 cellpadding=5>
+<tr>
+ <td width=100 align=center>에러코드</td>
+ <td>1404</td>
+</tr>
+<tr>
+ <td align=center>설명</td>
+ <td>읽고자 하는 파일이 비어있음</td>
+</tr>
+<tr>
+ <td align=center>해결방법</td>
+ <td>해당 경로의 파일의 사이즈가 0이 아닌지를 확인한다.</td>
+</tr>
+</table>
+
+<br>
+
+<table border=1 width=90% cellspacing=0 cellpadding=5>
+<tr>
+ <td width=100 align=center>에러코드</td>
+ <td>1405</td>
+</tr>
+<tr>
+ <td align=center>설명</td>
+ <td>지원하지 않는 저장매체 종류</td>
+</tr>
+<tr>
+ <td align=center>해결방법</td>
+ <td>함수 인자로 지정한 저장매체 종류 값을 확인한다.</td>
+</tr>
+</table>
+
+<br>
+
+<table border=1 width=90% cellspacing=0 cellpadding=5>
+<tr>
+ <td width=100 align=center>에러코드</td>
+ <td>1406</td>
+</tr>
+<tr>
+ <td align=center>설명</td>
+ <td> 동적 라이브러리를 로드해야 함</td>
+</tr>
+<tr>
+ <td align=center>해결방법</td>
+ <td> C/C++ 표준보안API를 직접 사용할 때 발생할 수 있는 에러로서 JAVA용 표준보안API에서는 발생하지 않는 에러이다.</td>
+</tr>
+</table>
+
+<br>
+
+<table border=1 width=90% cellspacing=0 cellpadding=5>
+<tr>
+ <td width=100 align=center>에러코드</td>
+ <td>1407</td>
+</tr>
+<tr>
+ <td align=center>설명</td>
+ <td> 이미 동적라이브러리가 로드되어 있음</td>
+</tr>
+<tr>
+ <td align=center>해결방법</td>
+ <td> C/C++ 표준보안API를 직접 사용할 때 발생할 수 있는 에러로서 JAVA용 표준보안API에서는 발생하지 않는 에러이다.</td>
+</tr>
+</table>
+
+<br>
+
+<table border=1 width=90% cellspacing=0 cellpadding=5>
+<tr>
+ <td width=100 align=center>에러코드</td>
+ <td>1408</td>
+</tr>
+<tr>
+ <td align=center>설명</td>
+ <td> 동적 라이브러리 로드 실패</td>
+</tr>
+<tr>
+ <td align=center>해결방법</td>
+ <td> 동적 라이브러리 위치를 지정한 곳에 동적 라이브러리가 존재하는지 확인한다.</td>
+</tr>
+</table>
+
+<br>
+
+<table border=1 width=90% cellspacing=0 cellpadding=5>
+<tr>
+ <td width=100 align=center>에러코드</td>
+ <td>1409</td>
+</tr>
+<tr>
+ <td align=center>설명</td>
+ <td> 동적 라이브러리 해제 실패</td>
+</tr>
+<tr>
+ <td align=center>해결방법</td>
+ <td> 윈도우 용 함수 FreeLibrary 을 사용하는데 실패하였음. 에러 정보의 에러코드를 통하여 정확한 원인을 파악한다.</td>
+</tr>
+</table>
+
+<br>
+
+<table border=1 width=90% cellspacing=0 cellpadding=5>
+<tr>
+ <td width=100 align=center>에러코드</td>
+ <td>1410</td>
+</tr>
+<tr>
+ <td align=center>설명</td>
+ <td> 동적 라이브러리로부터 함수를 로드하는데 실패</td>
+</tr>
+<tr>
+ <td align=center>해결방법</td>
+ <td> SmartCard 클래스 생성자 호출 시, 설정한 동적 라이브러리가 올바른 라이브러리인지 확인한다.</td>
+</tr>
+</table>
+
+<br>
+
+<table border=1 width=90% cellspacing=0 cellpadding=5>
+<tr>
+ <td width=100 align=center>에러코드</td>
+ <td>1411</td>
+</tr>
+<tr>
+ <td align=center>설명</td>
+ <td> 지정한 파일을 저장매체에서 삭제하는데 실패</td>
+</tr>
+<tr>
+ <td align=center>해결방법</td>
+ <td> 
+  1. 디스크에 있는 파일을 지우고자 한 경우에는 해당 위치의 파일을 삭제할 수 있는 권한이 있는지 확인한다.<br>
+  2. 스마트카드에 있는 파일을 지우고자 한 경우에는 에러 정보를 확인한다.<br>
+ </td>
+</tr>
+</table>
+
+<br>
+
+<table border=1 width=90% cellspacing=0 cellpadding=5>
+<tr>
+ <td width=100 align=center>에러코드</td>
+ <td>1412</td>
+</tr>
+<tr>
+ <td align=center>설명</td>
+ <td> 인증서 파일을 저장매체에 저장하는데 실패</td>
+</tr>
+<tr>
+ <td align=center>해결방법</td>
+ <td> 
+  1. 디스크에 파일을 저장하고자 한 경우에는 해당 위치에 파일을 저장할 수 있는 권한이 있는지 확인한다.<br>
+  2. 스마트카드에 인증서를 저장하고자 한 경우에는 에러 정보를 확인한다.
+ </td>
+</tr>
+</table>
+
+<br>
+
+<table border=1 width=90% cellspacing=0 cellpadding=5>
+<tr>
+ <td width=100 align=center>에러코드</td>
+ <td>1413</td>
+</tr>
+<tr>
+ <td align=center>설명</td>
+ <td> 개인키 파일을 저장매체에 저장하는데 실패</td>
+</tr>
+<tr>
+ <td align=center>해결방법</td>
+ <td> 
+  1. 디스크에 파일을 저장하고자 한 경우에는 해당 위치에 파일을 저장할 수 있는 권한이 있는지 확인한다.<br>
+  2. 스마트카드에 개인키를 저장하고자 한 경우에는 에러 정보를 확인한다.
+ </td>
+</tr>
+</table>
+
+<br>
+
+<table border=1 width=90% cellspacing=0 cellpadding=5>
+<tr>
+ <td width=100 align=center>에러코드</td>
+ <td>1414</td>
+</tr>
+<tr>
+ <td align=center>설명</td>
+ <td> 스마트카드가 PC에 꽂혀있지 않음</td>
+</tr>
+<tr>
+ <td align=center>해결방법</td>
+ <td> 스마트카드가 PC에 꽂혀있는지 확인한다.</td>
+</tr>
+</table>
+
+<br>
+
+<table border=1 width=90% cellspacing=0 cellpadding=5>
+<tr>
+ <td width=100 align=center>에러코드</td>
+ <td>1415</td>
+</tr>
+<tr>
+ <td align=center>설명</td>
+ <td> 잘못된 스마트카드의 PIN 번호를 입력함</td>
+</tr>
+<tr>
+ <td align=center>해결방법</td>
+ <td> 입력한 스마트카드의 PIN 번호가 올바른지 확인합니다.</td>
+</tr>
+</table>
+
+<br>
+
+<table border=1 width=90% cellspacing=0 cellpadding=5>
+<tr>
+ <td width=100 align=center>에러코드</td>
+ <td>1416</td>
+</tr>
+<tr>
+ <td align=center>설명</td>
+ <td> 파일의 끝을 찾는데 실패</td>
+</tr>
+<tr>
+ <td align=center>해결방법</td>
+ <td> 지정한 파일이 올바른지 확인하세요.</td>
+</tr>
+</table>
+
+<br>
+
+<table border=1 width=90% cellspacing=0 cellpadding=5>
+<tr>
+ <td width=100 align=center>에러코드</td>
+ <td>1417</td>
+</tr>
+<tr>
+ <td align=center>설명</td>
+ <td> 파일의 처음을 찾는데 실패</td>
+</tr>
+<tr>
+ <td align=center>해결방법</td>
+ <td> 지정한 파일이 올바른지 확인하세요.</td>
+</tr>
+</table>
+
+<br>
+
+<table border=1 width=90% cellspacing=0 cellpadding=5>
+<tr>
+ <td width=100 align=center>에러코드</td>
+ <td>1418</td>
+</tr>
+<tr>
+ <td align=center>설명</td>
+ <td> 예상했던 파일 사이즈 만큼 파일을 읽는데 실패</td>
+</tr>
+<tr>
+ <td align=center>해결방법</td>
+ <td> 지정한 파일이 올바른지 확인하세요.</td>
+</tr>
+</table>
+
+<br>
+
+<table border=1 width=90% cellspacing=0 cellpadding=5>
+<tr>
+ <td width=100 align=center>에러코드</td>
+ <td>1419</td>
+</tr>
+<tr>
+ <td align=center>설명</td>
+ <td> 파일 생성 실패</td>
+</tr>
+<tr>
+ <td align=center>해결방법</td>
+ <td> 저장하고자 한 위치에 디렉토리 권한을 확인하세요.</td>
+</tr>
+</table>
+
+</blockquote>
+</p>
+
+<br>
+<hr size=3 noshade>
+<br>
+<table width=100%>
+<tr>
+ <td align=left width=50% rowspan=2>
+   <a href="./3_1_error_code.html"><img src="../img/back.gif" border=0></a>
+   <a href="../index.html"><img src="../img/home.gif" border=0></a>
+ </td>
+ <td align=right width=50%>
+   <font size=2> Copyright &#169; 2003~2016 Government Computerization Center (GCC). </font>
+ </td>
+</tr>
+<tr>
+ <td align=right>
+   <font size=2> All Rights Reserved. </font>
+ </td>
+</tr>
+</table>
+</font>
+
+</body>
+</html>

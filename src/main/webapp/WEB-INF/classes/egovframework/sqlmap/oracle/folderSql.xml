@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "/WEB-INF/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="folderSql">
+	<!-- 카테고리 정보 가져오기 -->
+	<select id="getCatList_ext" parameterType="mtenMap" resultType="mtenMap">
+<!--	
+		SELECT lc.catid, lc.title, lc.catcd, lc.useyn, lc.ord, 
+		NVL(bookid,0) bookid ,NVL(statecd,'') statecd, NVL(noformyn,'') noformyn, NVL(obookid,0) obookid, NVL(revcha,-1) revcha,
+		promuldt, startdt, enddt, revcd
+		FROM TB_LM_RULECAT lc, TB_LM_RULEHISTORY lb
+		WHERE lc.pcatid = #{pcatid} AND lc.delyn='N' AND lc.catid = lb.catid(+)
+		ORDER BY lc.ord
+		
+		(select to_char(wm_concat(deptcd)) from tb_lm_ruledept where obookid = lb.obookid)
+-->		
+		SELECT LC.CATID, 
+		DECODE(CATCD,'folder',LC.TITLE,DECODE( LS.STATECD,'현행',LC.TITLE,'폐지',LC.TITLE,LC.TITLE||'('||LS.STATECD||')')) TITLE 
+		, LC.CATCD, LC.USEYN, LC.ORD, 
+		NVL(LB.BOOKID,0) BOOKID ,NVL(LS.STATECD,'') STATECD,LS.STATEID, NVL(LB.NOFORMYN,'') NOFORMYN, 
+		NVL(LB.OBOOKID,0) OBOOKID, NVL(LB.REVCHA,-1) REVCHA,
+		LB.PROMULDT, LB.STARTDT, LB.ENDDT, LB.REVCD, LB.DEPTNAME,
+		LB.DEPT,
+		(
+			select b.statecd from TB_LM_RULEHISTORY  a,TB_LM_STATE b 
+			where obookid=lb.obookid and a.statecd = b.stateid and  revcha=(select max(revcha) from TB_LM_RULEHISTORY where obookid=lb.obookid)
+			AND A.BOOKID = (select max(BOOKID) from TB_LM_RULEHISTORY where obookid=lb.obookid AND revcha= (select max(revcha) from TB_LM_RULEHISTORY where obookid=lb.obookid))	<!-- 임시조치 -->
+		) as FSTATECD
+		,(select max(statehistoryid) from tb_lm_statehistory where bookid = lb.bookid and stateid = lb.statecd) as STATEHISTORYID
+		,(select max(updatecha) from tb_lm_ruleupdatelog where bookid = lb.bookid) as UPDATECHA,
+		LB.BOOKCD
+		FROM TB_LM_RULECAT lc, TB_LM_RULEHISTORY lb,TB_LM_STATE ls 
+		WHERE lc.pcatid = #{node} and lb.statecd=ls.stateid(+)  AND lc.delyn='N' AND lc.catid = lb.catid(+) 
+		<if test="node != '0'">
+			<if test="stateCd == '현행'">
+				and (lb.statecd not in (select stateid from TB_LM_STATE where statecd in (#{key1},#{key2} )) or lc.catcd='folder')
+			</if>
+			<if test="stateCd != '현행'">
+				and (lb.statecd = (select stateid from TB_LM_STATE where statecd = #{stateCd} ) or lc.catcd='folder' )
+			</if>
+		</if>
+		ORDER BY lc.ord
+	</select>
+	
+	<!-- 하위폴더 삽입 -->
+	<insert id="addChild" parameterType="mtenMap">
+		<selectKey keyProperty="catid" resultType="int" order="BEFORE">
+			SELECT KEYID.NEXTVAL FROM DUAL
+		</selectKey>
+		INSERT INTO TB_LM_RULECAT (catid, pcatid, ord, catcd, title, useYn, delYn, upDt)
+		VALUES (
+			#{catid},#{pcatid},#{ord},'folder',#{title},#{useyn},'N',to_char(SYSDATE,'YYYY-MM-DD')
+		)
+	</insert>
+	
+	<!-- ord숫자 받아오기 -->
+	<select id="getCurNodeSize" parameterType="HashMap" resultType="int">
+		SELECT COUNT(lc.catId)
+		FROM TB_LM_RULECAT lc, TB_LM_RULEHISTORY lb 
+		WHERE lc.pcatid = #{pcatid} AND ((lb.statecd=#{statecd} AND lc.catcd='doc')OR(lc.catcd='folder')) AND lc.catid = lb.catid(+)
+	</select>
+	
+	<select id="getNodeSize" resultType="int">
+        SELECT COUNT(catid)
+        FROM TB_LM_RULECAT
+        START WITH delyn='N' AND catid=#{catid}
+        CONNECT BY PRIOR catid = pcatid
+    </select>
+    
+    <!-- curOrd보다 큰 ord값들에 +1씩 -->
+	<update id="reorderMinus" parameterType="mtenMap">
+		UPDATE TB_LM_RULECAT
+		SET ord= ord-1
+		WHERE ord>#{ord} AND pcatid = #{pcatid}
+	</update>
+	
+	<update id="reorderPlus" parameterType="mtenMap">
+		UPDATE TB_LM_RULECAT
+		SET ord= ord+1
+		WHERE ord>=#{ord} AND pcatid = #{pcatid}		
+	</update>
+	
+	<delete id="deleteFolder">
+		DELETE FROM TB_LM_RULECAT
+		WHERE catid=#{catid}
+	</delete>
+	
+	<update id="modFolder" parameterType="mtenMap">
+		UPDATE TB_LM_RULECAT
+		SET ord=#{ord},title=#{title},useyn=#{useyn},updt=to_char(SYSDATE,'YYYY-MM-DD')
+		WHERE catid = #{catid}
+	</update>
+	
+	<update id="reorderAbove" parameterType="mtenMap">
+		<![CDATA[		
+			UPDATE TB_LM_RULECAT
+			SET ord = ord+1
+			WHERE ord>=#{ord} AND pcatid=#{pcatid}
+		]]>
+	</update>
+	<update id="reorderBelow" parameterType="mtenMap">
+		<![CDATA[
+			UPDATE TB_LM_RULECAT
+			SET ord = ord-1
+			WHERE ord>#{ord} AND pcatid=#{pcatid}
+		]]>
+	</update>
+</mapper>

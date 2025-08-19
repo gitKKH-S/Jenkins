@@ -1,0 +1,85 @@
+	String cnstn_mng_no   = consult.get("CNSTN_MNG_NO")==null?"":consult.get("CNSTN_MNG_NO").toString();
+	String menu_mng_no   = consult.get("MENU_MNG_NO")==null?"":consult.get("MENU_MNG_NO").toString();
+	String cnstn_doc_no   = consult.get("CNSTN_DOC_NO")==null?"":consult.get("CNSTN_DOC_NO").toString();
+	String prgrs_stts_se_nm   = consult.get("PRGRS_STTS_SE_NM")==null?"":consult.get("PRGRS_STTS_SE_NM").toString();
+	String rls_yn   = consult.get("RLS_YN")==null?"":consult.get("RLS_YN").toString();
+	String insd_otsd_task_se   = consult.get("INSD_OTSD_TASK_SE")==null?"":consult.get("INSD_OTSD_TASK_SE").toString();
+	String otsd_rqst_rsn   = consult.get("OTSD_RQST_RSN")==null?"":consult.get("OTSD_RQST_RSN").toString();
+	String cnstn_ttl   = consult.get("CNSTN_TTL")==null?"":consult.get("CNSTN_TTL").toString();
+	String cnstn_rqst_emp_no   = consult.get("CNSTN_RQST_EMP_NO")==null?"":consult.get("CNSTN_RQST_EMP_NO").toString();
+	String cnstn_rqst_emp_nm   = consult.get("CNSTN_RQST_EMP_NM")==null?"":consult.get("CNSTN_RQST_EMP_NM").toString();
+	String cnstn_rqst_dept_no   = consult.get("CNSTN_RQST_DEPT_NO")==null?"":consult.get("CNSTN_RQST_DEPT_NO").toString();
+	String cnstn_rqst_dept_nm   = consult.get("CNSTN_RQST_DEPT_NM")==null?"":consult.get("CNSTN_RQST_DEPT_NM").toString();
+	String cnstn_rqst_dept_tmldr_emp_no   = consult.get("CNSTN_RQST_DEPT_TMLDR_EMP_NO")==null?"":consult.get("CNSTN_RQST_DEPT_TMLDR_EMP_NO").toString();
+	String cnstn_rqst_dept_tmldr_nm   = consult.get("CNSTN_RQST_DEPT_TMLDR_NM")==null?"":consult.get("CNSTN_RQST_DEPT_TMLDR_NM").toString();
+	String rqst_dept_last_aprvr_jbps_nm   = consult.get("RQST_DEPT_LAST_APRVR_JBPS_NM")==null?"":consult.get("RQST_DEPT_LAST_APRVR_JBPS_NM").toString();
+	String cnstn_rqst_reg_ymd   = consult.get("CNSTN_RQST_REG_YMD")==null?"":consult.get("CNSTN_RQST_REG_YMD").toString();
+	String cnstn_rqst_ymd   = consult.get("CNSTN_RQST_YMD")==null?"":consult.get("CNSTN_RQST_YMD").toString();
+	String cnstn_rqst_cn   = consult.get("CNSTN_RQST_CN")==null?"":consult.get("CNSTN_RQST_CN").toString();
+	String cnstn_rqst_subst_cn   = consult.get("CNSTN_RQST_SUBST_CN")==null?"":consult.get("CNSTN_RQST_SUBST_CN").toString();
+	String rmrk_cn   = consult.get("RMRK_CN")==null?"":consult.get("RMRK_CN").toString();
+	String cnstn_hope_rply_ymd   = consult.get("CNSTN_HOPE_RPLY_YMD")==null?"":consult.get("CNSTN_HOPE_RPLY_YMD").toString();
+	String cnstn_rcpt_ymd   = consult.get("CNSTN_RCPT_YMD")==null?"":consult.get("CNSTN_RCPT_YMD").toString();
+	String cnstn_tkcg_emp_no   = consult.get("CNSTN_TKCG_EMP_NO")==null?"":consult.get("CNSTN_TKCG_EMP_NO").toString();
+	String cnstn_tkcg_emp_nm   = consult.get("CNSTN_TKCG_EMP_NM")==null?"":consult.get("CNSTN_TKCG_EMP_NM").toString();
+	String cnstn_rply_ymd   = consult.get("CNSTN_RPLY_YMD")==null?"":consult.get("CNSTN_RPLY_YMD").toString();
+	String cnstn_cmptn_ymd   = consult.get("CNSTN_CMPTN_YMD")==null?"":consult.get("CNSTN_CMPTN_YMD").toString();
+	String prvt_srch_kywd_cn   = consult.get("PRVT_SRCH_KYWD_CN")==null?"":consult.get("PRVT_SRCH_KYWD_CN").toString();
+	String emrg_yn   = consult.get("EMRG_YN")==null?"":consult.get("EMRG_YN").toString();
+	String del_yn   = consult.get("DEL_YN")==null?"":consult.get("DEL_YN").toString();
+	String wrtr_emp_nm   = consult.get("WRTR_EMP_NM")==null?"":consult.get("CNSTN_MNWRTR_EMP_NMG_NO").toString();
+	String wrtr_emp_no   = consult.get("WRTR_EMP_NO")==null?"":consult.get("WRTR_EMP_NO").toString();
+	String wrt_ymd   = consult.get("WRT_YMD")==null?"":consult.get("WRT_YMD").toString();
+	String wrt_dept_nm   = consult.get("WRT_DEPT_NM")==null?"":consult.get("WRT_DEPT_NM").toString();
+	String wrt_dept_no   = consult.get("WRT_DEPT_NO")==null?"":consult.get("WRT_DEPT_NO").toString();
+	String mdfcn_emp_nm   = consult.get("MDFCN_EMP_NM")==null?"":consult.get("MDFCN_EMP_NM").toString();
+	String mdfcn_emp_no   = consult.get("MDFCN_EMP_NO")==null?"":consult.get("MDFCN_EMP_NO").toString();
+	String mdfcn_ymd   = consult.get("MDFCN_YMD")==null?"":consult.get("MDFCN_YMD").toString();
+	String mdfcn_dept_nm   = consult.get("MDFCN_DEPT_NM")==null?"":consult.get("MDFCN_DEPT_NM").toString();
+	String mdfcn_dept_no   = consult.get("MDFCN_DEPT_NO")==null?"":consult.get("MDFCN_DEPT_NO").toString();
+	
+	A.CNSTN_MNG_NO		/* 자문관리번호 */
+, A.MENU_MNG_NO		/* 메뉴관리번호 */
+, A.CNSTN_DOC_NO		/* 자문문서번호 */
+, A.PRGRS_STTS_SE_NM		/* 진행상태구분명 */
+, A.RLS_YN		/* 공개여부 */
+, A.INSD_OTSD_TASK_SE		/* 내부외부업무구분 */
+, A.OTSD_RQST_RSN		/* 외부의뢰사유 */
+, A.CNSTN_TTL		/* 자문제목 */
+, A.CNSTN_RQST_EMP_NO		/* 자문의뢰직원번호 */
+, A.CNSTN_RQST_EMP_NM		/* 자문의뢰직원명 */
+, A.CNSTN_RQST_DEPT_NO		/* 자문의뢰부서번호 */
+, A.CNSTN_RQST_DEPT_NM		/* 자문의뢰부서명 */
+, A.CNSTN_RQST_DEPT_TMLDR_EMP_NO		/* 자문의뢰부서팀장직원번호 */
+, A.CNSTN_RQST_DEPT_TMLDR_NM		/* 자문의뢰부서팀장명 */
+, A.RQST_DEPT_LAST_APRVR_JBPS_NM		/* 의뢰부서최종결재자직위명 */
+, A.CNSTN_RQST_REG_YMD		/* 자문의뢰등록일자 */
+, A.CNSTN_RQST_YMD		/* 자문의뢰일자 */
+, A.CNSTN_RQST_CN		/* 자문의뢰내용 */
+, A.CNSTN_RQST_SUBST_CN		/* 자문의뢰요지내용 */
+, A.RMRK_CN		/* 비고내용 */
+, A.CNSTN_HOPE_RPLY_YMD		/* 자문희망회신일자 */
+, A.CNSTN_RCPT_YMD		/* 자문접수일자 */
+, A.CNSTN_TKCG_EMP_NO		/* 자문담당직원번호 */
+, A.CNSTN_TKCG_EMP_NM		/* 자문담당직원명 */
+, A.CNSTN_RPLY_YMD		/* 자문회신일자 */
+, A.CNSTN_CMPTN_YMD		/* 자문완료일자 */
+, A.PRVT_SRCH_KYWD_CN		/* 비공개검색키워드내용 */
+, A.EMRG_YN		/* 긴급여부 */
+, A.DEL_YN		/* 삭제여부 */
+, A.WRTR_EMP_NM		/* 작성직원명 */
+, A.WRTR_EMP_NO		/* 작성직원번호 */
+, A.WRT_YMD		/* 작성일자 */
+, A.WRT_DEPT_NM		/* 작성부서명 */
+, A.WRT_DEPT_NO		/* 작성부서번호 */
+, A.MDFCN_EMP_NM		/* 수정직원명 */
+, A.MDFCN_EMP_NO		/* 수정직원번호 */
+, A.MDFCN_YMD		/* 수정일자 */
+, A.MDFCN_DEPT_NM		/* 수정부서명 */
+, A.MDFCN_DEPT_NO		/* 수정부서번호 */
+
+
+
+
+
+

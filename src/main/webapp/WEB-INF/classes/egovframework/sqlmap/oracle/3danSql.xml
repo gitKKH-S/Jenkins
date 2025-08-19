@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "/WEB-INF/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="3danSql">
+	<!-- 내규명으로 검색 -->
+    <select id="getSearchResult" parameterType="HashMap" resultType="HashMap">
+    	SELECT LB.BOOKID, LB.OBOOKID, LB.TITLE, NVL(L3.DAN,0) DAN
+        FROM TB_LM_RULEHISTORY lb, TB_LM_RULESAMDAN l3
+        WHERE title LIKE '%'||#{schText}||'%' AND statecd=(select stateid from tb_lm_state where statecd = #{statecd}) AND lb.obookid=l3.obookid(+)
+    </select>
+	<select id="getSearch23" resultType="HashMap">
+		SELECT LB.BOOKID, LB.OBOOKID, LB.TITLE, NVL(L3.ORD,0) ORD
+		FROM TB_LM_RULEHISTORY lb, TB_LM_RULESAMDAN l3
+		WHERE title LIKE '%'||#{schText}||'%' AND statecd=(select stateid from tb_lm_state where statecd = #{statecd}) AND lb.obookid=l3.obookid(+)
+		AND lb.obookid NOT IN 
+		<foreach item="item" index="index" collection="obookids" open="( " close=" )" separator="," >
+			#{item}
+		</foreach>
+			AND lb.obookid NOT IN (
+				SELECT obookid
+				FROM TB_LM_RULESAMDAN
+			)
+	</select>
+	<select id="isLaw3dan" parameterType="int" resultType="int">
+		SELECT COUNT(danid)
+		FROM TB_LM_RULESAMDAN
+		WHERE obookid=#{obookid} AND dan=1
+	</select>
+	<!-- 3단보기 레코드 추가 -->
+	<insert id="insertData" parameterType="HashMap" >
+		<selectKey keyProperty="danid" resultType="int" order="BEFORE">
+			SELECT KEYID.NEXTVAL FROM DUAL 
+		</selectKey>
+		INSERT INTO TB_LM_RULESAMDAN
+		VALUES (#{danid}, #{fstobookid}, #{obookid}, #{dan}, #{ord})
+	</insert>
+	<!-- 3단보기 레코드 업데이트 -->
+	
+	<!-- 3단보기 설정된 리스트 가져오기 -->
+	<select id="get3danList" parameterType="HashMap" resultType="HashMap">
+		SELECT LB.TITLE, L3.DAN, L3.FSTOBOOKID 
+		FROM TB_LM_RULEHISTORY lb, TB_LM_RULESAMDAN l3
+		WHERE title LIKE '%'||#{query}||'%' AND statecd=(select stateid from tb_lm_state where statecd = #{statecd}) AND lb.obookid = l3.obookid
+		ORDER BY l3.fstobookid , l3.dan
+	</select>
+	<!-- 3단보기의 fstobookid의 개수? -->
+	<select id="get3danSetSize" parameterType="HashMap" resultType="HashMap">
+		SELECT DISTINCT(l3.fstobookid) as FSTOBOOKID
+		FROM TB_LM_RULESAMDAN l3, TB_LM_RULEHISTORY lb
+		WHERE title LIKE '%'||#{query}||'%' AND statecd=(select stateid from tb_lm_state where statecd = #{statecd}) AND lb.obookid = l3.obookid
+		ORDER BY l3.fstobookid
+	</select>
+	<!-- 3단보기 셋 삭제 -->
+	<delete id="del3danSet">
+		DELETE FROM TB_LM_RULESAMDAN WHERE fstobookid IN 
+		<foreach item="item" index="index" collection="fstobookids" open="( " close=" )" separator="," >
+			#{item}
+		</foreach>			
+	</delete>
+</mapper>

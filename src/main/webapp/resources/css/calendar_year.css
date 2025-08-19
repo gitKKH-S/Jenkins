@@ -1,0 +1,13 @@
+.ui-datepicker-calendar{
+	
+	display:none;
+}
+.ui-datepicker-month{
+	display:none;
+}
+.ui-datepicker-title select.ui-datepicker-year{
+	float:left;
+}
+.ui-datepicker select.ui-datepicker-year{
+	width:100%;
+}

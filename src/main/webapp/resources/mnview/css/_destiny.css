@@ -1,0 +1,75 @@
+@CHARSET "EUC-KR";
+
+/*
+ * _destiny.css
+ */
+
+/* fonts for all */
+* {
+	font-size: 9pt;
+	font-family: Dotum, Gulim, tahoma, Arial;
+	word-spacing: normal;
+	text-decoration: none;
+	/*	color: #656565; */
+}
+
+html,body {
+	height: 100%;
+}
+
+q:before,q:after {
+	content: '';
+}
+
+h1,h2,h3,h4,h5,h6 {
+	font-size: 100%;
+}
+
+table {
+	border-collapse: collapse;
+	border-spacing: 0px;
+}
+
+select {
+	word-spacing: normal;
+	text-decoration: none;
+	color: #181818;
+	/*	height: 20px; */
+}
+
+textarea {
+	background-color: white;
+	color: #000000;
+	font-family: Dotum, Gulim, Tahoma, Helvetica;
+	margin-left: 1px;
+	border: #555555 1px solid;
+}
+
+.input {
+	font-size: 12px;
+	height: 14px;
+	background-color: white;
+	color: #454545;
+	padding-left: 3px;
+	padding-top: 4px;
+	border: 1px solid #7f9db9;
+}
+
+.input_readonly {
+	font-size: 12px;
+	height: 14px;
+	background-color: #E0E0E0;
+	color: #454545;
+	padding-left: 3px;
+	padding-top: 4px;
+	border: 1px solid #7f9db9;
+}
+
+.hangul {
+	ime-mode: active;
+}
+
+/* common css */
+div.lineHeight {
+	line-height: 1px;
+}

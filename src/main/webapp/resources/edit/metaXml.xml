@@ -1,0 +1,22 @@
+﻿<?xml version="1.0" encoding="EUC-KR" standalone="no"?>
+<data>
+<write ex="0:양식조회 1:양식자동채우기 2:양식관리 3:양식수정">0</write>
+<files>
+<file fname="1">http://211.187.234.227:9500/kimolaw/dataFile/law/attach/0001.hwp</file>
+<file fname="2">http://211.187.234.227:9500/kimolaw/dataFile/law/attach/0002.hwp</file>
+<file fname="3">http://211.187.234.227:9500/kimolaw/dataFile/law/attach/0003.hwp</file>
+<file fname="4">http://211.187.234.227:9500/kimolaw/dataFile/law/attach/0004.hwp</file>
+</files>
+<gianurl><![CDATA[www.gianurl.com]]></gianurl>
+<saveurl><![CDATA[www.saveurl.com]]></saveurl>
+<AutoReport>
+<c1><![CDATA[c11]]></c1>
+<c2><![CDATA[c22]]></c2>
+<c3><![CDATA[c33]]></c3>
+<f1><![CDATA[f11]]></f1>
+<f2><![CDATA[f22]]></f2>
+<f3><![CDATA[f33]]></f3>
+</AutoReport>
+<LKRMS5configurl>http://211.187.234.227:9500//dtaqlaw/jsp/bylaw/dllapp/LKRMS5.config</LKRMS5configurl>
+<LawXmlconfigurl>http://211.187.234.227:9500//dtaqlaw/jsp/bylaw/dllapp/LawXml.exe.config</LawXmlconfigurl>
+</data>

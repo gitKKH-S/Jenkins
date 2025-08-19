@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="EUC-KR" standalone="no"?>
+<data>
+<write ex="0:양식조회 1:양식자동채우기 2:양식관리 3:양식수정">0</write>
+<private noshow="1">1</private>
+<file>a.hwp</file>
+<gianurl><![CDATA[www.gianurl.com]]></gianurl>
+<saveurl><![CDATA[www.saveurl.com]]></saveurl>
+<AutoReport>
+<c1><![CDATA[c11]]></c1>
+<c2><![CDATA[c22]]></c2>
+<c3><![CDATA[c33]]></c3>
+<f1><![CDATA[f11]]></f1>
+<f2><![CDATA[f22]]></f2>
+<f3><![CDATA[f33]]></f3>
+</AutoReport>
+<LKRMS5configurl>http://211.187.234.227:9500//dtaqlaw/jsp/bylaw/dllapp/LKRMS5.config</LKRMS5configurl>
+<LawXmlconfigurl>http://211.187.234.227:9500//dtaqlaw/jsp/bylaw/dllapp/LawXml.exe.config</LawXmlconfigurl>
+</data>
+
+
+
+<data><write>1</write>
+<files>
+<file>http://211.187.234.227:8081/goyang/dataFile/doctype/10049742.hwp</file>
+<file>http://211.187.234.227:8081/goyang/dataFile/doctype/10049741.hwp</file>
+<file>http://211.187.234.227:8081/goyang/dataFile/doctype/10049741.hwp</file>
+<file>http://211.187.234.227:8081/goyang/dataFile/doctype/10049741.hwp</file>
+</files>
+<gianurl>/dll/SaveContentDoc.do</gianurl>
+<saveurl>http://211.187.234.227:8081/goyang/dll/SaveContentDoc.do</saveurl>
+<AutoReport>10118796</AutoReport>
+<LKRMS5configurl>http://211.187.234.227:8081/goyang/resources/edit/LKRMS5.config</LKRMS5configurl>
+<LawXmlconfigurl>http://211.187.234.227:8081/goyang/resources/edit/LawXml.exe.config</LawXmlconfigurl></data>
+
+
+<casenum><![CDATA[2020두44312]]></casenum>
+<courtnm1><![CDATA[대법원]]></courtnm1><courtnm2><![CDATA[대법원]]></courtnm2><deliverydt><![CDATA[]]></deliverydt><jdgmtdt><![CDATA[2020-11-12]]></jdgmtdt><jdgmtgbn><![CDATA[심리불속행기각]]></jdgmtgbn><makecasedt><![CDATA[2020-07-21]]></makecasedt><pigo><![CDATA[고양피고]]></pigo><reldeptnm1><![CDATA[]]></reldeptnm1><reldeptnm2><![CDATA[]]></reldeptnm2><reldeptnm3><![CDATA[]]></reldeptnm3><relempnm><![CDATA[]]></relempnm><resultgbn><![CDATA[기타]]></resultgbn><suitcont><![CDATA[2014년 세무조사와 관련하여 부가가치세 등을 부과하는 처분에 대하여 진행한 조세심판 청구(일부 기각) 및 1심(당사 패소)에 불복하여 소 제기 
+ ]]></suitcont><suitnm><![CDATA[부가가치세 등 부과처분취소]]></suitnm><wongo><![CDATA[고양시]]></wongo><viewname><![CDATA[소장접수보고서.hwp]]></viewname><docgbn><![CDATA[SUIT]]></docgbn><caseid><![CDATA[110080190]]></caseid><suitid><![CDATA[110079859]]></suitid><tableid><![CDATA[so6]]></tableid>
+
+<organ><![CDATA[협약체결기관]]></organ><organ1><![CDATA[협약체결기관]]></organ1><purpose><![CDATA[협약체결기관]]></purpose><purpose1><![CDATA[협약체결기관]]></purpose1><collaboration1><![CDATA[1.협약체결기관
+2.협약체결기관
+3.
+4.
+5.]]></collaboration1><collaboration2><![CDATA[1.협약체결기관
+2.협약체결기관
+3.
+4.
+5.]]></collaboration2><manage><![CDATA[협약체결기관]]></manage><pdate><![CDATA[협약체결기관]]></pdate><title><![CDATA[협약체결기관]]></title><pdeptname><![CDATA[]]></pdeptname><deptname><![CDATA[법무실]]></deptname><writer><![CDATA[전체관리자]]></writer><ophone><![CDATA[031-000-0000]]></ophone><chujin><![CDATA[]]></chujin><result><![CDATA[]]></result><prehyup><![CDATA[]]></prehyup><yyyy><![CDATA[2020]]></yyyy><docgbn><![CDATA[AGREE]]></docgbn><gbnid><![CDATA[10118797]]></gbnid><filegbn><![CDATA[agreebon1]]></filegbn><viewfilenm><![CDATA[사전보고서.hwp]]></viewfilenm><downfilenm><![CDATA[사전보고서.hwp]]></downfilenm>

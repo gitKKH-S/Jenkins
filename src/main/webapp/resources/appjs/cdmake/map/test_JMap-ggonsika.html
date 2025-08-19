@@ -1,0 +1,20 @@
+<html>
+<head>
+<script language=javascript src="corelib_util_JException.js"></script>
+<script language=javascript src="corelib_util_JMap.js"></script>
+<script language=javascript>
+<!--
+    var map = null;
+    try {
+        var map = new JMap();
+        map.put("0", "testValue1");
+        alert(map.get("0"));
+    } catch (e) {
+        alert(e.getMessage());
+    } finally {
+	    delete map;
+	}
+//-->
+</script>
+</head>
+</html>

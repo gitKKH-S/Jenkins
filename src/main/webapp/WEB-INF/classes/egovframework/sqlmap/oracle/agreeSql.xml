@@ -1,0 +1,2231 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "/WEB-INF/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="agreeSql">
+	
+	<select id="getFileIdKey" resultType="String">
+		/* agreeSql.getFileIdKey */
+		SELECT KEYID.NEXTVAL FROM DUAL
+	</select>
+	
+	<insert id="insertFile" parameterType="HashMap">
+		/* agreeSql.insertFile */
+		INSERT INTO TB_CVTN_FILE (
+		    FILE_MNG_NO         /* 파일관리번호       */
+		  , CVTN_MNG_NO         /* 협약관리번호       */
+		  , TRGT_PST_MNG_NO     /* 대상게시물관리번호 */
+		  , FILE_SE_NM          /* 파일구분           */
+		  , DWNLD_FILE_NM       /* 다운로드파일명     */
+		  , SRVR_FILE_NM        /* 서버파일명         */
+		  , PHYS_FILE_NM        /* 물리파일명         */
+		  , FILE_EXTN_NM        /* 파일확장자명       */
+		  , FILE_SZ
+		  , TRGT_PST_TBL_NM     /* 대상게시물테이블명 */
+		  , SORT_SEQ            /* 정렬순서           */
+		  , DEL_YN              /* 삭제여부           */
+		  , WRTR_EMP_NM         /* 작성직원명         */
+		  , WRTR_EMP_NO         /* 작성직원번호       */
+		  , WRT_YMD             /* 작성일자           */
+		  , WRT_DEPT_NM         /* 작성부서명         */
+		  , WRT_DEPT_NO         /* 작성부서번호       */
+		) VALUES (
+		    #{FILE_MNG_NO}
+		  , #{CVTN_MNG_NO}
+		  , #{TRGT_PST_MNG_NO}
+		  , #{FILE_SE_NM}
+		  , #{DWNLD_FILE_NM}
+		  , #{SRVR_FILE_NM}
+		  , #{PHYS_FILE_NM}
+		  , #{FILE_EXTN_NM}
+		  , #{FILE_SZ}
+		  , #{TRGT_PST_TBL_NM}
+		  , #{SORT_SEQ}
+		  , 'N'
+		  , #{WRTR_EMP_NM}
+		  , #{WRTR_EMP_NO}
+		  , to_char(sysdate,'YYYYMMDD')
+		  , #{WRT_DEPT_NM}
+		  , #{WRT_DEPT_NO}
+		)
+	</insert>
+	
+	<select id="selectFileList" resultType="HashMap">
+		/* agreeSql.selectFileList */
+		SELECT FILE_MNG_NO       /* 파일관리번호 */
+		     , CVTN_MNG_NO       /* 협약관리번호 */
+		     , TRGT_PST_MNG_NO   /* 대상게시물관리번호 */
+		     , TRGT_PST_TBL_NM   /* 대상게시물테이블명 */
+		     , FILE_SE_NM        /* 파일구분 */
+		     , DWNLD_FILE_NM     /* 다운로드파일명 */
+		     , SRVR_FILE_NM      /* 서버파일명 */
+		     , PHYS_FILE_NM      /* 물리파일명 */
+		     , FILE_EXTN_NM      /* 파일확장자명 */
+		     , SORT_SEQ          /* 정렬순서 */
+		FROM TB_CVTN_FILE
+		WHERE CVTN_MNG_NO = #{CVTN_MNG_NO}
+		<if test="TRGT_PST_MNG_NO != '' and TRGT_PST_MNG_NO != null">
+		  AND TRGT_PST_MNG_NO = #{TRGT_PST_MNG_NO}
+		</if>
+		<if test="TRGT_PST_TBL_NM != '' and TRGT_PST_TBL_NM != null">
+		  AND TRGT_PST_TBL_NM = #{TRGT_PST_TBL_NM}
+		</if>
+		<if test="FILE_SE != '' and FILE_SE != null">
+		  AND FILE_SE_NM = #{FILE_SE}
+		</if>
+		<if test="schTxt != '' and schTxt != null">
+		  AND PHYS_FILE_NM LIKE '%'||#{schTxt}||'%'
+		</if>
+		<if test="ordgbnList != null and ordgbnList != ''">
+		  <if test="ordgbnList.size != 0 and ordgbn != '' and ordgbn != null">
+		    AND FILE_SE_NM IN
+		    <foreach collection="ordgbnList" item="item" index="index" separator="," open="(" close=")">
+		        #{item}
+		    </foreach>
+		  </if>
+		</if>
+	</select>
+	
+	<select id="selectAgreeList" resultType="HashMap">
+		/* agreeSql.selectAgreeList */
+		SELECT B.*
+		FROM (
+		    SELECT A.*,
+		    <if test="pagesize != '' and pagesize != null">
+		           CEIL(ROWNUM/#{pagesize}) PAGE,
+		    </if>
+		           ROWNUM
+		    FROM (
+		        SELECT A.CVTN_MNG_NO                   /* 협약관리번호             */
+		             , A.MENU_MNG_NO                   /* 메뉴관리번호             */
+		             , A.CVTN_DOC_NO                   /* 협약문서번호             */
+		             , A.CVTN_INTL_DOC_NO              /* 협약국제문서번호         */
+		             , A.CVTN_SE                       /* 협약구분                 */
+		             , A.PRGRS_STTS_SE_NM              /* 진행상태구분명           */
+		             , A.RLS_YN                        /* 공개여부                 */
+		             <if test="grpcd != null and grpcd != ''">
+		               <if test='grpcd == "P"'>
+		             , CASE WHEN A.RLS_YN = 'Y' AND A.CVTN_RQST_DEPT_NO = #{WRT_DEPT_NO} THEN 'Y'
+		                    WHEN A.RLS_YN = 'N' AND A.CVTN_RQST_EMP_NO = #{WRTR_EMP_NO}  THEN 'Y'
+		                    ELSE 'N'
+		               END OPENYN
+		               </if>
+		               <if test='grpcd != "P"'>
+		             , 'Y' AS OPENYN
+		               </if>
+		             </if>
+		             <if test="grpcd == null or grpcd == ''">
+		             , 'N' AS OPENYN
+		             </if>
+		             , A.INSD_OTSD_TASK_SE             /* 내부외부업무구분         */
+		             , A.OTSD_RQST_RSN                 /* 외부의뢰사유             */
+		             , A.EMRG_YN                       /* 긴급여부                 */
+		             , A.EMRG_RQST_RSN                 /* 긴급의뢰사유             */
+		             , A.CVTN_CTRT_TYPE_CD_NM          /* 협약계약유형코드명       */
+		             , A.CVTN_TTL                      /* 협약제목                 */
+		             , A.CVTN_RQST_EMP_NO              /* 협약의뢰직원번호         */
+		             , A.CVTN_RQST_EMP_NM              /* 협약의뢰직원명           */
+		             , A.CVTN_RQST_DEPT_NO             /* 협약의뢰부서번호         */
+		             , A.CVTN_RQST_DEPT_NM             /* 협약의뢰부서명           */
+		             , A.CVTN_RQST_REG_YMD             /* 협약의뢰등록일자         */
+		             , A.CVTN_RQST_YMD                 /* 협약의뢰일자             */
+		             , A.CVTN_RQST_LAST_ATRZ_JBPS_SE   /* 협약의뢰최종결재직위구분 */
+		             , A.CVTN_RQST_LAST_APRVR_NM       /* 협약의뢰최종결재자명     */
+		             , A.CVTN_RQST_LAST_APRVR_NO       /* 협약의뢰최종결재자번호   */
+		             , A.CVTN_RQST_CN                  /* 협약의뢰내용             */
+		             , A.CVTN_SRNG_DMND_CN             /* 협약심사요청내용         */
+		             , A.RMRK_CN                       /* 비고내용                 */
+		             , A.CVTN_HOPE_RPLY_YMD            /* 협약희망회신일자         */
+		             , A.CVTN_RCPT_YMD                 /* 협약접수일자             */
+		             , A.CVTN_TKCG_EMP_NO              /* 협약담당직원번호         */
+		             , A.CVTN_TKCG_EMP_NM              /* 협약담당직원명           */
+		             , A.CVTN_RPLY_YMD                 /* 협약회신일자             */
+		             , A.CVTN_CMPTN_YMD                /* 협약완료일자             */
+		             , A.PRVT_SRCH_KYWD_CN             /* 비공개검색키워드내용     */
+		             , A.RFLT_YN_RSLT_REG_YN           /* 반영여부결과등록여부     */
+		             , A.RFLT_YN_RSLT_WRTR_EMP_NO      /* 반영여부결과작성직원번호 */
+		             , A.RFLT_YN_RSLT_WRTR_EMP_NM      /* 반영여부결과작성직원명   */
+		             , A.RFLT_YN_RSLT_REG_YMD          /* 반영여부결과등록일자     */
+		             , A.RFLT_YN_RSLT_TTL              /* 반영여부결과제목         */
+		             , A.RFLT_YN_RSLT_CN               /* 반영여부결과내용         */
+		             , C.RVW_TKCG_EMP_NM      /* 고문변호사명 쉼표연결 */ 
+		             , C.JDAF_CORP_EMP_NMS AS JDAF_CORP_NMS /* 법무법인명+고문변호사명 쉼표연결 */
+		             , D.MANAGER_DEPT_NM /* 부서 실국명 */
+		        FROM TB_CVTN_MNG A LEFT OUTER JOIN TB_CVTN_RVW_PIC B ON A.CVTN_MNG_NO = B.CVTN_MNG_NO
+		                           LEFT OUTER JOIN (
+		                               SELECT L.CVTN_MNG_NO
+		                                    , LISTAGG(L.RVW_TKCG_EMP_NM, ',') WITHIN GROUP (ORDER BY L.RVW_TKCG_EMP_NM) AS RVW_TKCG_EMP_NM
+		                                    , LISTAGG(LTRIM(NVL(C2.JDAF_CORP_NM, '') || ' ' || L.RVW_TKCG_EMP_NM), ',') WITHIN GROUP (ORDER BY C2.JDAF_CORP_NM, L.RVW_TKCG_EMP_NM) AS JDAF_CORP_EMP_NMS
+		                               FROM TB_CVTN_RVW_PIC L 
+		                                    LEFT JOIN TB_COM_LWYR C1 ON L.RVW_TKCG_EMP_NO = C1.LWYR_MNG_NO
+		                                    LEFT JOIN TB_COM_JDAF_CORP C2 ON C1.JDAF_CORP_MNG_NO = C2.JDAF_CORP_MNG_NO
+		                               GROUP BY L.CVTN_MNG_NO 
+		                           ) C ON A.CVTN_MNG_NO = C.CVTN_MNG_NO
+		                           LEFT OUTER JOIN TB_COM_ORGCHT D ON D.DEPT_NO = A.CVTN_RQST_DEPT_NO
+		        WHERE A.MENU_MNG_NO IS NOT NULL
+		        <if test='MENU_MNG_NO != null and MENU_MNG_NO != ""'>
+		          <if test='MENU_MNG_NO == "100000594"'>
+		          <!-- 필수심사대상 폴더 클릭 -->
+		          AND (
+		              A.CVTN_CTRT_TYPE_CD_NM IN (
+		                  SELECT MENU_TTL FROM TB_COM_MENU WHERE UP_MENU_MNG_NO = #{MENU_MNG_NO} 
+		              )
+		              OR A.CVTN_CTRT_TYPE_CD_NM IS NULL
+		          )
+		          </if>
+		          <if test='MENU_MNG_NO != "100000594"'>
+		          AND A.MENU_MNG_NO = #{MENU_MNG_NO}
+		          </if>
+		        </if>
+		        <if test="grpcd != null and grpcd != ''">
+		          <if test='grpcd != "Y"'>
+		            AND (
+		                A.PRGRS_STTS_SE_NM != '작성중' OR
+		                (A.RLS_YN = 'Y' AND A.CVTN_RQST_DEPT_NO = #{WRT_DEPT_NO}) OR
+		                (A.RLS_YN = 'N' AND A.CVTN_RQST_EMP_NO = #{WRTR_EMP_NO})
+		            )
+		          </if>
+		        </if>
+		        <if test='CVTN_RQST_YMD1 != null and CVTN_RQST_YMD1 != ""'>
+		          AND <![CDATA[REPLACE(A.CVTN_RQST_YMD,'-','') >= REPLACE(#{CVTN_RQST_YMD1},'-','')]]>
+		        </if>
+		        <if test="CVTN_RQST_YMD2 != '' and CVTN_RQST_YMD2 != null">
+		          AND <![CDATA[REPLACE(A.CVTN_RQST_YMD,'-','') <= REPLACE(#{CVTN_RQST_YMD2},'-','')]]>
+		        </if>
+		        
+		        <if test='CVTN_RPLY_YMD1 != null and CVTN_RPLY_YMD1 != ""'>
+		          AND <![CDATA[REPLACE(A.CVTN_RPLY_YMD,'-','') >= REPLACE(#{CVTN_RPLY_YMD1},'-','')]]>
+		        </if>
+		        <if test="CVTN_RPLY_YMD2 != '' and CVTN_RPLY_YMD2 != null">
+		          AND <![CDATA[REPLACE(A.CVTN_RPLY_YMD,'-','') <= REPLACE(#{CVTN_RPLY_YMD2},'-','')]]>
+		        </if>
+		        
+		        <if test='CVTN_CTRT_TYPE_CD_NM != null and CVTN_CTRT_TYPE_CD_NM != ""'>
+		          AND A.CVTN_CTRT_TYPE_CD_NM = #{CVTN_CTRT_TYPE_CD_NM}
+		        </if>
+		        <if test='PRVT_SRCH_KYWD_CN != null and PRVT_SRCH_KYWD_CN != ""'>
+		          AND A.PRVT_SRCH_KYWD_CN LIKE '%'||#{PRVT_SRCH_KYWD_CN}||'%'
+		        </if>
+		        <if test='CVTN_RQST_DEPT_NM != null and CVTN_RQST_DEPT_NM != ""'>
+		          AND A.CVTN_RQST_DEPT_NM LIKE '%'||#{CVTN_RQST_DEPT_NM}||'%'
+		        </if>
+		        <if test='CVTN_RQST_EMP_NM != null and CVTN_RQST_EMP_NM != ""'>
+		          AND A.CVTN_RQST_EMP_NM LIKE '%'||#{CVTN_RQST_EMP_NM}||'%'
+		        </if>
+		        <if test='CVTN_TKCG_EMP_NM != null and CVTN_TKCG_EMP_NM != ""'>
+		          AND A.CVTN_TKCG_EMP_NM LIKE '%'||#{CVTN_TKCG_EMP_NM}||'%'
+		        </if>
+		        <if test='RVW_TKCG_EMP_NM != null and RVW_TKCG_EMP_NM != ""'>
+		          AND B.RVW_TKCG_EMP_NM LIKE '%'||#{RVW_TKCG_EMP_NM}||'%'
+		        </if>
+		        <if test='INSD_OTSD_TASK_SE != null and INSD_OTSD_TASK_SE != ""'>
+		          AND A.INSD_OTSD_TASK_SE = #{INSD_OTSD_TASK_SE}
+		        </if>
+		        <if test='RFLT_YN_RSLT_REG_YN != null and RFLT_YN_RSLT_REG_YN != ""'>
+		          AND A.RFLT_YN_RSLT_REG_YN = #{RFLT_YN_RSLT_REG_YN}
+		        </if>
+		        <if test='EMRG_YN != null and EMRG_YN != ""'>
+		          AND A.EMRG_YN = #{EMRG_YN}
+		        </if>
+		        <if test='CVTN_DOC_NO != null and CVTN_DOC_NO != ""'>
+		          AND A.CVTN_DOC_NO LIKE '%'||#{CVTN_DOC_NO}||'%'
+		        </if>
+		        <if test='CVTN_INTL_DOC_NO != null and CVTN_INTL_DOC_NO != ""'>
+		          AND A.CVTN_INTL_DOC_NO LIKE '%'||#{CVTN_INTL_DOC_NO}||'%'
+		        </if>
+		        <if test='CVTN_TTL != null and CVTN_TTL != ""'>
+		          AND (
+		              A.CVTN_TTL LIKE '%'||#{CVTN_TTL}||'%' OR
+		              A.CVTN_RQST_CN LIKE '%'||#{CVTN_TTL}||'%' OR
+		              A.CVTN_SRNG_DMND_CN LIKE '%'||#{CVTN_TTL}||'%' OR
+		              A.RMRK_CN LIKE '%'||#{CVTN_TTL}||'%'
+		          )
+		        </if>
+		        <if test="PRGRS_STTS_SE_NM != null and PRGRS_STTS_SE_NM != ''">
+<!-- 		          AND A.PRGRS_STTS_SE_NM = #{PRGRS_STTS_SE_NM} -->
+					<choose>
+						<when test="PRGRS_STTS_SE_NM == '결재중'">
+							AND A.PRGRS_STTS_SE_NM IN ('팀장결재중', '과장결재중')
+						</when>
+						<when test="PRGRS_STTS_SE_NM == '진행중'">
+							AND A.PRGRS_STTS_SE_NM NOT IN ('작성중', '접수대기', '완료', '철회')
+						</when>
+						<otherwise>
+							AND A.PRGRS_STTS_SE_NM = #{PRGRS_STTS_SE_NM}
+						</otherwise>
+					</choose>
+		        </if>
+   		        <choose>
+		          <when test="orderby == null or orderby == ''">
+		        ORDER BY 
+<!-- 		        A.CNSTN_RQST_YMD, A.CNSTN_RQST_REG_YMD DESC -->
+<!-- 					A.CNSTN_DOC_NO DESC, CNSTN_MNG_NO DESC -->
+					A.CVTN_RCPT_YMD DESC NULLS FIRST, CVTN_MNG_NO DESC NULLS FIRST
+		          </when>
+		          <otherwise>
+		        	<include refid="commonSql.orderbysql"></include>
+		          </otherwise>
+		        </choose>
+		    ) A
+		) B
+		<trim prefix="WHERE" prefixOverrides="AND |OR ">
+		    <if test="pagesize != '' and pagesize != null">
+		    <if test="pageno != null and pageno != ''">
+		        page = #{pageno}
+		    </if>
+		    </if>
+		</trim>
+	</select>
+	
+	<select id="selectAgreeListCnt" resultType="int">
+		/* agreeSql.selectAgreeListCnt */
+		SELECT COUNT(*)
+		FROM (
+		    SELECT A.CVTN_MNG_NO                   /* 협약관리번호             */
+		         , A.MENU_MNG_NO                   /* 메뉴관리번호             */
+		         , A.CVTN_DOC_NO                   /* 협약문서번호             */
+		         , A.CVTN_INTL_DOC_NO              /* 협약국제문서번호         */
+		         , A.CVTN_SE                       /* 협약구분                 */
+		         , A.PRGRS_STTS_SE_NM              /* 진행상태구분명           */
+		         , A.RLS_YN                        /* 공개여부                 */
+		         , A.INSD_OTSD_TASK_SE             /* 내부외부업무구분         */
+		         , A.OTSD_RQST_RSN                 /* 외부의뢰사유             */
+		         , A.EMRG_YN                       /* 긴급여부                 */
+		         , A.EMRG_RQST_RSN                 /* 긴급의뢰사유             */
+		         , A.CVTN_CTRT_TYPE_CD_NM          /* 협약계약유형코드명       */
+		         , A.CVTN_TTL                      /* 협약제목                 */
+		         , A.CVTN_RQST_EMP_NO              /* 협약의뢰직원번호         */
+		         , A.CVTN_RQST_EMP_NM              /* 협약의뢰직원명           */
+		         , A.CVTN_RQST_DEPT_NO             /* 협약의뢰부서번호         */
+		         , A.CVTN_RQST_DEPT_NM             /* 협약의뢰부서명           */
+		         , A.CVTN_RQST_REG_YMD             /* 협약의뢰등록일자         */
+		         , A.CVTN_RQST_YMD                 /* 협약의뢰일자             */
+		         , A.CVTN_RQST_LAST_ATRZ_JBPS_SE   /* 협약의뢰최종결재직위구분 */
+		         , A.CVTN_RQST_LAST_APRVR_NM       /* 협약의뢰최종결재자명     */
+		         , A.CVTN_RQST_LAST_APRVR_NO       /* 협약의뢰최종결재자번호   */
+		         , A.CVTN_RQST_CN                  /* 협약의뢰내용             */
+		         , A.CVTN_SRNG_DMND_CN             /* 협약심사요청내용         */
+		         , A.RMRK_CN                       /* 비고내용                 */
+		         , A.CVTN_HOPE_RPLY_YMD            /* 협약희망회신일자         */
+		         , A.CVTN_RCPT_YMD                 /* 협약접수일자             */
+		         , A.CVTN_TKCG_EMP_NO              /* 협약담당직원번호         */
+		         , A.CVTN_TKCG_EMP_NM              /* 협약담당직원명           */
+		         , A.CVTN_RPLY_YMD                 /* 협약회신일자             */
+		         , A.CVTN_CMPTN_YMD                /* 협약완료일자             */
+		         , A.PRVT_SRCH_KYWD_CN             /* 비공개검색키워드내용     */
+		         , A.RFLT_YN_RSLT_REG_YN           /* 반영여부결과등록여부     */
+		         , A.RFLT_YN_RSLT_WRTR_EMP_NO      /* 반영여부결과작성직원번호 */
+		         , A.RFLT_YN_RSLT_WRTR_EMP_NM      /* 반영여부결과작성직원명   */
+		         , A.RFLT_YN_RSLT_REG_YMD          /* 반영여부결과등록일자     */
+		         , A.RFLT_YN_RSLT_TTL              /* 반영여부결과제목         */
+		         , A.RFLT_YN_RSLT_CN               /* 반영여부결과내용         */
+		         , C.RVW_TKCG_EMP_NM      		   /* 고문변호사명 쉼표연결 */ 
+		         , C.JDAF_CORP_EMP_NMS AS JDAF_CORP_NMS 	/* 법무법인명+고문변호사명 쉼표연결 */
+		    FROM TB_CVTN_MNG A LEFT OUTER JOIN TB_CVTN_RVW_PIC B ON A.CVTN_MNG_NO = B.CVTN_MNG_NO
+		                       LEFT OUTER JOIN (
+		                           SELECT L.CVTN_MNG_NO
+		                                , LISTAGG(L.RVW_TKCG_EMP_NM, ',') WITHIN GROUP (ORDER BY L.RVW_TKCG_EMP_NM) AS RVW_TKCG_EMP_NM
+		                                , LISTAGG(LTRIM(NVL(C2.JDAF_CORP_NM, '') || ' ' || L.RVW_TKCG_EMP_NM), ',') WITHIN GROUP (ORDER BY C2.JDAF_CORP_NM, L.RVW_TKCG_EMP_NM) AS JDAF_CORP_EMP_NMS
+		                           FROM TB_CVTN_RVW_PIC L 
+		                                LEFT JOIN TB_COM_LWYR C1 ON L.RVW_TKCG_EMP_NO = C1.LWYR_MNG_NO
+		                                LEFT JOIN TB_COM_JDAF_CORP C2 ON C1.JDAF_CORP_MNG_NO = C2.JDAF_CORP_MNG_NO
+		                           GROUP BY L.CVTN_MNG_NO 
+		                       ) C ON A.CVTN_MNG_NO = C.CVTN_MNG_NO
+		    WHERE A.MENU_MNG_NO IS NOT NULL
+		    <if test='MENU_MNG_NO != null and MENU_MNG_NO != ""'>
+		      <if test='MENU_MNG_NO == "100000594"'>
+		      <!-- 필수심사대상 폴더 클릭 -->
+	          AND (
+       				A.CVTN_CTRT_TYPE_CD_NM IN (
+              		SELECT MENU_TTL FROM TB_COM_MENU WHERE UP_MENU_MNG_NO = #{MENU_MNG_NO} 
+       				)
+	          		OR A.CVTN_CTRT_TYPE_CD_NM IS NULL
+  					)
+		      </if>
+		      <if test='MENU_MNG_NO != "100000594"'>
+		      AND A.MENU_MNG_NO = #{MENU_MNG_NO}
+		      </if>
+		    </if>
+		    <if test="grpcd != null and grpcd != ''">
+		      <if test='grpcd != "Y"'>
+		        AND (
+		            A.PRGRS_STTS_SE_NM != '작성중' OR
+		            (A.RLS_YN = 'Y' AND A.CVTN_RQST_DEPT_NO = #{WRT_DEPT_NO}) OR
+		            (A.RLS_YN = 'N' AND A.CVTN_RQST_EMP_NO = #{WRTR_EMP_NO})
+		        )
+		      </if>
+		    </if>
+		    <if test='CVTN_RQST_YMD1 != null and CVTN_RQST_YMD1 != ""'>
+		      AND <![CDATA[REPLACE(A.CVTN_RQST_YMD,'-','') >= REPLACE(#{CVTN_RQST_YMD1},'-','')]]>
+		    </if>
+		    <if test="CVTN_RQST_YMD2 != '' and CVTN_RQST_YMD2 != null">
+		      AND <![CDATA[REPLACE(A.CVTN_RQST_YMD,'-','') <= REPLACE(#{CVTN_RQST_YMD2},'-','')]]>
+		    </if>
+		    
+		    <if test='CVTN_RPLY_YMD1 != null and CVTN_RPLY_YMD1 != ""'>
+		      AND <![CDATA[REPLACE(A.CVTN_RPLY_YMD,'-','') >= REPLACE(#{CVTN_RPLY_YMD1},'-','')]]>
+		    </if>
+		    <if test="CVTN_RPLY_YMD2 != '' and CVTN_RPLY_YMD2 != null">
+		      AND <![CDATA[REPLACE(A.CVTN_RPLY_YMD,'-','') <= REPLACE(#{CVTN_RPLY_YMD2},'-','')]]>
+		    </if>
+		    
+		    <if test='CVTN_CTRT_TYPE_CD_NM != null and CVTN_CTRT_TYPE_CD_NM != ""'>
+		      AND A.CVTN_CTRT_TYPE_CD_NM = #{CVTN_CTRT_TYPE_CD_NM}
+		    </if>
+		    <if test='PRVT_SRCH_KYWD_CN != null and PRVT_SRCH_KYWD_CN != ""'>
+		      AND A.PRVT_SRCH_KYWD_CN LIKE '%'||#{PRVT_SRCH_KYWD_CN}||'%'
+		    </if>
+		    <if test='CVTN_RQST_DEPT_NM != null and CVTN_RQST_DEPT_NM != ""'>
+		      AND A.CVTN_RQST_DEPT_NM LIKE '%'||#{CVTN_RQST_DEPT_NM}||'%'
+		    </if>
+		    <if test='CVTN_RQST_EMP_NM != null and CVTN_RQST_EMP_NM != ""'>
+		      AND A.CVTN_RQST_EMP_NM LIKE '%'||#{CVTN_RQST_EMP_NM}||'%'
+		    </if>
+		    <if test='CVTN_TKCG_EMP_NM != null and CVTN_TKCG_EMP_NM != ""'>
+		      AND A.CVTN_TKCG_EMP_NM LIKE '%'||#{CVTN_TKCG_EMP_NM}||'%'
+		    </if>
+		    <if test='RVW_TKCG_EMP_NM != null and RVW_TKCG_EMP_NM != ""'>
+		      AND B.RVW_TKCG_EMP_NM LIKE '%'||#{RVW_TKCG_EMP_NM}||'%'
+		    </if>
+		    <if test='INSD_OTSD_TASK_SE != null and INSD_OTSD_TASK_SE != ""'>
+		      AND A.INSD_OTSD_TASK_SE = #{INSD_OTSD_TASK_SE}
+		    </if>
+		    <if test='RFLT_YN_RSLT_REG_YN != null and RFLT_YN_RSLT_REG_YN != ""'>
+		      AND A.RFLT_YN_RSLT_REG_YN = #{RFLT_YN_RSLT_REG_YN}
+		    </if>
+		    <if test='EMRG_YN != null and EMRG_YN != ""'>
+		      AND A.EMRG_YN = #{EMRG_YN}
+		    </if>
+		    <if test='CVTN_DOC_NO != null and CVTN_DOC_NO != ""'>
+		      AND A.CVTN_DOC_NO LIKE '%'||#{CVTN_DOC_NO}||'%'
+		    </if>
+		    <if test='CVTN_INTL_DOC_NO != null and CVTN_INTL_DOC_NO != ""'>
+		      AND A.CVTN_INTL_DOC_NO LIKE '%'||#{CVTN_INTL_DOC_NO}||'%'
+		    </if>
+		    <if test='CVTN_TTL != null and CVTN_TTL != ""'>
+		      AND (
+		          A.CVTN_TTL LIKE '%'||#{CVTN_TTL}||'%' OR
+		          A.CVTN_RQST_CN LIKE '%'||#{CVTN_TTL}||'%' OR
+		          A.CVTN_SRNG_DMND_CN LIKE '%'||#{CVTN_TTL}||'%' OR
+		          A.RMRK_CN LIKE '%'||#{CVTN_TTL}||'%'
+		      )
+		    </if>
+		    <if test="PRGRS_STTS_SE_NM != null and PRGRS_STTS_SE_NM != ''">
+<!-- 		      AND A.PRGRS_STTS_SE_NM = #{PRGRS_STTS_SE_NM} -->
+				<choose>
+					<when test="PRGRS_STTS_SE_NM == '결재중'">
+						AND A.PRGRS_STTS_SE_NM IN ('팀장결재중', '과장결재중')
+					</when>
+					<when test="PRGRS_STTS_SE_NM == '진행중'">
+						AND A.PRGRS_STTS_SE_NM NOT IN ('작성중', '접수대기', '완료', '철회')
+					</when>
+					<otherwise>
+						AND A.PRGRS_STTS_SE_NM = #{PRGRS_STTS_SE_NM}
+					</otherwise>
+				</choose>
+		    </if>
+		)
+	</select>
+	
+	<select id="getAgreeDetail" resultType="HashMap">
+		/* agreeSql.getAgreeDetail */
+		SELECT CVTN_MNG_NO                  /* 협약관리번호 */
+		     , MENU_MNG_NO                  /* 메뉴관리번호 */
+		     , CVTN_DOC_NO                  /* 협약문서번호 */
+		     , CVTN_INTL_DOC_NO             /* 협약국제문서번호 */
+		     , CVTN_SE                      /* 협약구분 */
+		     , PRGRS_STTS_SE_NM             /* 진행상태구분명 */
+		     , RLS_YN                       /* 공개여부 */
+		     , INSD_OTSD_TASK_SE            /* 내부외부업무구분 */
+		     , OTSD_RQST_RSN                /* 외부의뢰사유 */
+		     , EMRG_YN                      /* 긴급여부 */
+		     , AGRE_YN
+		     , EMRG_RQST_RSN                /* 긴급의뢰사유 */
+		     , CVTN_CTRT_TYPE_CD_NM         /* 협약계약유형코드명 */
+		     , CVTN_TTL                     /* 협약제목 */
+		     , CVTN_RQST_EMP_NO             /* 협약의뢰직원번호 */
+		     , CVTN_RQST_EMP_NM             /* 협약의뢰직원명 */
+		     , CVTN_RQST_DEPT_NO            /* 협약의뢰부서번호 */
+		     , CVTN_RQST_DEPT_NM            /* 협약의뢰부서명 */
+		     , TO_CHAR(TO_DATE(CVTN_RQST_REG_YMD, 'YYYYMMDD'), 'YYYY-MM-DD') AS CVTN_RQST_REG_YMD            /* 협약의뢰등록일자 */
+		     , TO_CHAR(TO_DATE(CVTN_RQST_YMD, 'YYYYMMDD'), 'YYYY-MM-DD') AS CVTN_RQST_YMD                /* 협약의뢰일자 */
+		     , CVTN_RQST_LAST_ATRZ_JBPS_SE  /* 협약의뢰최종결재직위구분 */
+		     , CVTN_RQST_LAST_APRVR_NM      /* 협약의뢰최종결재자명 */
+		     , CVTN_RQST_LAST_APRVR_NO      /* 협약의뢰최종결재자번호 */
+		     , CVTN_RQST_CN                 /* 협약의뢰내용 */
+		     , CVTN_SRNG_DMND_CN            /* 협약심사요청내용 */
+		     , RMRK_CN                      /* 비고내용 */
+		     
+		     , BIZ_OTLN                     /* 사업개요 */
+		     , PJTCO_CN                     /* 사업비내용 */
+		     , BIZ_PRD_NM                   /* 사업기간명 */
+		     , BSS_STT_CN                   /* 근거법령내용 */
+		     , BFHD_PRCD_IMPLT_CN           /* 사전절차이행내용 */
+		     , MAIN_CTRT_CN                 /* 주요계약내용 */
+		     , HCFH_PLAN_CN                 /* 향후계획내용 */
+		     , TO_CHAR(TO_DATE(CVTN_CNCLS_PRNMNT_YMD, 'YYYYMMDD'), 'YYYY-MM-DD') AS CVTN_CNCLS_PRNMNT_YMD        /* 협약체결예정일자 */
+		     
+		     , EXCL_DMND_JDAF_CORP_NM       /* 제외요청법무법인명 */
+		     , CVTN_HOPE_RPLY_YMD           /* 협약희망회신일자 */
+		     , TO_CHAR(TO_DATE(CVTN_RCPT_YMD, 'YYYYMMDD'), 'YYYY-MM-DD') AS CVTN_RCPT_YMD                /* 협약접수일자 */
+		     , CVTN_TKCG_EMP_NO             /* 협약담당직원번호 */
+		     , CVTN_TKCG_EMP_NM             /* 협약담당직원명 */
+		     , TO_CHAR(TO_DATE(CVTN_RPLY_YMD, 'YYYYMMDD'), 'YYYY-MM-DD') AS CVTN_RPLY_YMD                /* 협약회신일자 */
+		     , CVTN_CMPTN_YMD               /* 협약완료일자 */
+		     , PRVT_SRCH_KYWD_CN            /* 비공개검색키워드내용 */
+		     , RFLT_YN_RSLT_REG_YN          /* 반영여부결과등록여부 */
+		     , RFLT_YN_RSLT_WRTR_EMP_NO     /* 반영여부결과작성직원번호 */
+		     , RFLT_YN_RSLT_WRTR_EMP_NM     /* 반영여부결과작성직원명 */
+		     , TO_CHAR(TO_DATE(RFLT_YN_RSLT_REG_YMD, 'YYYYMMDD'), 'YYYY-MM-DD') AS RFLT_YN_RSLT_REG_YMD         /* 반영여부결과등록일자 */
+		     , RFLT_YN_RSLT_TTL             /* 반영여부결과제목 */
+		     , RFLT_YN_RSLT_CN              /* 반영여부결과내용 */
+		     , CVTN_ANS_RVW_OPNN_CN         /* 협약답변검토의견내용 */
+		     , TO_CHAR(TO_DATE(RVW_OPNN_REG_YMD, 'YYYYMMDD'), 'YYYY-MM-DD') AS RVW_OPNN_REG_YMD  /* 검토의견등록일자 */
+		     
+		     , DGSTFN_RSPNS_YN
+		     
+			 , CVTN_RQST_DH_EMP_NO					/* 부서장(과장) 직원번호 */
+			 , CVTN_RQST_DH_NM						/* 부서장(과장) 이름 */
+			 , CVTN_RQST_DH_JBPS_NM					/* 부서장(과장) 직급명*/
+			 , CVTN_RQST_DEPT_TMLDR_JBPS_NM			/* 협약의뢰부서팀장직급명*/
+
+			 , CTRT_DTL_TYPE_CD_NM			/* 계약상세유형코드명*/
+		     
+		FROM TB_CVTN_MNG
+		WHERE CVTN_MNG_NO = #{CVTN_MNG_NO}
+	</select>
+	
+	
+	<select id="getAgreeMakeDoc" resultType="HashMap">
+		/* agreeSql.getAgreeMakeDoc */
+		SELECT CVTN_MNG_NO                  /* 협약관리번호 */
+		     , CVTN_TTL
+		     , CVTN_RQST_DEPT_NM
+		     , BIZ_OTLN
+		     , PJTCO_CN
+		     , BIZ_PRD_NM
+		     , BSS_STT_CN
+		     , BFHD_PRCD_IMPLT_CN
+		     , MAIN_CTRT_CN
+		     , CVTN_SRNG_DMND_CN
+		     , HCFH_PLAN_CN
+		     , CVTN_RQST_EMP_NM
+		     , CVTN_RQST_LAST_APRVR_NM
+		     , (SELECT Z.WRC_TELNO FROM TB_COM_HRIS Z WHERE Z.EMP_NO = A.CVTN_RQST_LAST_APRVR_NO) AS WRC_TELNO1
+		     , (SELECT Z.WRC_TELNO FROM TB_COM_HRIS Z WHERE Z.EMP_NO = A.CVTN_RQST_EMP_NO)        AS WRC_TELNO2
+		     , TO_CHAR(TO_DATE(CVTN_CNCLS_PRNMNT_YMD, 'YYYYMMDD'), 'YYYY-MM-DD') AS CVTN_CNCLS_PRNMNT_YMD
+		     , CVTN_RQST_CN
+		FROM TB_CVTN_MNG A
+		WHERE CVTN_MNG_NO = #{CVTN_MNG_NO}
+	</select>
+	
+	<insert id="agreeSave" parameterType="HashMap">
+		<selectKey keyProperty="CVTN_MNG_NO" resultType="String" order="BEFORE">
+			SELECT KEYID.NEXTVAL FROM DUAL
+		</selectKey>
+		/* agreeSql.agreeSave */
+		INSERT INTO TB_CVTN_MNG (
+		    CVTN_MNG_NO                   /* 협약관리번호              */
+		  , MENU_MNG_NO                   /* 메뉴관리번호              */
+		  , CVTN_SE                       /* 협약구분                  */
+		  , PRGRS_STTS_SE_NM              /* 진행상태구분명            */
+		  , RLS_YN                        /* 공개여부                  */
+		  , INSD_OTSD_TASK_SE             /* 내부외부업무구분          */
+		  , OTSD_RQST_RSN                 /* 외부의뢰사유              */
+		  , EMRG_YN                       /* 긴급여부                  */
+		  , EMRG_RQST_RSN                 /* 긴급의뢰사유              */
+		  , CVTN_CTRT_TYPE_CD_NM          /* 협약계약유형코드명        */
+		  , CVTN_TTL                      /* 협약제목                  */
+		  , CVTN_RQST_EMP_NO              /* 협약의뢰직원번호          */
+		  , CVTN_RQST_EMP_NM              /* 협약의뢰직원명            */
+		  , CVTN_RQST_DEPT_NO             /* 협약의뢰부서번호          */
+		  , CVTN_RQST_DEPT_NM             /* 협약의뢰부서명            */
+		  , CVTN_RQST_REG_YMD             /* 협약의뢰등록일자          */
+		  , CVTN_RQST_LAST_ATRZ_JBPS_SE   /* 협약의뢰최종결재직위구분  */
+		  , CVTN_RQST_LAST_APRVR_NM       /* 협약의뢰최종결재자명      */
+		  , CVTN_RQST_LAST_APRVR_NO       /* 협약의뢰최종결재자번호    */
+		  , CVTN_RQST_CN                  /* 협약의뢰내용              */
+		  , CVTN_SRNG_DMND_CN             /* 협약심사요청내용          */
+		  , RFLT_YN_RSLT_REG_YN           /* 반영여부결과등록여부      */
+		  , RMRK_CN                       /* 비고내용                  */
+		  , BIZ_OTLN                      /* 사업개요 */
+		  , PJTCO_CN                      /* 사업비내용 */
+		  , BIZ_PRD_NM                    /* 사업기간명 */
+		  , BSS_STT_CN                    /* 근거법령내용 */
+		  , BFHD_PRCD_IMPLT_CN            /* 사전절차이행내용 */
+		  , MAIN_CTRT_CN                  /* 주요계약내용 */
+		  , HCFH_PLAN_CN                  /* 향후계획내용 */
+		  , CVTN_CNCLS_PRNMNT_YMD         /* 협약체결예정일자 */
+		  , DEL_YN                        /* 삭제여부                  */
+		  , WRTR_EMP_NM                   /* 작성직원명                */
+		  , WRTR_EMP_NO                   /* 작성직원번호              */
+		  , WRT_YMD                       /* 작성일자                  */
+		  , WRT_DEPT_NM                   /* 작성부서명                */
+		  , WRT_DEPT_NO                   /* 작성부서번호              */
+		  
+		  , DGSTFN_RSPNS_YN
+		  
+			, CVTN_RQST_DH_EMP_NO /* 의뢰부서장직원번호 */
+			, CVTN_RQST_DH_NM		/* 의뢰부서장명 */
+			, CVTN_RQST_DH_JBPS_NM	/* 의뢰부서장직위명 */
+			, CVTN_RQST_DEPT_TMLDR_JBPS_NM	/* 협약의뢰부서담당팀장직위명 */
+
+			, CTRT_DTL_TYPE_CD_NM	/* 계약상세유형코드명 */
+			
+			
+		) VALUES (
+		    #{CVTN_MNG_NO}
+		    <if test='MENU_MNG_NO != null and MENU_MNG_NO != ""'>
+		      <if test='MENU_MNG_NO == "100000594"'>
+		      <!-- 필수심사대상 폴더 클릭 -->
+				, #{MENU_MNG_NO}
+		      </if>
+		      <if test='MENU_MNG_NO != "100000594"'>
+			  , (SELECT Z.MENU_MNG_NO FROM TB_COM_MENU Z WHERE Z.MENU_TTL = #{CVTN_CTRT_TYPE_CD_NM})
+		      </if>
+		    </if>
+		  , #{CVTN_SE}
+		  , '작성중'
+		  , #{RLS_YN}
+		  , #{INSD_OTSD_TASK_SE}
+		  , #{OTSD_RQST_RSN}
+		  , #{EMRG_YN}
+		  , #{EMRG_RQST_RSN}
+		  , #{CVTN_CTRT_TYPE_CD_NM}
+		  , #{CVTN_TTL}
+		  , #{CVTN_RQST_EMP_NO}
+		  , #{CVTN_RQST_EMP_NM}
+		  , #{CVTN_RQST_DEPT_NO}
+		  , #{CVTN_RQST_DEPT_NM}
+		  , to_char(sysdate,'YYYYMMDD')
+		  , #{CVTN_RQST_LAST_ATRZ_JBPS_SE}
+		  , #{CVTN_RQST_LAST_APRVR_NM}
+		  , #{CVTN_RQST_LAST_APRVR_NO}
+		  , #{CVTN_RQST_CN}
+		  , #{CVTN_SRNG_DMND_CN}
+		  , 'N'
+		  , #{RMRK_CN}
+		  , #{BIZ_OTLN}
+		  , #{PJTCO_CN}
+		  , #{BIZ_PRD_NM}
+		  , #{BSS_STT_CN}
+		  , #{BFHD_PRCD_IMPLT_CN}
+		  , #{MAIN_CTRT_CN}
+		  , #{HCFH_PLAN_CN}
+		  , (REPLACE(#{CVTN_CNCLS_PRNMNT_YMD}, '-', ''))
+		  , 'N'
+		  , #{WRTR_EMP_NM}
+		  , #{WRTR_EMP_NO}
+		  , to_char(sysdate,'YYYYMMDD')
+		  , #{WRT_DEPT_NM}
+		  , #{WRT_DEPT_NO}
+		  
+		  , 'N'
+		  
+  			, #{CVTN_RQST_DH_EMP_NO}
+			, #{CVTN_RQST_DH_NM}
+			, #{CVTN_RQST_DH_JBPS_NM}
+			, #{CVTN_RQST_DEPT_TMLDR_JBPS_NM}
+
+			, #{CTRT_DTL_TYPE_CD_NM}
+		)
+	</insert>
+	
+	<select id="getCvtnDocNo" resultType="String">
+		/* agreeSql.getCvtnDocNo */
+		SELECT CASE 
+		         WHEN A.CNT = 0 THEN TO_CHAR(SYSDATE, 'YYYY')||'-0001'
+		         ELSE (
+		           SELECT D.TODAY2 || '-' || 
+		                  LPAD(MAX(TO_NUMBER(REPLACE(C.CVTN_DOC_NO, D.TODAY2 || '-')))+1, 4, '0')
+		           FROM TB_CVTN_MNG C,
+		                (SELECT TO_CHAR(SYSDATE, 'YYYY') AS TODAY2 FROM DUAL) D
+		           WHERE C.CVTN_DOC_NO LIKE D.TODAY2 || '-%'
+		             AND REGEXP_LIKE(REPLACE(C.CVTN_DOC_NO, D.TODAY2 || '-'), '^\d+$')
+		         )
+		       END AS CVTN_DOC_NO
+		FROM (
+		  SELECT COUNT(L.CVTN_MNG_NO) AS CNT
+		  FROM TB_CVTN_MNG L,
+		       (SELECT TO_CHAR(SYSDATE, 'YYYY') AS TODAY FROM DUAL) D
+		  WHERE L.CVTN_DOC_NO LIKE D.TODAY || '-%'
+		) A
+	</select>
+	
+	<select id="getIntlCvtnDocNo" resultType="String">
+		/* agreeSql.getIntlCvtnDocNo */
+		SELECT CASE WHEN A.CNT = 0 THEN (SELECT TO_CHAR(SYSDATE, 'YYYY') FROM DUAL)||'-001'
+		            ELSE (
+		                SELECT D.TODAY2||'-'||LPAD(MAX(TO_NUMBER(REPLACE(C.CVTN_INTL_DOC_NO, D.TODAY2||'-')))+1, 3, '0')
+		                FROM TB_CVTN_MNG C,
+		                     (
+		                      SELECT TO_CHAR(SYSDATE, '%YYYY') AS TODAY1,
+		                             TO_CHAR(SYSDATE, 'YYYY') AS TODAY2
+		                      FROM DUAL
+		                     ) D
+		                WHERE C.CVTN_INTL_DOC_NO LIKE D.TODAY1||'%'
+		                  AND C.CVTN_SE = '국제'
+		            )
+		        END AS CVTN_DOC_NO
+		FROM (
+		    SELECT COUNT(L.CVTN_MNG_NO) AS CNT
+		    FROM TB_CVTN_MNG L,
+		         (SELECT TO_CHAR(SYSDATE, '%YYYY') AS TODAY FROM DUAL) D
+		    WHERE L.CVTN_INTL_DOC_NO LIKE TODAY||'%'
+		      AND L.CVTN_SE = '국제'
+		) A
+	</select>
+	
+	<update id="agreeUpdate" parameterType="HashMap">
+		/* agreeSql.agreeUpdate */
+		UPDATE TB_CVTN_MNG
+		SET 
+<!-- 			MENU_MNG_NO                  = (SELECT Z.MENU_MNG_NO FROM TB_COM_MENU Z WHERE Z.MENU_TTL = #{CVTN_CTRT_TYPE_CD_NM}) -->
+		   CVTN_DOC_NO                  = #{CVTN_DOC_NO}
+		  , CVTN_INTL_DOC_NO             = #{CVTN_INTL_DOC_NO}
+		  , CVTN_SE                      = #{CVTN_SE}
+<!-- 		  , PRGRS_STTS_SE_NM             = #{PRGRS_STTS_SE_NM} -->
+		  , RLS_YN                       = #{RLS_YN}
+		  , INSD_OTSD_TASK_SE            = #{INSD_OTSD_TASK_SE}
+		  , OTSD_RQST_RSN                = #{OTSD_RQST_RSN}
+		  , EMRG_YN                      = #{EMRG_YN}
+		  , EMRG_RQST_RSN                = #{EMRG_RQST_RSN}
+		  , CVTN_CTRT_TYPE_CD_NM         = #{CVTN_CTRT_TYPE_CD_NM}
+		  , CVTN_TTL                     = #{CVTN_TTL}
+		  , CVTN_RQST_EMP_NO             = #{CVTN_RQST_EMP_NO}
+		  , CVTN_RQST_EMP_NM             = #{CVTN_RQST_EMP_NM}
+		  , CVTN_RQST_DEPT_NO            = #{CVTN_RQST_DEPT_NO}
+		  , CVTN_RQST_DEPT_NM            = #{CVTN_RQST_DEPT_NM}
+		  , CVTN_RQST_YMD                = REPLACE(#{CVTN_RQST_YMD}, '-', '')
+		  , CVTN_RQST_LAST_ATRZ_JBPS_SE  = #{CVTN_RQST_LAST_ATRZ_JBPS_SE}
+		  , CVTN_RQST_LAST_APRVR_NM      = #{CVTN_RQST_LAST_APRVR_NM}
+		  , CVTN_RQST_LAST_APRVR_NO      = #{CVTN_RQST_LAST_APRVR_NO}
+		  , CVTN_RQST_CN                 = #{CVTN_RQST_CN}
+		  , CVTN_SRNG_DMND_CN            = #{CVTN_SRNG_DMND_CN}
+		  , RMRK_CN                      = #{RMRK_CN}
+		  , BIZ_OTLN                     = #{BIZ_OTLN}
+		  , PJTCO_CN                     = #{PJTCO_CN}
+		  , BIZ_PRD_NM                   = #{BIZ_PRD_NM}
+		  , BSS_STT_CN                   = #{BSS_STT_CN}
+		  , BFHD_PRCD_IMPLT_CN           = #{BFHD_PRCD_IMPLT_CN}
+		  , MAIN_CTRT_CN                 = #{MAIN_CTRT_CN}
+		  , HCFH_PLAN_CN                 = #{HCFH_PLAN_CN}
+		  , CVTN_CNCLS_PRNMNT_YMD        = REPLACE(#{CVTN_CNCLS_PRNMNT_YMD}, '-', '')
+
+		  , CVTN_RQST_DH_EMP_NO        = #{CVTN_RQST_DH_EMP_NO}
+		  , CVTN_RQST_DH_NM        = #{CVTN_RQST_DH_NM}
+		  , CVTN_RQST_DH_JBPS_NM        = #{CVTN_RQST_DH_JBPS_NM}
+		  , CVTN_RQST_DEPT_TMLDR_JBPS_NM        = #{CVTN_RQST_DEPT_TMLDR_JBPS_NM}
+		  
+		  , CTRT_DTL_TYPE_CD_NM        = #{CTRT_DTL_TYPE_CD_NM}
+		WHERE CVTN_MNG_NO = #{CVTN_MNG_NO}
+	</update>
+	
+	<delete id="deleteAgreeLawyer2">
+		/* agreeSql.deleteAgreeLawyer2 */
+		DELETE FROM TB_CVTN_RVW_PIC
+		WHERE CVTN_MNG_NO = #{CVTN_MNG_NO}
+		<if test="RVW_TKCG_MNG_NO != null and RVW_TKCG_MNG_NO != ''">
+		  AND RVW_TKCG_MNG_NO = #{RVW_TKCG_MNG_NO}
+		</if>
+	</delete>
+	
+	<update id="updateAgreeYmd" parameterType="HashMap">
+		/* agreeSql.updateAgreeYmd */
+		UPDATE TB_CVTN_MNG
+		<trim prefix="set " prefixOverrides=", ">
+		  <if test='PRGRS_STTS_SE_NM == "접수대기"'>
+		  , CVTN_RQST_YMD = to_char(sysdate, 'YYYYMMDD')	/* 협약의뢰일자 */
+		  </if>
+		  <if test='PRGRS_STTS_SE_NM == "접수"'>
+		  , CVTN_RCPT_YMD = to_char(sysdate, 'YYYYMMDD')	/* 협약접수일자 */
+		  </if>
+		</trim>
+		WHERE CVTN_MNG_NO = #{CVTN_MNG_NO}
+	</update>
+	
+	<update id="updateAgreeState" parameterType="HashMap">
+		/* agreeSql.updateAgreeState */
+		UPDATE TB_CVTN_MNG
+		SET PRGRS_STTS_SE_NM = #{PRGRS_STTS_SE_NM}
+		<if test='PRGRS_STTS_SE_NM == "접수"'>
+		  <if test="CVTN_DOC_NO!=null and CVTN_DOC_NO!=''">
+		  , CVTN_DOC_NO = #{CVTN_DOC_NO}
+		  </if>
+		</if>
+		WHERE CVTN_MNG_NO = #{CVTN_MNG_NO}
+	</update>
+	
+	<update id="updateAgreeOpenyn" parameterType="HashMap">
+		/* agreeSql.updateAgreeOpenyn */
+		UPDATE TB_CVTN_MNG
+		SET RLS_YN = #{openyn}
+		WHERE CVTN_MNG_NO = #{CVTN_MNG_NO}
+	</update>
+	
+	<update id="updateAgreeInout" parameterType="HashMap">
+		/* agreeSql.updateAgreeInout */
+		UPDATE TB_CVTN_MNG
+		SET INSD_OTSD_TASK_SE = #{inout}
+		WHERE CVTN_MNG_NO = #{CVTN_MNG_NO}
+	</update>
+	
+	<delete id="agreeDelete">
+		/* agreeSql.agreeDelete */
+		DELETE FROM TB_CVTN_MNG
+		WHERE CVTN_MNG_NO = #{CVTN_MNG_NO} 
+	</delete>
+	
+	<select id="selectAgreeEmpList" resultType="HashMap" parameterType="HashMap">
+		/* agreeSql.selectAgreeEmpList */
+		SELECT A.EMP_NO             /* 직원번호 */
+		     , A.EMP_NM             /* 직원명 */
+		     , A.DEPT_NO            /* 부서번호 */
+		     , A.DEPT_GROUP_NO      /* 부서그룹번호 */
+		     , A.DEPT_GROUP_NM      /* 부서그룹명 */
+		     , A.UP_DEPT_NO         /* 상위부서번호 */
+		     , A.UP_DEPT_NM         /* 상위부서명 */
+		     , A.WRC_TELNO          /* 직장전화번호 */
+		     , A.MBL_TELNO          /* 휴대전화번호 */
+		     , A.EML_ADDR           /* 이메일주소 */
+		     , A.JBGD_CD            /* 직급코드 */
+		     , A.JBGD_NM            /* 직급명 */
+		     , A.JBTTL_CD           /* 직책코드 */
+		     , A.JBTTL_NM           /* 직책명 */
+		     , A.JBSRS_NM           /* 직렬명 */
+		     , A.JBSRS_CD           /* 직렬코드 */
+		     , A.HDOF_YN            /* 재직여부 */
+		     , A.REG_YMD            /* 등록일자 */
+		     , (
+		        SELECT COUNT(*) FROM TB_CVTN_MNG B
+		        WHERE B.CVTN_TKCG_EMP_NO = A.EMP_NO
+		          AND B.PRGRS_STTS_SE_NM != '완료'
+		          AND B.CVTN_DOC_NO IS NOT NULL
+		       ) AS TKCG_CVTN_CNT
+		     , CASE WHEN (
+		                SELECT COUNT(*) FROM TB_CVTN_MNG B
+		                WHERE B.CVTN_TKCG_EMP_NO = A.EMP_NO
+		                  AND B.PRGRS_STTS_SE_NM != '완료'
+		                  AND B.CVTN_DOC_NO IS NOT NULL
+		            ) > 0 THEN 'Y'
+		            ELSE 'N'
+		       END STATE
+		<if test="CVTN_MNG_NO != null and CVTN_MNG_NO != ''">
+		     , CASE WHEN (
+		                SELECT COUNT(*) FROM TB_CVTN_MNG B
+		                WHERE B.CVTN_MNG_NO = #{CVTN_MNG_NO}
+		                  AND B.CVTN_TKCG_EMP_NO = A.EMP_NO
+		                  AND B.PRGRS_STTS_SE_NM != '완료'
+		            ) > 0 THEN 'Y'
+	 	            ELSE 'N'
+		       END CHRGYN
+		</if>
+		     , TO_CHAR(TO_DATE(C.RCNT_ALTMNT_YMD, 'YYYYMMDD'), 'YYYY-MM-DD') AS RCNT_ALTMNT_YMD
+		FROM TB_COM_HRIS A LEFT JOIN TB_COM_MNGR_AUTHRT B ON A.EMP_NO = B.EMP_NO
+		                   LEFT JOIN TB_CVTN_PIC C ON A.EMP_NO = C.TKCG_EMP_NO
+		WHERE B.MNGR_AUTHRT_NM  IN ('N', 'Y')
+	</select>
+	
+	
+	<update id="setChrgEmp" parameterType="HashMap">
+		/* agreeSql.setChrgEmp */
+		UPDATE TB_CVTN_MNG
+		SET CVTN_TKCG_EMP_NO = #{userno}
+		  , CVTN_TKCG_EMP_NM = #{usernm}
+		WHERE CVTN_MNG_NO = #{CVTN_MNG_NO}
+	</update>
+	
+	<update id="updateAltmntYmd" parameterType="HashMap">
+		/* agreeSql.updateAltmntYmd */
+		UPDATE TB_CVTN_PIC
+		SET RCNT_ALTMNT_YMD = to_char(sysdate, 'YYYYMMDD')
+		  , MDFCN_EMP_NM    = #{writer}         /* 수정직원명 */
+		  , MDFCN_EMP_NO    = #{writerid}       /* 수정직원번호 */
+		  , MDFCN_YMD       = to_char(sysdate, 'YYYYMMDD')  /* 수정일자 */
+		  , MDFCN_DEPT_NM   = #{sdeptname}      /* 수정부서명 */
+		  , MDFCN_DEPT_NO   = #{sdeptid}        /* 수정부서번호 */
+		WHERE TKCG_EMP_NO = #{userno}
+	</update>
+	
+	<insert id="insertAgreeLawyer2" parameterType="HashMap">
+		<selectKey keyProperty="RVW_TKCG_MNG_NO" resultType="String" order="BEFORE">
+			SELECT KEYID.NEXTVAL FROM DUAL
+		</selectKey>
+		/* agreeSql.insertAgreeLawyer2 */
+		INSERT INTO TB_CVTN_RVW_PIC (
+		    RVW_TKCG_MNG_NO
+		  , CVTN_MNG_NO
+		  , INSD_OTSD_TASK_SE
+		  , RVW_TKCG_EMP_NO
+		  , RVW_TKCG_EMP_NM
+		  , PRSL_PSBLTY_YN
+		  , RCPT_YN
+		  , DEL_YN
+		  , WRTR_EMP_NM
+		  , WRTR_EMP_NO
+		  , WRT_YMD
+		  , WRT_DEPT_NM
+		  , WRT_DEPT_NO
+		) VALUES (
+		    #{RVW_TKCG_MNG_NO}
+		  , #{CVTN_MNG_NO}
+		  , #{INSD_OTSD_TASK_SE}
+		  <if test='INSD_OTSD_TASK_SE == "I"'>
+		  , #{chrgempno}
+		  , #{chrgempnm}
+		  </if>
+		  <if test='INSD_OTSD_TASK_SE == "O"'>
+		  , #{advisorid}
+		  , (
+		     SELECT LWYR_NM
+		     FROM TB_COM_LWYR
+		     WHERE LWYR_MNG_NO = #{advisorid}
+		       AND DEL_YN = 'N'
+		    )
+		  </if>
+		  , 'Y'
+		  , 'A'
+		  , 'N'
+		  , #{writer}
+		  , #{writerid}
+		  , to_char(sysdate, 'YYYYMMDD')
+		  , #{deptname}
+		  , #{deptid}
+		)
+	</insert>
+	
+	<select id="chkRvwPic" resultType="int">
+		/* agreeSql.chkRvwPic */
+		SELECT COUNT(*)
+		FROM TB_CVTN_RVW_PIC
+		WHERE CVTN_MNG_NO = #{CVTN_MNG_NO}
+	</select>
+	
+	<select id="selectAgreeLawyerList" resultType="HashMap" parameterType="HashMap">
+		/* agreeSql.selectAgreeLawyerList */
+		SELECT A.RVW_TKCG_MNG_NO    /* 검토담당관리번호 */
+		     , A.CVTN_MNG_NO        /* 협약관리번호 */
+		     , A.RVW_OPNN_MNG_NO    /* 검토의견관리번호 */
+		     , A.INSD_OTSD_TASK_SE  /* 내부외부업무구분 */
+		     , A.RVW_TKCG_EMP_NO    /* 검토담당직원번호 */
+		     , A.RVW_TKCG_EMP_NM    /* 검토담당직원명 */
+		     , B.OFC_TELNO          /* 사무실전화번호 */
+		     , B.EML_ADDR           /* 이메일주소 */
+		     , C.JDAF_CORP_NM       /* 법무법인명 */
+		     , A.RCPT_YN
+		     , A.RFSL_RSN
+		FROM TB_CVTN_RVW_PIC A LEFT OUTER JOIN TB_COM_LWYR B ON A.RVW_TKCG_EMP_NO = B.LWYR_MNG_NO
+		                       LEFT OUTER JOIN TB_COM_JDAF_CORP C ON B.JDAF_CORP_MNG_NO = C.JDAF_CORP_MNG_NO
+		WHERE A.CVTN_MNG_NO = #{CVTN_MNG_NO}
+		<if test="gbn != null and gbn != ''">
+		  AND A.RCPT_YN != 'N'
+		</if>
+	</select>
+	
+	<select id="selectLawyerList2" resultType="HashMap" parameterType="HashMap">
+		/* agreeSql.selectLawyerList2 */
+		SELECT B.* 
+		FROM (
+		    SELECT A.*
+		         , CEIL(ROWNUM/#{pagesize}) AS PAGE
+		    FROM (
+		        SELECT A.LWYR_MNG_NO
+		             , A.JDAF_CORP_MNG_NO
+		             , B.JDAF_CORP_NM
+		             , A.LWYR_NM
+		             , A.MBL_TELNO
+		             , A.EML_ADDR
+		             , A.ARSP_NM
+		             , BB.WRT_YMD
+		             , BB.RETURNDATE
+		             , CC.SATI_SCR
+		             , NVL(S.CNT, 0) AS SCNT
+		             , NVL(C.CNT, 0) AS CCNT
+		             , NVL(AA.CNT, 0) AS ACNT
+		        FROM TB_COM_LWYR A
+		             LEFT OUTER JOIN (
+		                 SELECT A.LWYR_MNG_NO
+		                      , NVL(SUM(B.CNT), 0) AS CNT
+		                 FROM TB_LWS_AGT A
+		                    LEFT OUTER JOIN (
+		                     SELECT A.LWS_MNG_NO
+		                          , B.INST_MNG_NO
+		                          , CASE WHEN B.JDGM_CFMTN_YMD IS NULL THEN 1
+		                                 ELSE 0
+		                            END CNT
+		                     FROM TB_LWS_MNG A LEFT OUTER JOIN TB_LWS_INST B ON A.LWS_MNG_NO = B.LWS_MNG_NO AND A.LAST_INST_CD = B.INST_CD
+		                    ) B ON A.LWS_MNG_NO = B.LWS_MNG_NO
+		                 GROUP BY A.LWYR_MNG_NO
+		             ) S ON A.LWYR_MNG_NO = S.LWYR_MNG_NO
+		             LEFT OUTER JOIN (
+		                 SELECT A.RVW_TKCG_EMP_NO
+		                          , COUNT(A.RVW_TKCG_EMP_NO) AS CNT
+		                     FROM TB_CNSTN_RVW_PIC A
+		                        , TB_CNSTN_MNG B
+		                     WHERE A.CNSTN_MNG_NO = B.CNSTN_MNG_NO
+		                       AND B.PRGRS_STTS_SE_NM != '완료'
+		                       AND A.INSD_OTSD_TASK_SE = 'O'
+		                     GROUP BY A.RVW_TKCG_EMP_NO
+		             ) C ON A.LWYR_MNG_NO = C.RVW_TKCG_EMP_NO
+		             LEFT OUTER JOIN (
+		                 SELECT A.RVW_TKCG_EMP_NO
+		                      , COUNT(A.RVW_TKCG_EMP_NO) AS CNT
+		                 FROM TB_CVTN_RVW_PIC A
+		                    , TB_CVTN_MNG B
+		                 WHERE A.CVTN_MNG_NO = B.CVTN_MNG_NO
+		                   AND B.PRGRS_STTS_SE_NM != '완료'
+		                   AND A.INSD_OTSD_TASK_SE = 'O'
+		                 GROUP BY A.RVW_TKCG_EMP_NO
+		             ) AA ON A.LWYR_MNG_NO = AA.RVW_TKCG_EMP_NO
+		             LEFT OUTER JOIN (
+		                 SELECT A.RVW_TKCG_EMP_NO
+		                      , MAX(A.WRT_YMD) AS WRT_YMD
+		                      , ROUND(SUM((TO_DATE(NVL(C.RVW_OPNN_REG_YMD, TO_CHAR(SYSDATE, 'YYYY-MM-DD')), 'YYYY-MM-DD') - TO_DATE(NVL(A.WRT_YMD, TO_CHAR(SYSDATE, 'YYYY-MM-DD')), 'YYYY-MM-DD')))/COUNT(A.RVW_TKCG_EMP_NO)) AS RETURNDATE
+		                 FROM TB_CVTN_RVW_PIC A
+		                    , TB_CVTN_RVW_OPNN C
+		                 WHERE A.RVW_OPNN_MNG_NO = C.RVW_OPNN_MNG_NO
+		                   AND A.INSD_OTSD_TASK_SE = 'O'
+		                 GROUP BY A.RVW_TKCG_EMP_NO
+		             ) BB ON A.LWYR_MNG_NO = BB.RVW_TKCG_EMP_NO
+		             LEFT OUTER JOIN (
+		                 SELECT B.RVW_TKCG_EMP_NO, ROUND(((SUM(DGSTFN_ANS_SCR)-1)/(5-1)*100)/COUNT(TRGT_PST_MNG_NO)) AS SATI_SCR
+		                 FROM TB_COM_DGSTFN_EXMN A, TB_CVTN_RVW_PIC B
+		                 WHERE A.DGSTFN_SRVY_TRGT_MNG_NO = B.RVW_TKCG_MNG_NO
+		                 GROUP BY RVW_TKCG_EMP_NO
+		             ) CC ON A.LWYR_MNG_NO = CC.RVW_TKCG_EMP_NO
+		           , TB_COM_JDAF_CORP B
+		        WHERE A.JDAF_CORP_MNG_NO = B.JDAF_CORP_MNG_NO
+		          AND A.DEL_YN = 'N'
+		          AND B.DEL_YN = 'N'
+		          AND A.LWYR_CTRT_STTS_NM = 'Y'
+		        <if test="office != null and office != ''">
+		          AND A.LWYR_NM LIKE '%'||#{office}||'%'
+		        </if>
+		        ORDER BY BB.WRT_YMD
+		    ) A
+		) B 
+	</select>
+	
+	<select id="selectLawyerTotal" resultType="int">
+		/* agreeSql.selectLawyerTotal */
+		SELECT COUNT(*)
+		FROM TB_COM_LWYR A, TB_COM_JDAF_CORP B
+		WHERE A.JDAF_CORP_MNG_NO = B.JDAF_CORP_MNG_NO
+		AND A.DEL_YN = 'N'
+		AND B.DEL_YN = 'N'
+		AND A.LWYR_CTRT_STTS_NM = 'Y'
+		<if test="office != null and office != ''">
+		  AND A.LWYR_NM LIKE '%'||#{office}||'%'
+		</if>
+	</select>
+	
+	<select id="selectAgreeAnswerView" resultType="HashMap" parameterType="HashMap">
+		/* agreeSql.selectAgreeAnswerView */
+		SELECT A.RVW_OPNN_MNG_NO
+		     , A.CVTN_MNG_NO
+		     , B.RVW_TKCG_EMP_NM
+		     , A.RVW_TKCG_MNG_NO
+		     , A.RVW_OPNN_REG_YMD
+		     , A.RVW_OPNN_CMPTN_YMD
+		     , A.RVW_OPNN_CMPTN_YN
+		     , A.RVW_OPNN_CN
+		     , A.RMRK_CN
+		     , C.AGRE_YN
+		FROM TB_CVTN_RVW_OPNN A
+		     LEFT OUTER JOIN TB_CVTN_RVW_PIC B ON A.RVW_TKCG_MNG_NO = B.RVW_TKCG_MNG_NO AND A.RVW_OPNN_MNG_NO = B.RVW_OPNN_MNG_NO
+		     LEFT OUTER JOIN TB_CVTN_MNG C ON A.CVTN_MNG_NO = C.CVTN_MNG_NO
+		WHERE A.CVTN_MNG_NO = #{CVTN_MNG_NO}
+		<if test="RVW_OPNN_MNG_NO != null and RVW_OPNN_MNG_NO != ''">
+		  AND A.RVW_OPNN_MNG_NO = #{RVW_OPNN_MNG_NO}
+		</if>
+	</select>
+	
+	<insert id="insertAnswerBoard" parameterType="java.util.Map">
+		<selectKey keyProperty="RVW_OPNN_MNG_NO" resultType="String" order="BEFORE">
+			SELECT KEYID.NEXTVAL FROM DUAL
+		</selectKey>
+		/* agreeSql.insertAnswerBoard */
+		INSERT INTO TB_CVTN_RVW_OPNN (
+		    RVW_OPNN_MNG_NO      /* 검토의견관리번호 */
+		  , CVTN_MNG_NO          /* 협약관리번호 */
+		  , RVW_TKCG_MNG_NO      /* 검토담당관리번호 */
+		  , RVW_OPNN_REG_YMD     /* 검토의견등록일 */
+		  , RVW_OPNN_CMPTN_YN    /* 검토의견완료여부 */
+		  , RVW_OPNN_CN          /* 검토의견 */
+		  , RMRK_CN              /* 비고내용 */
+		  , DEL_YN               /* 삭제여부 */
+		  , WRTR_EMP_NM          /* 작성직원명 */
+		  , WRTR_EMP_NO          /* 작성직원번호 */
+		  , WRT_YMD              /* 작성일자 */
+		  , WRT_DEPT_NM          /* 작성부서명 */
+		  , WRT_DEPT_NO          /* 작성부서번호 */
+		) VALUES (
+		    #{RVW_OPNN_MNG_NO}
+		  , #{CVTN_MNG_NO}
+		  , #{CONSULTLAWYERID}
+		  , to_char(sysdate, 'YYYYMMDD')
+		  , 'N'
+		  , #{RVW_OPNN_CN}
+		  , #{RMRK_CN}
+		  , 'N'
+		  , #{WRTR_EMP_NM}
+		  , #{WRTR_EMP_NO}
+		  , to_char(sysdate, 'YYYYMMDD')
+		  , #{WRT_DEPT_NM}
+		  , #{WRT_DEPT_NO}
+		)
+	</insert>
+	
+	<update id="updateLawyerChckid" parameterType="HashMap">
+		/* agreeSql.updateLawyerChckid */
+		UPDATE TB_CVTN_RVW_PIC
+		SET RVW_OPNN_MNG_NO = #{RVW_OPNN_MNG_NO}
+		WHERE RVW_TKCG_MNG_NO = #{CONSULTLAWYERID}
+	</update>
+	
+	<update id="updateAnswerBoard" parameterType="HashMap">
+		/* agreeSql.updateAnswerBoard */
+		UPDATE TB_CVTN_RVW_OPNN 
+		SET RVW_OPNN_CMPTN_YN = 'N'
+		  , RVW_OPNN_CN       = #{RVW_OPNN_CN}
+		  , RMRK_CN           = #{RMRK_CN}
+		WHERE CVTN_MNG_NO     = #{CVTN_MNG_NO}
+		  AND RVW_OPNN_MNG_NO = #{RVW_OPNN_MNG_NO}
+	</update>
+	
+	<delete id="deleteFile">
+		/* agreeSql.deleteFile */
+		DELETE FROM TB_CVTN_FILE
+		WHERE CVTN_MNG_NO = #{CVTN_MNG_NO}
+		  AND TRGT_PST_MNG_NO = #{TRGT_PST_MNG_NO}
+		<if  test="fileid != null and fileid != ''">
+		  AND FILE_MNG_NO = #{fileid}
+		</if>
+	</delete>
+	
+	<delete id="deleteAnswer" parameterType="java.util.Map">
+		/* agreeSql.deleteAnswer */
+		DELETE FROM TB_CVTN_RVW_OPNN
+		WHERE CNSTN_MNG_NO = #{CVTN_MNG_NO}
+		<if  test="RVW_OPNN_MNG_NO != null and RVW_OPNN_MNG_NO != ''">
+		  AND RVW_OPNN_MNG_NO = #{RVW_OPNN_MNG_NO}
+		</if>
+	</delete>
+	
+	<update id="answerResultSave" parameterType="HashMap">
+		/* agreeSql.answerResultSave */
+		UPDATE TB_CVTN_RVW_OPNN
+		SET RVW_OPNN_CMPTN_YN  = #{ansresult}	/*  검토의견완료여부  */
+		  , RVW_OPNN_CMPTN_YMD = to_char(sysdate, 'YYYYMMDD')	/*  검토의견완료일자 */
+		WHERE RVW_OPNN_MNG_NO  = #{RVW_OPNN_MNG_NO}
+	</update>
+	
+	<select id="selectAnswerBoard" resultType="HashMap" parameterType="HashMap">
+		/* agreeSql.selectAnswerBoard */
+		SELECT A.RVW_OPNN_MNG_NO
+			, A.CVTN_MNG_NO
+			, A.RVW_TKCG_MNG_NO
+			, TO_CHAR(TO_DATE(A.RVW_OPNN_REG_YMD, 'YYYYMMDD'), 'YYYY-MM-DD') AS RVW_OPNN_REG_YMD
+			, TO_CHAR(TO_DATE(A.RVW_OPNN_CMPTN_YMD, 'YYYYMMDD'), 'YYYY-MM-DD') AS RVW_OPNN_CMPTN_YMD
+			, A.RVW_OPNN_CMPTN_YN
+			, A.RVW_OPNN_CN
+			, A.RMRK_CN
+			, B.RVW_TKCG_MNG_NO
+			, B.RVW_TKCG_EMP_NO
+			, B.RVW_TKCG_EMP_NM
+			, C.CVTN_CST_MNG_NO
+			, C.CVTN_MNG_NO
+			, C.BACNT_MNG_NO
+			, TRIM(TO_CHAR( C.CVTN_CST_AMT , '999,999,999,999,999')) AS CVTN_CST_AMT
+			, C.CST_PRGRS_STTS_SE
+			, CASE WHEN C.CST_PRGRS_STTS_SE IS NULL OR C.CST_PRGRS_STTS_SE = 'R' THEN '검토중'
+			       WHEN C.CST_PRGRS_STTS_SE = 'A' THEN '비용승인'
+			       WHEN C.CST_PRGRS_STTS_SE = 'C' THEN '비용지급'
+			       WHEN C.CST_PRGRS_STTS_SE = 'E' THEN '완료'
+			  END CST_PRGRS_STTS_NM
+			  
+			, TO_CHAR(TO_DATE(C.CST_CLM_YMD, 'YYYY-MM-DD'), 'YYYY-MM-DD') AS CST_CLM_YMD
+			, TO_CHAR(TO_DATE(C.CST_APRV_YMD, 'YYYY-MM-DD'), 'YYYY-MM-DD') AS CST_APRV_YMD
+			, TO_CHAR(TO_DATE(C.CST_GIVE_YMD, 'YYYY-MM-DD'), 'YYYY-MM-DD') AS CST_GIVE_YMD
+			, D.BANK_NM || ' ' || D.DPSTR_NM || ' ' || D.ACTNO AS BACNT_INFO
+			, D.DPSTR_NM
+			, D.BANK_NM
+			, D.BANK_SE_NO
+			, D.ACTNO
+			, D.USE_YN
+			, D.RMRK_CN AS BANK_RMRK_CN
+		FROM TB_CVTN_RVW_OPNN A,
+		     TB_CVTN_RVW_PIC B LEFT OUTER JOIN TB_CVTN_CST C ON B.RVW_TKCG_MNG_NO = C.RVW_TKCG_MNG_NO
+		                       LEFT OUTER JOIN TB_COM_LWYR_BACNT D ON C.BACNT_MNG_NO = D.BACNT_MNG_NO
+		WHERE A.RVW_TKCG_MNG_NO = B.RVW_TKCG_MNG_NO
+		  AND A.RVW_OPNN_MNG_NO = B.RVW_OPNN_MNG_NO
+		  AND A.CVTN_MNG_NO = #{CVTN_MNG_NO}
+		<if  test="RVW_OPNN_MNG_NO != null and RVW_OPNN_MNG_NO != ''">
+		  AND A.RVW_OPNN_MNG_NO = #{RVW_OPNN_MNG_NO}
+		</if>
+	</select>
+	
+	<update id="updateRplyYmd" parameterType="HashMap">
+		/* agreeSql.updateRplyYmd */
+		UPDATE TB_CVTN_MNG
+		<trim prefix="set " prefixOverrides=", ">
+			, CVTN_RPLY_YMD = to_char(sysdate, 'YYYYMMDD')
+		</trim>
+		WHERE CVTN_MNG_NO = #{CVTN_MNG_NO}
+	</update>
+	
+	<select id="selectMemoList" resultType="HashMap">
+		/* agreeSql.selectMemoList */
+		SELECT CVTN_MEMO_MNG_NO
+		     , CVTN_MNG_NO
+		     , MEMO_TTL
+		     , MEMO_CN
+		     , DEL_YN
+		     , WRTR_EMP_NM
+		     , WRTR_EMP_NO
+		     , WRT_YMD
+		     , WRT_DEPT_NM
+		     , WRT_DEPT_NO
+		FROM TB_CVTN_MEMO
+		WHERE CVTN_MNG_NO = #{CVTN_MNG_NO}
+		ORDER BY CVTN_MEMO_MNG_NO DESC
+	</select>
+	
+	<select id="selectAgreeMemoView" resultType="HashMap">
+		/* agreeSql.selectAgreeMemoView */
+		SELECT CVTN_MEMO_MNG_NO
+		     , CVTN_MNG_NO
+		     , MEMO_TTL
+		     , MEMO_CN
+		     , DEL_YN
+		     , WRTR_EMP_NM
+		     , WRTR_EMP_NO
+		     , WRT_YMD
+		     , WRT_DEPT_NM
+		     , WRT_DEPT_NO
+		FROM TB_CVTN_MEMO
+		WHERE CVTN_MNG_NO = #{CVTN_MNG_NO}
+		<if  test="CVTN_MEMO_MNG_NO != null and CVTN_MEMO_MNG_NO != ''">
+		  AND CVTN_MEMO_MNG_NO = #{CVTN_MEMO_MNG_NO}
+		</if>
+	</select>
+	
+	<insert id="insertAgreeMemo" parameterType="HashMap">
+		<selectKey keyProperty="CVTN_MEMO_MNG_NO" resultType="String" order="BEFORE">
+			SELECT KEYID.NEXTVAL FROM DUAL
+		</selectKey>
+		/* agreeSql.insertAgreeMemo */
+		INSERT INTO TB_CVTN_MEMO (
+		    CVTN_MEMO_MNG_NO
+		  , CVTN_MNG_NO
+		  , MEMO_TTL
+		  , MEMO_CN
+		  , DEL_YN
+		  , WRTR_EMP_NM
+		  , WRTR_EMP_NO
+		  , WRT_YMD
+		  , WRT_DEPT_NM
+		  , WRT_DEPT_NO
+		) VALUES (
+		    #{CVTN_MEMO_MNG_NO}
+		  , #{CVTN_MNG_NO}
+		  , #{MEMO_TTL}
+		  , #{MEMO_CN}
+		  , 'N'
+		  , #{WRTR_EMP_NM}
+		  , #{WRTR_EMP_NO}
+		  , to_char(sysdate, 'YYYYMMDD')
+		  , #{WRT_DEPT_NM}
+		  , #{WRT_DEPT_NO}
+		)
+	</insert>
+	
+	<update id="updateAgreeMemo"   parameterType="HashMap">
+		/* agreeSql.updateAgreeMemo */
+		UPDATE TB_CVTN_MEMO
+		SET MEMO_TTL      = #{MEMO_TTL}				/* 메모제목 */
+		  , MEMO_CN       = #{MEMO_CN}				/* 메모내용 */
+		  , MDFCN_EMP_NM  = #{WRTR_EMP_NM}			/* 수정직원명 */
+		  , MDFCN_EMP_NO  = #{WRTR_EMP_NO}			/* 수정직원번호 */
+		  , MDFCN_YMD	  = to_char(sysdate, 'YYYYMMDD')	/* 수정일자 */
+		  , MDFCN_DEPT_NM = #{WRT_DEPT_NM}			/* 수정부서명 */
+		  , MDFCN_DEPT_NO = #{WRT_DEPT_NO}			/* 수정부서번호 */
+		WHERE CVTN_MEMO_MNG_NO = #{CVTN_MEMO_MNG_NO}
+	</update>
+	
+	<delete id="deleteAgreeMemo">
+		/* agreeSql.deleteAgreeMemo */
+		DELETE FROM TB_CVTN_MEMO
+		WHERE CVTN_MNG_NO = #{CVTN_MNG_NO}
+		<if  test="CVTN_MEMO_MNG_NO != null and CVTN_MEMO_MNG_NO != ''">
+		  AND CVTN_MEMO_MNG_NO = #{CVTN_MEMO_MNG_NO}
+		</if>
+	</delete>
+	
+	<select id="getProcSatisList" resultType="HashMap">
+		/* agreeSql.getProcSatisList */
+		SELECT *
+		FROM TB_COM_DGSTFN_EXMN
+		WHERE TRGT_PST_MNG_NO = #{CVTN_MNG_NO}
+	</select>
+	
+	<select id="getSatisfactionList" resultType="HashMap">
+		/* agreeSql.getSatisfactionList */
+		SELECT SATIS.DGSTFN_ANS_MNG_NO,
+		       SATIS.TRGT_PST_MNG_NO,
+		       SATIS.DGSTFN_ANS_SCR,
+		       (SATIS.DGSTFN_ANS_SCR-1)/(5-1)*100 AS DGSTFN_ANS_SCR2,
+		       SATIS.WRTR_EMP_NM,
+		       SATIS.WRTR_EMP_NO,
+		       SATIS.DGSTFN_SRVY_TRGT_MNG_NO,
+		       (SELECT Z.RVW_TKCG_EMP_NM FROM TB_CNSTN_RVW_PIC Z WHERE Z.RVW_TKCG_MNG_NO = SATIS.DGSTFN_SRVY_TRGT_MNG_NO) AS TRGT_NM,
+		       ITEM.DGSTFN_SRVY_MNG_NO,
+		       ITEM.DGSTFN_SRVY_CN,
+		       ITEM.USE_YN,
+		       ITEM.DGSTFN_SRVY_TRGT_SE,
+		       ITEM.DGSTFN_EVL_TYPE_NM,
+		       ITEM.FST_ANS_ARTCL_NM,
+		       ITEM.SEC_ANS_ARTCL_NM,
+		       ITEM.THR_ANS_ARTCL_NM,
+		       ITEM.FOUR_ANS_ARTCL_NM,
+		       ITEM.FIFTH_ANS_ARTCL_NM
+		FROM TB_COM_DGSTFN_ARTC ITEM
+		         LEFT OUTER JOIN TB_COM_DGSTFN_EXMN SATIS
+		         ON ITEM.DGSTFN_SRVY_MNG_NO = SATIS.DGSTFN_SRVY_MNG_NO
+		           AND TRGT_PST_MNG_NO = #{CVTN_MNG_NO}
+		WHERE ITEM.USE_YN = 'Y'
+		  AND ITEM.SRVY_SE = 'AGR'
+		ORDER BY SATIS.DGSTFN_SRVY_MNG_NO ASC
+	</select>
+	
+	<select id="selectConsultLawyerList" resultType="HashMap" parameterType="HashMap">
+		/* agreeSql.selectConsultLawyerList */
+		SELECT 
+			A.RVW_TKCG_MNG_NO				/* 검토담당관리번호 */
+			, A.CVTN_MNG_NO				/* 자문관리번호 */
+			, A.RVW_OPNN_MNG_NO				/* 검토의견관리번호 */
+			, A.INSD_OTSD_TASK_SE				/* 내부외부업무구분 */
+			, A.RVW_TKCG_EMP_NO				/* 검토담당직원번호 */
+			, A.RVW_TKCG_EMP_NM				/* 검토담당직원명 */
+			, A.DEL_YN				/* 삭제여부 */
+			, A.WRTR_EMP_NM				/* 작성직원명 */
+			, A.WRTR_EMP_NO				/* 작성직원번호 */
+			, A.WRT_YMD				/* 작성일자 */
+			, A.WRT_DEPT_NM				/* 작성부서명 */
+			, A.WRT_DEPT_NO				/* 작성부서번호 */
+			, A.MDFCN_EMP_NM				/* 수정직원명 */
+			, A.MDFCN_EMP_NO				/* 수정직원번호 */
+			, A.MDFCN_YMD				/* 수정일자 */
+			, A.MDFCN_DEPT_NM				/* 수정부서명 */
+			, A.MDFCN_DEPT_NO				/* 수정부서번호 */
+			, B.OFC_TELNO			/* 사무실전화번호 */
+			, B.EML_ADDR			/* 이메일주소 */
+			, C.JDAF_CORP_NM			/* 법무법인명 */
+		FROM TB_CVTN_RVW_PIC A LEFT OUTER JOIN TB_COM_LWYR B ON A.RVW_TKCG_EMP_NO = B.LWYR_MNG_NO
+		                       LEFT OUTER JOIN TB_COM_JDAF_CORP C ON B.JDAF_CORP_MNG_NO = C.JDAF_CORP_MNG_NO
+		WHERE A.CVTN_MNG_NO = #{CVTN_MNG_NO}
+	</select>
+	
+	<select id="getCvtnCtrtTypeNm" resultType="String">
+		/* agreeSql.getCvtnCtrtTypeNm */
+		SELECT MENU_TTL
+		FROM TB_COM_MENU
+		WHERE MENU_MNG_NO = #{MENU_MNG_NO}
+	</select>
+	
+	<update id="setAgreYn"   parameterType="HashMap">
+		/* agreeSql.setAgreYn */
+		UPDATE TB_CVTN_MNG
+		SET AGRE_YN      = #{AGRE_YN}
+		WHERE CVTN_MNG_NO = #{CVTN_MNG_NO}
+	</update>
+	
+	<update id="agreeResultSave"   parameterType="HashMap">
+		/* agreeSql.agreeResultSave */
+		UPDATE TB_CVTN_MNG
+		SET RFLT_YN_RSLT_TTL         = #{RFLT_YN_RSLT_TTL}
+		  , RFLT_YN_RSLT_CN          = #{RFLT_YN_RSLT_CN}
+		  , RFLT_YN_RSLT_REG_YN      = 'Y'
+		  , RFLT_YN_RSLT_WRTR_EMP_NO = #{RFLT_YN_RSLT_WRTR_EMP_NO}
+		  , RFLT_YN_RSLT_WRTR_EMP_NM = #{RFLT_YN_RSLT_WRTR_EMP_NM}
+		  , RFLT_YN_RSLT_REG_YMD     = to_char(sysdate,'YYYYMMDD')
+		WHERE CVTN_MNG_NO = #{CVTN_MNG_NO}
+	</update>
+	
+	
+	<select id="getOutAgreeCnt" resultType="HashMap">
+		/* agreeSql.getOutAgreeCnt */
+		SELECT NVL(SUM(ENDCNT), 0) AS ENDCNT
+		     , NVL(SUM(PROGCNT), 0) AS PROGCNT
+		     , NVL(SUM(TOTALCNT), 0) AS TOTALCNT
+		FROM (
+		    SELECT CASE WHEN A.PRGRS_STTS_SE_NM IN ('완료', '종료') THEN 1 ELSE 0 END ENDCNT
+		         , CASE WHEN A.PRGRS_STTS_SE_NM NOT IN ('완료', '종료') THEN 1 ELSE 0 END PROGCNT
+		         , CASE WHEN A.CVTN_MNG_NO IS NOT NULL   THEN 1 ELSE 0 END TOTALCNT
+		    FROM TB_CVTN_MNG A
+		       , TB_CVTN_RVW_PIC B
+		    WHERE A.CVTN_MNG_NO = B.CVTN_MNG_NO
+		      AND B.RVW_TKCG_EMP_NO = #{WRTR_EMP_NO}
+		)
+	</select>
+	
+	
+	<select id="selectOutAgreeList" resultType="HashMap"  parameterType="HashMap">
+		/* agreeSql.selectOutAgreeList */
+		SELECT A.*
+		FROM (
+		    SELECT Z.*
+		         , CEIL(ROWNUM/#{pagesize}) PAGE
+		    FROM (
+		        SELECT A.CVTN_MNG_NO
+		             , A.MENU_MNG_NO
+		             , A.PRGRS_STTS_SE_NM
+		             , A.CVTN_TTL
+		             , A.CVTN_RQST_EMP_NO
+		             , A.CVTN_RQST_EMP_NM
+		             , A.CVTN_RQST_DEPT_NO
+		             , A.CVTN_RQST_DEPT_NM
+		             , A.CVTN_TKCG_EMP_NO
+		             , A.CVTN_TKCG_EMP_NM
+		             , A.CVTN_CTRT_TYPE_CD_NM
+		             , A.CVTN_RQST_REG_YMD
+		             , A.CVTN_RQST_YMD
+		             , A.CVTN_DOC_NO
+		             , A.WRT_YMD
+		             , B.RVW_TKCG_EMP_NM
+		             , A.MDFCN_YMD
+		             , A.CVTN_RCPT_YMD
+		             , B.RCPT_YN
+		        FROM TB_CVTN_MNG A
+		           , TB_CVTN_RVW_PIC B
+		        WHERE A.CVTN_MNG_NO = B.CVTN_MNG_NO
+		          AND B.RVW_TKCG_EMP_NO = #{WRTR_EMP_NO}
+		          AND B.PRSL_PSBLTY_YN = 'Y'
+		        <if test='CVTN_RQST_YMD1 != null and CVTN_RQST_YMD1 != ""'>
+		          AND <![CDATA[REPLACE(A.CVTN_RQST_YMD,'-','') >= REPLACE(#{CVTN_RQST_YMD1},'-','')]]>
+		        </if>
+		        <if test="CVTN_RQST_YMD2 != '' and CVTN_RQST_YMD2 != null">
+		          AND <![CDATA[REPLACE(A.CVTN_RQST_YMD,'-','') <= REPLACE(#{CVTN_RQST_YMD2},'-','')]]>
+		        </if>
+		        
+		        <if test='CVTN_RPLY_YMD1 != null and CVTN_RPLY_YMD1 != ""'>
+		          AND <![CDATA[REPLACE(A.CVTN_RPLY_YMD,'-','') >= REPLACE(#{CVTN_RPLY_YMD1},'-','')]]>
+		        </if>
+		        <if test="CVTN_RPLY_YMD2 != '' and CVTN_RPLY_YMD2 != null">
+		          AND <![CDATA[REPLACE(A.CVTN_RPLY_YMD,'-','') <= REPLACE(#{CVTN_RPLY_YMD2},'-','')]]>
+		        </if>
+		        
+		        <if test='PRVT_SRCH_KYWD_CN != null and PRVT_SRCH_KYWD_CN != ""'>
+		          AND A.PRVT_SRCH_KYWD_CN LIKE '%'||#{PRVT_SRCH_KYWD_CN}||'%'
+		        </if>
+		        <if test='CVTN_RQST_DEPT_NM != null and CVTN_RQST_DEPT_NM != ""'>
+		          AND A.CVTN_RQST_DEPT_NM LIKE '%'||#{CVTN_RQST_DEPT_NM}||'%'
+		        </if>
+		        <if test='CVTN_RQST_EMP_NM != null and CVTN_RQST_EMP_NM != ""'>
+		          AND A.CVTN_RQST_EMP_NM LIKE '%'||#{CVTN_RQST_EMP_NM}||'%'
+		        </if>
+		        <if test='CVTN_TKCG_EMP_NM != null and CVTN_TKCG_EMP_NM != ""'>
+		          AND A.CVTN_TKCG_EMP_NM LIKE '%'||#{CVTN_TKCG_EMP_NM}||'%'
+		        </if>
+		        <if test='RVW_TKCG_EMP_NM != null and RVW_TKCG_EMP_NM != ""'>
+		          AND B.RVW_TKCG_EMP_NM LIKE '%'||#{RVW_TKCG_EMP_NM}||'%'
+		        </if>
+		        <if test='INSD_OTSD_TASK_SE != null and INSD_OTSD_TASK_SE != ""'>
+		          AND A.INSD_OTSD_TASK_SE = #{INSD_OTSD_TASK_SE}
+		        </if>
+		        <if test='RFLT_YN_RSLT_REG_YN != null and RFLT_YN_RSLT_REG_YN != ""'>
+		          AND A.RFLT_YN_RSLT_REG_YN = #{RFLT_YN_RSLT_REG_YN}
+		        </if>
+		        <if test='EMRG_YN != null and EMRG_YN != ""'>
+		          AND A.EMRG_YN = #{EMRG_YN}
+		        </if>
+		        <if test='CVTN_DOC_NO != null and CVTN_DOC_NO != ""'>
+		          AND A.CVTN_DOC_NO LIKE '%'||#{CVTN_DOC_NO}||'%'
+		        </if>
+		        <if test='CVTN_INTL_DOC_NO != null and CVTN_INTL_DOC_NO != ""'>
+		          AND A.CVTN_INTL_DOC_NO LIKE '%'||#{CVTN_INTL_DOC_NO}||'%'
+		        </if>
+		        <if test='CVTN_TTL != null and CVTN_TTL != ""'>
+		          AND (
+		              A.CVTN_TTL LIKE '%'||#{CVTN_TTL}||'%' OR
+		              A.CVTN_RQST_CN LIKE '%'||#{CVTN_TTL}||'%' OR
+		              A.CVTN_SRNG_DMND_CN LIKE '%'||#{CVTN_TTL}||'%' OR
+		              A.RMRK_CN LIKE '%'||#{CVTN_TTL}||'%'
+		          )
+		        </if>
+		    ) Z
+		) A
+		<trim prefix="WHERE" prefixOverrides="AND |OR ">
+			<if test="pageno != null and pageno != ''">
+				page = #{pageno}
+			</if>
+		</trim>
+	</select>
+	
+	<select id="selectOutAgreeListTotal" resultType="int" parameterType="java.util.Map">
+		/* agreeSql.selectOutAgreeListTotal */
+		SELECT COUNT(*)
+		FROM (
+		    SELECT A.CVTN_MNG_NO
+		         , A.MENU_MNG_NO
+		         , A.PRGRS_STTS_SE_NM
+		         , A.CVTN_TTL
+		         , A.CVTN_RQST_EMP_NO
+		         , A.CVTN_RQST_EMP_NM
+		         , A.CVTN_RQST_DEPT_NO
+		         , A.CVTN_RQST_DEPT_NM
+		         , A.CVTN_TKCG_EMP_NO
+		         , A.CVTN_TKCG_EMP_NM
+		         , A.CVTN_CTRT_TYPE_CD_NM
+		         , A.CVTN_RQST_REG_YMD
+		         , A.CVTN_RQST_YMD
+		         , A.CVTN_DOC_NO
+		         , A.WRT_YMD
+		         , B.RVW_TKCG_EMP_NM
+		         , A.MDFCN_YMD
+		         , A.CVTN_RCPT_YMD
+		    FROM TB_CVTN_MNG A
+		       , TB_CVTN_RVW_PIC B
+		    WHERE A.CVTN_MNG_NO = B.CVTN_MNG_NO
+		      AND B.RVW_TKCG_EMP_NO = #{WRTR_EMP_NO}
+		      AND B.PRSL_PSBLTY_YN = 'Y'
+		    <if test='CVTN_RQST_YMD1 != null and CVTN_RQST_YMD1 != ""'>
+		      AND <![CDATA[REPLACE(A.CVTN_RQST_YMD,'-','') >= REPLACE(#{CVTN_RQST_YMD1},'-','')]]>
+		    </if>
+		    <if test="CVTN_RQST_YMD2 != '' and CVTN_RQST_YMD2 != null">
+		      AND <![CDATA[REPLACE(A.CVTN_RQST_YMD,'-','') <= REPLACE(#{CVTN_RQST_YMD2},'-','')]]>
+		    </if>
+		    
+		    <if test='CVTN_RPLY_YMD1 != null and CVTN_RPLY_YMD1 != ""'>
+		      AND <![CDATA[REPLACE(A.CVTN_RPLY_YMD,'-','') >= REPLACE(#{CVTN_RPLY_YMD1},'-','')]]>
+		    </if>
+		    <if test="CVTN_RPLY_YMD2 != '' and CVTN_RPLY_YMD2 != null">
+		      AND <![CDATA[REPLACE(A.CVTN_RPLY_YMD,'-','') <= REPLACE(#{CVTN_RPLY_YMD2},'-','')]]>
+		    </if>
+		    
+		    <if test='PRVT_SRCH_KYWD_CN != null and PRVT_SRCH_KYWD_CN != ""'>
+		      AND A.PRVT_SRCH_KYWD_CN LIKE '%'||#{PRVT_SRCH_KYWD_CN}||'%'
+		    </if>
+		    <if test='CVTN_RQST_DEPT_NM != null and CVTN_RQST_DEPT_NM != ""'>
+		      AND A.CVTN_RQST_DEPT_NM LIKE '%'||#{CVTN_RQST_DEPT_NM}||'%'
+		    </if>
+		    <if test='CVTN_RQST_EMP_NM != null and CVTN_RQST_EMP_NM != ""'>
+		      AND A.CVTN_RQST_EMP_NM LIKE '%'||#{CVTN_RQST_EMP_NM}||'%'
+		    </if>
+		    <if test='CVTN_TKCG_EMP_NM != null and CVTN_TKCG_EMP_NM != ""'>
+		      AND A.CVTN_TKCG_EMP_NM LIKE '%'||#{CVTN_TKCG_EMP_NM}||'%'
+		    </if>
+		    <if test='RVW_TKCG_EMP_NM != null and RVW_TKCG_EMP_NM != ""'>
+		      AND B.RVW_TKCG_EMP_NM LIKE '%'||#{RVW_TKCG_EMP_NM}||'%'
+		    </if>
+		    <if test='INSD_OTSD_TASK_SE != null and INSD_OTSD_TASK_SE != ""'>
+		      AND A.INSD_OTSD_TASK_SE = #{INSD_OTSD_TASK_SE}
+		    </if>
+		    <if test='RFLT_YN_RSLT_REG_YN != null and RFLT_YN_RSLT_REG_YN != ""'>
+		      AND A.RFLT_YN_RSLT_REG_YN = #{RFLT_YN_RSLT_REG_YN}
+		    </if>
+		    <if test='EMRG_YN != null and EMRG_YN != ""'>
+		      AND A.EMRG_YN = #{EMRG_YN}
+		    </if>
+		    <if test='CVTN_DOC_NO != null and CVTN_DOC_NO != ""'>
+		      AND A.CVTN_DOC_NO LIKE '%'||#{CVTN_DOC_NO}||'%'
+		    </if>
+		    <if test='CVTN_INTL_DOC_NO != null and CVTN_INTL_DOC_NO != ""'>
+		      AND A.CVTN_INTL_DOC_NO LIKE '%'||#{CVTN_INTL_DOC_NO}||'%'
+		    </if>
+		    <if test='CVTN_TTL != null and CVTN_TTL != ""'>
+		      AND (
+		          A.CVTN_TTL LIKE '%'||#{CVTN_TTL}||'%' OR
+		          A.CVTN_RQST_CN LIKE '%'||#{CVTN_TTL}||'%' OR
+		          A.CVTN_SRNG_DMND_CN LIKE '%'||#{CVTN_TTL}||'%' OR
+		          A.RMRK_CN LIKE '%'||#{CVTN_TTL}||'%'
+		      )
+		    </if>
+		) A
+	</select>
+	
+	<insert id="insertAgreeCost" parameterType="java.util.Map">
+		<selectKey keyProperty="CVTN_CST_MNG_NO" resultType="String" order="BEFORE">
+			SELECT KEYID.NEXTVAL FROM DUAL
+		</selectKey>
+		/* agreeSql.insertAgreeCost */
+		INSERT INTO TB_CVTN_CST (
+		    CVTN_CST_MNG_NO      /* 자문비용관리번호 */
+		  , CVTN_MNG_NO          /* 자문관리번호     */
+		  , RVW_TKCG_MNG_NO       /* 검토담당관리번호 */
+		  , BACNT_MNG_NO          /* 계좌관리번호     */
+		  , CVTN_CST_AMT         /* 자문비용금액     */
+		  , CST_PRGRS_STTS_SE     /* 비용진행상태구분 */
+		  , CST_CLM_YMD           /* 비용청구일자     */
+		) VALUES (
+		    #{CVTN_CST_MNG_NO}
+		  , #{CVTN_MNG_NO}
+		  , #{RVW_TKCG_MNG_NO}
+		  , #{BACNT_MNG_NO}
+		  , #{CVTN_CST_AMT}
+		  , 'R'
+		  , REPLACE(#{CST_CLM_YMD}, '-', '')
+		)
+	</insert>
+	
+	<update id="updateAgreeCost" parameterType="HashMap">
+		/* agreeSql.updateAgreeCost */
+		UPDATE TB_CVTN_CST
+		SET BACNT_MNG_NO = #{BACNT_MNG_NO}
+		  , CVTN_CST_AMT = #{CVTN_CST_AMT}
+		  , CST_CLM_YMD = REPLACE(#{CST_CLM_YMD}, '-', '')
+		  , CST_PRGRS_STTS_SE = #{CST_PRGRS_STTS_SE}
+		WHERE CVTN_CST_MNG_NO = #{CVTN_CST_MNG_NO}
+	</update>
+	
+	<update id="setCostInfo" parameterType="HashMap">
+		/* agreeSql.setCostInfo */
+		UPDATE TB_CVTN_CST
+		SET CST_PRGRS_STTS_SE = #{CST_PRGRS_STTS_SE}
+		  , CST_APRV_YMD = REPLACE(#{CST_APRV_YMD}, '-', '')
+		  , CST_GIVE_YMD = REPLACE(#{CST_GIVE_YMD}, '-', '')
+		WHERE CVTN_CST_MNG_NO = #{CVTN_CST_MNG_NO}
+	</update>
+	
+	<select id="selectStateTotalCnt" resultType="int">
+		/* agreeSql.selectStateTotalCnt_목록화면 통계그림 전체 건수 조회 */
+		SELECT COUNT(*)
+		FROM (
+		    SELECT A.CVTN_MNG_NO                   /* 협약관리번호             */
+		         , A.MENU_MNG_NO                   /* 메뉴관리번호             */
+		         , A.CVTN_DOC_NO                   /* 협약문서번호             */
+		         , A.CVTN_INTL_DOC_NO              /* 협약국제문서번호         */
+		         , A.CVTN_SE                       /* 협약구분                 */
+		         , A.PRGRS_STTS_SE_NM              /* 진행상태구분명           */
+		         , A.RLS_YN                        /* 공개여부                 */
+		         , A.INSD_OTSD_TASK_SE             /* 내부외부업무구분         */
+		         , A.OTSD_RQST_RSN                 /* 외부의뢰사유             */
+		         , A.EMRG_YN                       /* 긴급여부                 */
+		         , A.EMRG_RQST_RSN                 /* 긴급의뢰사유             */
+		         , A.CVTN_CTRT_TYPE_CD_NM          /* 협약계약유형코드명       */
+		         , A.CVTN_TTL                      /* 협약제목                 */
+		         , A.CVTN_RQST_EMP_NO              /* 협약의뢰직원번호         */
+		         , A.CVTN_RQST_EMP_NM              /* 협약의뢰직원명           */
+		         , A.CVTN_RQST_DEPT_NO             /* 협약의뢰부서번호         */
+		         , A.CVTN_RQST_DEPT_NM             /* 협약의뢰부서명           */
+		         , A.CVTN_RQST_REG_YMD             /* 협약의뢰등록일자         */
+		         , A.CVTN_RQST_YMD                 /* 협약의뢰일자             */
+		         , A.CVTN_RQST_LAST_ATRZ_JBPS_SE   /* 협약의뢰최종결재직위구분 */
+		         , A.CVTN_RQST_LAST_APRVR_NM       /* 협약의뢰최종결재자명     */
+		         , A.CVTN_RQST_LAST_APRVR_NO       /* 협약의뢰최종결재자번호   */
+		         , A.CVTN_RQST_CN                  /* 협약의뢰내용             */
+		         , A.CVTN_SRNG_DMND_CN             /* 협약심사요청내용         */
+		         , A.RMRK_CN                       /* 비고내용                 */
+		         , A.CVTN_HOPE_RPLY_YMD            /* 협약희망회신일자         */
+		         , A.CVTN_RCPT_YMD                 /* 협약접수일자             */
+		         , A.CVTN_TKCG_EMP_NO              /* 협약담당직원번호         */
+		         , A.CVTN_TKCG_EMP_NM              /* 협약담당직원명           */
+		         , A.CVTN_RPLY_YMD                 /* 협약회신일자             */
+		         , A.CVTN_CMPTN_YMD                /* 협약완료일자             */
+		         , A.PRVT_SRCH_KYWD_CN             /* 비공개검색키워드내용     */
+		         , A.RFLT_YN_RSLT_REG_YN           /* 반영여부결과등록여부     */
+		         , A.RFLT_YN_RSLT_WRTR_EMP_NO      /* 반영여부결과작성직원번호 */
+		         , A.RFLT_YN_RSLT_WRTR_EMP_NM      /* 반영여부결과작성직원명   */
+		         , A.RFLT_YN_RSLT_REG_YMD          /* 반영여부결과등록일자     */
+		         , A.RFLT_YN_RSLT_TTL              /* 반영여부결과제목         */
+		         , A.RFLT_YN_RSLT_CN               /* 반영여부결과내용         */
+				 , B.RVW_TKCG_EMP_NM      		   /* 고문변호사명 쉼표연결 */ 
+				 , B.JDAF_CORP_EMP_NMS AS JDAF_CORP_NMS 	/* 법무법인명+고문변호사명 쉼표연결 */
+			FROM TB_CVTN_MNG A 
+				LEFT OUTER JOIN (
+			 					SELECT 
+			 						L.CVTN_MNG_NO
+									, LISTAGG(LTRIM(NVL(C2.JDAF_CORP_NM, '') || ' ' || L.RVW_TKCG_EMP_NM), ',') WITHIN GROUP (ORDER BY C2.JDAF_CORP_NM, L.RVW_TKCG_EMP_NM) AS JDAF_CORP_EMP_NMS
+									, LISTAGG(L.RVW_TKCG_EMP_NM, ',') WITHIN GROUP (ORDER BY L.RVW_TKCG_EMP_NM) AS RVW_TKCG_EMP_NM
+			 					FROM TB_CVTN_RVW_PIC L 
+									LEFT JOIN TB_COM_LWYR C1 ON L.RVW_TKCG_EMP_NO = C1.LWYR_MNG_NO
+									LEFT JOIN TB_COM_JDAF_CORP C2 ON C1.JDAF_CORP_MNG_NO = C2.JDAF_CORP_MNG_NO
+								GROUP BY L.CVTN_MNG_NO 
+								) B ON A.CVTN_MNG_NO = B.CVTN_MNG_NO
+		    WHERE A.MENU_MNG_NO IS NOT NULL
+		    <if test='MENU_MNG_NO != null and MENU_MNG_NO != ""'>
+		      <if test='MENU_MNG_NO == "100000594"'>
+		      <!-- 필수심사대상 폴더 클릭 -->
+		      AND (
+		      		A.CVTN_CTRT_TYPE_CD_NM IN (
+		         	SELECT MENU_TTL FROM TB_COM_MENU WHERE UP_MENU_MNG_NO = #{MENU_MNG_NO}
+		         	)
+		          	OR A.CVTN_CTRT_TYPE_CD_NM IS NULL
+  				  )
+		      </if>
+		      <if test='MENU_MNG_NO != "100000594"'>
+		      AND A.MENU_MNG_NO = #{MENU_MNG_NO}
+		      </if>
+		    </if>
+		    
+		    <if test='CVTN_RQST_YMD1 != null and CVTN_RQST_YMD1 != ""'>
+		      AND <![CDATA[REPLACE(A.CVTN_RQST_YMD,'-','') >= REPLACE(#{CVTN_RQST_YMD1},'-','')]]>
+		    </if>
+		    <if test="CVTN_RQST_YMD2 != '' and CVTN_RQST_YMD2 != null">
+		      AND <![CDATA[REPLACE(A.CVTN_RQST_YMD,'-','') <= REPLACE(#{CVTN_RQST_YMD2},'-','')]]>
+		    </if>
+		    
+		    <if test='CVTN_RPLY_YMD1 != null and CVTN_RPLY_YMD1 != ""'>
+		      AND <![CDATA[REPLACE(A.CVTN_RPLY_YMD,'-','') >= REPLACE(#{CVTN_RPLY_YMD1},'-','')]]>
+		    </if>
+		    <if test="CVTN_RPLY_YMD2 != '' and CVTN_RPLY_YMD2 != null">
+		      AND <![CDATA[REPLACE(A.CVTN_RPLY_YMD,'-','') <= REPLACE(#{CVTN_RPLY_YMD2},'-','')]]>
+		    </if>
+		    
+		    <if test='CVTN_CTRT_TYPE_CD_NM != null and CVTN_CTRT_TYPE_CD_NM != ""'>
+		      AND A.CVTN_CTRT_TYPE_CD_NM = #{CVTN_CTRT_TYPE_CD_NM}
+		    </if>
+		    <if test='PRVT_SRCH_KYWD_CN != null and PRVT_SRCH_KYWD_CN != ""'>
+		      AND A.PRVT_SRCH_KYWD_CN LIKE '%'||#{PRVT_SRCH_KYWD_CN}||'%'
+		    </if>
+		    <if test='CVTN_RQST_DEPT_NM != null and CVTN_RQST_DEPT_NM != ""'>
+		      AND A.CVTN_RQST_DEPT_NM LIKE '%'||#{CVTN_RQST_DEPT_NM}||'%'
+		    </if>
+		    <if test='CVTN_RQST_EMP_NM != null and CVTN_RQST_EMP_NM != ""'>
+		      AND A.CVTN_RQST_EMP_NM LIKE '%'||#{CVTN_RQST_EMP_NM}||'%'
+		    </if>
+		    <if test='CVTN_TKCG_EMP_NM != null and CVTN_TKCG_EMP_NM != ""'>
+		      AND A.CVTN_TKCG_EMP_NM LIKE '%'||#{CVTN_TKCG_EMP_NM}||'%'
+		    </if>
+		    <if test='RVW_TKCG_EMP_NM != null and RVW_TKCG_EMP_NM != ""'>
+		      AND B.RVW_TKCG_EMP_NM LIKE '%'||#{RVW_TKCG_EMP_NM}||'%'
+		    </if>
+		    <if test='INSD_OTSD_TASK_SE != null and INSD_OTSD_TASK_SE != ""'>
+		      AND A.INSD_OTSD_TASK_SE = #{INSD_OTSD_TASK_SE}
+		    </if>
+		    <if test='RFLT_YN_RSLT_REG_YN != null and RFLT_YN_RSLT_REG_YN != ""'>
+		      AND A.RFLT_YN_RSLT_REG_YN = #{RFLT_YN_RSLT_REG_YN}
+		    </if>
+		    <if test='EMRG_YN != null and EMRG_YN != ""'>
+		      AND A.EMRG_YN = #{EMRG_YN}
+		    </if>
+		    <if test='CVTN_DOC_NO != null and CVTN_DOC_NO != ""'>
+		      AND A.CVTN_DOC_NO LIKE '%'||#{CVTN_DOC_NO}||'%'
+		    </if>
+		    <if test='CVTN_INTL_DOC_NO != null and CVTN_INTL_DOC_NO != ""'>
+		      AND A.CVTN_INTL_DOC_NO LIKE '%'||#{CVTN_INTL_DOC_NO}||'%'
+		    </if>
+		    <if test='CVTN_TTL != null and CVTN_TTL != ""'>
+		      AND (
+		          A.CVTN_TTL LIKE '%'||#{CVTN_TTL}||'%' OR
+		          A.CVTN_RQST_CN LIKE '%'||#{CVTN_TTL}||'%' OR
+		          A.CVTN_SRNG_DMND_CN LIKE '%'||#{CVTN_TTL}||'%' OR
+		          A.RMRK_CN LIKE '%'||#{CVTN_TTL}||'%'
+		      )
+		    </if>
+		)
+	</select>
+	
+	<select id="selectStateCnt" resultType="HashMap" parameterType="HashMap">
+	/* agreeSql_selectStateCnt_목록화면 통계그림 건수 조회 */
+	    SELECT 
+    		PRGRS_STTS_SE_NM
+            ,COUNT(*) AS CNT
+	    FROM 
+		    (
+	        SELECT (CASE WHEN A.PRGRS_STTS_SE_NM = '팀장결재중' OR A.PRGRS_STTS_SE_NM = '과장결재중' THEN '결재중'
+	                    ELSE A.PRGRS_STTS_SE_NM
+	                END) AS PRGRS_STTS_SE_NM
+		    FROM
+		        TB_CVTN_MNG A
+		        LEFT OUTER JOIN (
+		            SELECT 
+			            L.CVTN_MNG_NO
+		                , LISTAGG(LTRIM(NVL(C2.JDAF_CORP_NM, '') || ' ' || L.RVW_TKCG_EMP_NM), ',') WITHIN GROUP (ORDER BY C2.JDAF_CORP_NM, L.RVW_TKCG_EMP_NM) AS JDAF_CORP_EMP_NMS
+						, LISTAGG(L.RVW_TKCG_EMP_NM, ',') WITHIN GROUP (ORDER BY L.RVW_TKCG_EMP_NM) AS RVW_TKCG_EMP_NM
+		            FROM TB_CVTN_RVW_PIC L
+	    	    		LEFT JOIN TB_COM_LWYR C1 ON L.RVW_TKCG_MNG_NO = C1.LWYR_MNG_NO
+		        	    LEFT JOIN TB_COM_JDAF_CORP C2 ON C1.JDAF_CORP_MNG_NO = C2.JDAF_CORP_MNG_NO
+		            GROUP BY L.CVTN_MNG_NO
+		        ) B ON A.CVTN_MNG_NO = B.CVTN_MNG_NO
+			    WHERE A.MENU_MNG_NO IS NOT NULL
+			    <if test='MENU_MNG_NO != null and MENU_MNG_NO != ""'>
+			      <if test='MENU_MNG_NO == "100000594"'>
+			      <!-- 필수심사대상 폴더 클릭 -->
+			      AND (
+			      		A.CVTN_CTRT_TYPE_CD_NM IN (
+			         	SELECT MENU_TTL FROM TB_COM_MENU WHERE UP_MENU_MNG_NO = #{MENU_MNG_NO}
+			         	)
+			          	OR A.CVTN_CTRT_TYPE_CD_NM IS NULL
+	  				  )
+			      </if>
+			      <if test='MENU_MNG_NO != "100000594"'>
+			      AND A.MENU_MNG_NO = #{MENU_MNG_NO}
+			      </if>
+			    </if>
+			    
+			    <if test='CVTN_RQST_YMD1 != null and CVTN_RQST_YMD1 != ""'>
+			      AND <![CDATA[REPLACE(A.CVTN_RQST_YMD,'-','') >= REPLACE(#{CVTN_RQST_YMD1},'-','')]]>
+			    </if>
+			    <if test="CVTN_RQST_YMD2 != '' and CVTN_RQST_YMD2 != null">
+			      AND <![CDATA[REPLACE(A.CVTN_RQST_YMD,'-','') <= REPLACE(#{CVTN_RQST_YMD2},'-','')]]>
+			    </if>
+			    
+			    <if test='CVTN_RPLY_YMD1 != null and CVTN_RPLY_YMD1 != ""'>
+			      AND <![CDATA[REPLACE(A.CVTN_RPLY_YMD,'-','') >= REPLACE(#{CVTN_RPLY_YMD1},'-','')]]>
+			    </if>
+			    <if test="CVTN_RPLY_YMD2 != '' and CVTN_RPLY_YMD2 != null">
+			      AND <![CDATA[REPLACE(A.CVTN_RPLY_YMD,'-','') <= REPLACE(#{CVTN_RPLY_YMD2},'-','')]]>
+			    </if>
+			    
+			    <if test='CVTN_CTRT_TYPE_CD_NM != null and CVTN_CTRT_TYPE_CD_NM != ""'>
+			      AND A.CVTN_CTRT_TYPE_CD_NM = #{CVTN_CTRT_TYPE_CD_NM}
+			    </if>
+			    <if test='PRVT_SRCH_KYWD_CN != null and PRVT_SRCH_KYWD_CN != ""'>
+			      AND A.PRVT_SRCH_KYWD_CN LIKE '%'||#{PRVT_SRCH_KYWD_CN}||'%'
+			    </if>
+			    <if test='CVTN_RQST_DEPT_NM != null and CVTN_RQST_DEPT_NM != ""'>
+			      AND A.CVTN_RQST_DEPT_NM LIKE '%'||#{CVTN_RQST_DEPT_NM}||'%'
+			    </if>
+			    <if test='CVTN_RQST_EMP_NM != null and CVTN_RQST_EMP_NM != ""'>
+			      AND A.CVTN_RQST_EMP_NM LIKE '%'||#{CVTN_RQST_EMP_NM}||'%'
+			    </if>
+			    <if test='CVTN_TKCG_EMP_NM != null and CVTN_TKCG_EMP_NM != ""'>
+			      AND A.CVTN_TKCG_EMP_NM LIKE '%'||#{CVTN_TKCG_EMP_NM}||'%'
+			    </if>
+			    <if test='RVW_TKCG_EMP_NM != null and RVW_TKCG_EMP_NM != ""'>
+			      AND B.RVW_TKCG_EMP_NM LIKE '%'||#{RVW_TKCG_EMP_NM}||'%'
+			    </if>
+			    <if test='INSD_OTSD_TASK_SE != null and INSD_OTSD_TASK_SE != ""'>
+			      AND A.INSD_OTSD_TASK_SE = #{INSD_OTSD_TASK_SE}
+			    </if>
+			    <if test='RFLT_YN_RSLT_REG_YN != null and RFLT_YN_RSLT_REG_YN != ""'>
+			      AND A.RFLT_YN_RSLT_REG_YN = #{RFLT_YN_RSLT_REG_YN}
+			    </if>
+			    <if test='EMRG_YN != null and EMRG_YN != ""'>
+			      AND A.EMRG_YN = #{EMRG_YN}
+			    </if>
+			    <if test='CVTN_DOC_NO != null and CVTN_DOC_NO != ""'>
+			      AND A.CVTN_DOC_NO LIKE '%'||#{CVTN_DOC_NO}||'%'
+			    </if>
+			    <if test='CVTN_INTL_DOC_NO != null and CVTN_INTL_DOC_NO != ""'>
+			      AND A.CVTN_INTL_DOC_NO LIKE '%'||#{CVTN_INTL_DOC_NO}||'%'
+			    </if>
+			    <if test='CVTN_TTL != null and CVTN_TTL != ""'>
+			      AND (
+			          A.CVTN_TTL LIKE '%'||#{CVTN_TTL}||'%' OR
+			          A.CVTN_RQST_CN LIKE '%'||#{CVTN_TTL}||'%' OR
+			          A.CVTN_SRNG_DMND_CN LIKE '%'||#{CVTN_TTL}||'%' OR
+			          A.RMRK_CN LIKE '%'||#{CVTN_TTL}||'%'
+			      )
+			    </if>
+			)
+	    GROUP BY PRGRS_STTS_SE_NM
+	    ORDER BY PRGRS_STTS_SE_NM
+	</select>
+	
+	<select id="selectAgreeReviewComment" resultType="HashMap" parameterType="HashMap">
+		/* consultSql_selectAgreeReviewComment_협약 답변 검토 의견 조회 */
+		SELECT 
+			 CVTN_ANS_RVW_OPNN_CN			/* 협약답변검토의견내용 */
+			, TO_CHAR(TO_DATE(RVW_OPNN_REG_YMD, 'YYYYMMDD'), 'YYYY-MM-DD') AS RVW_OPNN_REG_YMD  /* 검토의견등록일자 */
+			, DEL_YN			/* 삭제여부 */
+			, WRTR_EMP_NM			/* 작성직원명 */
+			, WRTR_EMP_NO			/* 작성직원번호 */
+			, TO_CHAR(TO_DATE(WRT_YMD, 'YYYYMMDD'), 'YYYY-MM-DD') AS WRT_YMD			/* 작성일자 */
+			, WRT_DEPT_NM			/* 작성부서명 */
+			, WRT_DEPT_NO			/* 작성부서번호 */
+			, MDFCN_EMP_NM			/* 수정직원명 */
+			, MDFCN_EMP_NO			/* 수정직원번호 */
+			, TO_CHAR(TO_DATE(MDFCN_YMD, 'YYYYMMDD'), 'YYYY-MM-DD') AS MDFCN_YMD			/* 수정일자 */
+			, MDFCN_DEPT_NM			/* 수정부서명 */
+			, MDFCN_DEPT_NO			/* 수정부서번호 */
+		FROM TB_CVTN_MNG
+		WHERE CVTN_MNG_NO = #{CVTN_MNG_NO}
+	</select>
+	
+	<update id="updateAgreetReviewComment"   parameterType="HashMap">
+		/* consultSql_updateAgreetReviewComment_협약 답변 검토 의견 저장,수정 */
+		UPDATE 
+			TB_CVTN_MNG
+		SET 
+			CVTN_ANS_RVW_OPNN_CN = #{CVTN_ANS_RVW_OPNN_CN}					/* 협약답변검토의견내용 */
+			<if test="checkVal != 'rcModi'">
+			, RVW_OPNN_REG_YMD	= to_char(sysdate, 'YYYYMMDD')		/* 검토의견등록일자 */
+			</if>
+			, MDFCN_EMP_NM = #{WRTR_EMP_NM}			/* 수정직원명 */
+			, MDFCN_EMP_NO = #{WRTR_EMP_NO}			/* 수정직원번호 */
+			, MDFCN_YMD	= to_char(sysdate, 'YYYYMMDD')		/* 수정일자 */
+			, MDFCN_DEPT_NM = #{WRT_DEPT_NM}			/* 수정부서명 */
+			, MDFCN_DEPT_NO = #{WRT_DEPT_NO}			/* 수정부서번호 */
+		WHERE 
+			CVTN_MNG_NO = #{CVTN_MNG_NO}
+	</update>
+	
+	<delete id="deleteGbnFile">
+	/* consultSql.deleteGbnFile_협약 관련 구분자 파일 삭제 */
+		DELETE
+		  FROM TB_CVTN_FILE
+		 WHERE CVTN_MNG_NO = #{CVTN_MNG_NO}
+		 <if  test="FILE_SE_NM != null and FILE_SE_NM != ''">
+			AND FILE_SE_NM = #{FILE_SE_NM}
+		</if>
+	</delete>
+	
+	<update id="setRfslRsn" parameterType="HashMap">
+		/* consultSql.setRfslRsn */
+		UPDATE TB_CVTN_RVW_PIC
+		SET RCPT_YN = #{RCPT_YN}
+		  , RFSL_RSN = #{RFSL_RSN}
+		  , PRSL_PSBLTY_YN = #{RCPT_YN}
+		WHERE CVTN_MNG_NO = #{DOC_PK}
+		  AND RVW_TKCG_EMP_NO = #{WRTR_EMP_NO}
+	</update>
+	
+	<update id="updateAgreeStateRfslRsn" parameterType="HashMap">
+		/* agreeSql.updateAgreeStateRfslRsn */
+		UPDATE TB_CVTN_MNG
+		SET PRGRS_STTS_SE_NM = #{PRGRS_STTS_SE_NM}
+		WHERE CVTN_MNG_NO = #{DOC_PK}
+	</update>
+	
+	<select id="getMainAgreeCnt1" resultType="HashMap">
+		/* suitSql.getMainAgreeCnt1 */
+<!-- 		SELECT COUNT(*) FROM TB_CVTN_MNG WHERE PRGRS_STTS_SE_NM = '접수대기' -->
+		SELECT 
+		    COUNT(CASE WHEN MENU_MNG_NO IN ('100000594', '100000597', '100000598', '100000599', '100000600', '100000602') THEN 1 END) AS ACNT1 -- 필수심사
+		    , COUNT(CASE WHEN MENU_MNG_NO = '100000595' THEN 1 END) AS ACNT2 -- 기타계약
+		    , COUNT(CASE WHEN MENU_MNG_NO = '100000596' THEN 1 END) AS ACNT3 -- 시의회
+		FROM TB_CVTN_MNG
+		WHERE PRGRS_STTS_SE_NM = '접수대기'
+	</select>
+
+	<select id="getMainAgreeCnt2" resultType="HashMap">
+		/* suitSql.getMainAgreeCnt2 */
+		SELECT 
+<!-- 			COUNT(*) -->
+			COUNT(CASE WHEN MENU_MNG_NO IN ('100000594', '100000597', '100000598', '100000599', '100000600', '100000602') THEN 1 END) AS ACNT1 -- 필수심사
+		    , COUNT(CASE WHEN MENU_MNG_NO = '100000595' THEN 1 END) AS ACNT2 -- 기타계약
+		    , COUNT(CASE WHEN MENU_MNG_NO = '100000596' THEN 1 END) AS ACNT3 -- 시의회
+		FROM
+			TB_CVTN_MNG 
+		WHERE 
+			PRGRS_STTS_SE_NM NOT IN ('작성중', '접수대기', '완료', '철회')
+<!-- 			AND -->
+<!-- 			CVTN_TKCG_EMP_NO = #{userId} -->
+			
+	</select>
+	
+	<select id="selectAgreeMainList" resultType="HashMap">
+		/* agreeSql.selectAgreeMainList */
+		SELECT B.*
+		FROM (
+		    SELECT A.*,
+		    <if test="pagesize != '' and pagesize != null">
+		           CEIL(ROWNUM/#{pagesize}) PAGE,
+		    </if>
+		           ROWNUM
+		    FROM (
+		        SELECT A.CVTN_MNG_NO                   /* 협약관리번호             */
+		             , A.MENU_MNG_NO                   /* 메뉴관리번호             */
+		             , A.CVTN_DOC_NO                   /* 협약문서번호             */
+		             , A.CVTN_INTL_DOC_NO              /* 협약국제문서번호         */
+		             , A.CVTN_SE                       /* 협약구분                 */
+		             , A.PRGRS_STTS_SE_NM              /* 진행상태구분명           */
+		             , A.RLS_YN                        /* 공개여부                 */
+		             , A.INSD_OTSD_TASK_SE             /* 내부외부업무구분         */
+		             , A.OTSD_RQST_RSN                 /* 외부의뢰사유             */
+		             , A.EMRG_YN                       /* 긴급여부                 */
+		             , A.EMRG_RQST_RSN                 /* 긴급의뢰사유             */
+		             , A.CVTN_CTRT_TYPE_CD_NM          /* 협약계약유형코드명       */
+		             , A.CVTN_TTL                      /* 협약제목                 */
+		             , A.CVTN_RQST_EMP_NO              /* 협약의뢰직원번호         */
+		             , A.CVTN_RQST_EMP_NM              /* 협약의뢰직원명           */
+		             , A.CVTN_RQST_DEPT_NO             /* 협약의뢰부서번호         */
+		             , A.CVTN_RQST_DEPT_NM             /* 협약의뢰부서명           */
+		             , A.CVTN_RQST_REG_YMD             /* 협약의뢰등록일자         */
+		             , TO_CHAR(TO_DATE(A.CVTN_RQST_YMD, 'YYYYMMDD'), 'YYYY-MM-DD') AS CVTN_RQST_YMD       /* 협약의뢰일자             */
+		             , A.CVTN_RQST_LAST_ATRZ_JBPS_SE   /* 협약의뢰최종결재직위구분 */
+		             , A.CVTN_RQST_LAST_APRVR_NM       /* 협약의뢰최종결재자명     */
+		             , A.CVTN_RQST_LAST_APRVR_NO       /* 협약의뢰최종결재자번호   */
+		             , A.CVTN_RQST_CN                  /* 협약의뢰내용             */
+		             , A.CVTN_SRNG_DMND_CN             /* 협약심사요청내용         */
+		             , A.RMRK_CN                       /* 비고내용                 */
+		             , A.CVTN_HOPE_RPLY_YMD            /* 협약희망회신일자         */
+		             , TO_CHAR(TO_DATE(A.CVTN_RCPT_YMD, 'YYYYMMDD'), 'YYYY-MM-DD') AS CVTN_RCPT_YMD                 /* 협약접수일자             */
+		             , A.CVTN_TKCG_EMP_NO              /* 협약담당직원번호         */
+		             , A.CVTN_TKCG_EMP_NM              /* 협약담당직원명           */
+		             , A.CVTN_RPLY_YMD                 /* 협약회신일자             */
+		             , A.CVTN_CMPTN_YMD                /* 협약완료일자             */
+		             , A.PRVT_SRCH_KYWD_CN             /* 비공개검색키워드내용     */
+		             , A.RFLT_YN_RSLT_REG_YN           /* 반영여부결과등록여부     */
+		             , A.RFLT_YN_RSLT_WRTR_EMP_NO      /* 반영여부결과작성직원번호 */
+		             , A.RFLT_YN_RSLT_WRTR_EMP_NM      /* 반영여부결과작성직원명   */
+		             , A.RFLT_YN_RSLT_REG_YMD          /* 반영여부결과등록일자     */
+		             , A.RFLT_YN_RSLT_TTL              /* 반영여부결과제목         */
+		             , A.RFLT_YN_RSLT_CN               /* 반영여부결과내용         */
+		             , C.RVW_TKCG_EMP_NM      /* 고문변호사명 쉼표연결 */ 
+		             , C.JDAF_CORP_EMP_NMS AS JDAF_CORP_NMS /* 법무법인명+고문변호사명 쉼표연결 */
+		        FROM TB_CVTN_MNG A LEFT OUTER JOIN TB_CVTN_RVW_PIC B ON A.CVTN_MNG_NO = B.CVTN_MNG_NO
+		                           LEFT OUTER JOIN (
+		                               SELECT L.CVTN_MNG_NO
+		                                    , LISTAGG(L.RVW_TKCG_EMP_NM, ',') WITHIN GROUP (ORDER BY L.RVW_TKCG_EMP_NM) AS RVW_TKCG_EMP_NM
+		                                    , LISTAGG(LTRIM(NVL(C2.JDAF_CORP_NM, '') || ' ' || L.RVW_TKCG_EMP_NM), ',') WITHIN GROUP (ORDER BY C2.JDAF_CORP_NM, L.RVW_TKCG_EMP_NM) AS JDAF_CORP_EMP_NMS
+		                               FROM TB_CVTN_RVW_PIC L 
+		                                    LEFT JOIN TB_COM_LWYR C1 ON L.RVW_TKCG_EMP_NO = C1.LWYR_MNG_NO
+		                                    LEFT JOIN TB_COM_JDAF_CORP C2 ON C1.JDAF_CORP_MNG_NO = C2.JDAF_CORP_MNG_NO
+		                               GROUP BY L.CVTN_MNG_NO 
+		                           ) C ON A.CVTN_MNG_NO = C.CVTN_MNG_NO
+		        WHERE A.MENU_MNG_NO IS NOT NULL
+		        <choose>
+			        <when test="PRGRS_STTS_SE_NM != null and PRGRS_STTS_SE_NM != ''">
+					AND A.PRGRS_STTS_SE_NM = #{PRGRS_STTS_SE_NM}
+			        </when>
+			        <otherwise>
+		        	AND A.PRGRS_STTS_SE_NM NOT IN ('작성중', '접수대기', '완료', '철회') -- 완료랑 쫑료 두개를 하나로 맞추기
+			        </otherwise>
+		        </choose>
+		    ) A
+		) B
+		<trim prefix="WHERE" prefixOverrides="AND |OR ">
+		    <if test="pagesize != '' and pagesize != null">
+		    	<if test="pageno != null and pageno != ''">
+			        page = #{pageno}
+			    </if>
+		    </if>
+		</trim>
+	</select>
+	
+	
+	
+	<select id="selectAgreeChrEmp" resultType="String">
+		/* agreeSql.selectAgreeChrEmp */
+		SELECT CVTN_TKCG_EMP_NO
+		FROM TB_CVTN_MNG
+		WHERE CVTN_MNG_NO = #{DOC_PK}
+	</select>
+	
+	<select id="selectMainAgrCnt" resultType="HashMap">
+		SELECT
+			'협약' AS GBN,
+			SUM(CASE WHEN PRGRS_STTS_SE_NM NOT IN ('작성중', '접수대기', '완료', '철회') THEN 1 ELSE 0 END) AS CNT1,
+			SUM(CASE WHEN PRGRS_STTS_SE_NM IN ('완료', '철회') THEN 1 ELSE 0 END) AS CNT2
+		FROM 
+			TB_CVTN_MNG
+		WHERE 1=1
+			AND CVTN_RQST_EMP_NO =  #{userId}
+	</select>
+	
+	
+	<select id="getAgreeChrEmpInfo2" resultType="HashMap">
+		SELECT LISTAGG(C.JDAF_CORP_NM || ' ' || A.LWYR_NM, ', ') WITHIN GROUP (ORDER BY A.LWYR_MNG_NO) AS LWYR_NM
+		     , LISTAGG((REGEXP_REPLACE(A.OFC_TELNO, '(^02|^01[0-9]|^0[0-9]{2})([0-9]+)([0-9]{4})', '\1-\2-\3')), ', ') WITHIN GROUP (ORDER BY A.LWYR_MNG_NO) AS OFC_TELNO
+		FROM TB_COM_LWYR A
+		   , TB_CNSTN_RVW_PIC B
+		   , TB_COM_JDAF_CORP C
+		WHERE A.LWYR_MNG_NO = B.RVW_TKCG_EMP_NO
+		  AND A.JDAF_CORP_MNG_NO = C.JDAF_CORP_MNG_NO
+		  AND B.CNSTN_MNG_NO = #{CNSTN_MNG_NO}
+		GROUP BY B.CNSTN_MNG_NO
+	</select>
+	
+	
+	
+	
+	
+	
+	
+	<select id="selectAgreeChrgCost" resultType="HashMap">
+		/* agreeSql.selectAgreeChrgCost */
+		SELECT A.CVTN_CST_MNG_NO
+		     , A.CVTN_MNG_NO
+		     , A.RVW_TKCG_MNG_NO
+		     , A.CST_PRGRS_STTS_SE
+		     , C.RVW_TKCG_EMP_NO
+		     , CASE WHEN A.CST_PRGRS_STTS_SE = 'R' THEN '검토중'
+		            WHEN A.CST_PRGRS_STTS_SE = 'X' THEN '보완요청'
+		            WHEN A.CST_PRGRS_STTS_SE = 'Z' THEN '보완완료'
+		            WHEN A.CST_PRGRS_STTS_SE = 'A' THEN '비용승인'
+		            WHEN A.CST_PRGRS_STTS_SE = 'C' THEN '비용지급'
+		            WHEN A.CST_PRGRS_STTS_SE = 'E' THEN '완료'
+		       END CST_PRGRS_STTS_NM
+		     , B.CVTN_DOC_NO || ' ' || B.CVTN_TTL AS CVTN_TTL
+		     , E.JDAF_CORP_NM || ' ' || D.LWYR_NM AS LWYR_NM
+		     , A.CVTN_CST_AMT
+		     , TO_CHAR(A.CVTN_CST_AMT, 'FM999,999,999,999') AS VIEW_CVTN_CST_AMT
+		     , TO_CHAR(TO_DATE(A.CST_CLM_YMD, 'YYYY-MM-DD'), 'YYYY-MM-DD') AS CST_CLM_YMD
+		     , TO_CHAR(TO_DATE(A.CST_APRV_YMD, 'YYYY-MM-DD'), 'YYYY-MM-DD') AS CST_APRV_YMD
+		     , TO_CHAR(TO_DATE(A.CST_GIVE_YMD, 'YYYY-MM-DD'), 'YYYY-MM-DD') AS CST_GIVE_YMD
+		FROM TB_CVTN_CST A
+		   , TB_CVTN_MNG B
+		   , TB_CVTN_RVW_PIC C
+		   , TB_COM_LWYR D
+		   , TB_COM_JDAF_CORP E
+		WHERE A.CVTN_MNG_NO = B.CVTN_MNG_NO
+		  AND A.RVW_TKCG_MNG_NO = C.RVW_TKCG_MNG_NO
+		  AND B.CVTN_MNG_NO = C.CVTN_MNG_NO
+		  AND C.RVW_TKCG_EMP_NO = D.LWYR_MNG_NO
+		  AND D.JDAF_CORP_MNG_NO = E.JDAF_CORP_MNG_NO
+		  AND A.CST_PRGRS_STTS_SE NOT IN ('C', 'E')
+	</select>
+	
+	<update id="updateChrgLawyerAmt" parameterType="HashMap">
+		/* agreeSql.updateChrgLawyerAmt */
+		UPDATE TB_CVTN_CST
+		SET MDFCN_EMP_NM      = #{WRTR_EMP_NM}
+		  , MDFCN_EMP_NO      = #{WRTR_EMP_NO}
+		  , MDFCN_YMD         = to_char(sysdate,'YYYYMMDD')
+		<if test="CST_PRGRS_STTS_SE != '' and CST_PRGRS_STTS_SE != null">
+		  , CST_PRGRS_STTS_SE = #{CST_PRGRS_STTS_SE}
+		</if>
+		<if test="CST_APRV_YMD != '' and CST_APRV_YMD != null">
+		  , CST_APRV_YMD      = REPLACE(#{CST_APRV_YMD}, '-', '')
+		</if>
+		<if test="CST_GIVE_YMD != '' and CST_GIVE_YMD != null">
+		  , CST_GIVE_YMD      = REPLACE(#{CST_GIVE_YMD}, '-', '')
+		</if>
+		WHERE CVTN_CST_MNG_NO = #{CVTN_CST_MNG_NO}
+	</update>
+	
+	<update id="updateAgreeState2" parameterType="HashMap">
+		/* agreeSql_AgreeState2_콤보박스로 자문진행상태만 수정 */
+		UPDATE TB_CVTN_MNG
+		SET PRGRS_STTS_SE_NM = #{PRGRS_STTS_SE_NM}
+		WHERE CVTN_MNG_NO = #{CVTN_MNG_NO}
+	</update>
+	
+	
+	
+	
+	<select id="getOutRcptYn" resultType="String">
+		SELECT DECODE(A.RCPT_YN, NULL, 'A', A.RCPT_YN) AS RCPT_YN
+		FROM TB_CVTN_RVW_PIC A, TB_COM_LWYR B
+		WHERE A.CVTN_MNG_NO = #{CVTN_MNG_NO}
+		  AND A.RVW_TKCG_EMP_NO = B.LWYR_MNG_NO
+		  AND (B.LGN_ID = #{WRTR_EMP_NO} OR B.ASST_LGN_ID = #{WRTR_EMP_NO} OR B.LWYR_MNG_NO = #{WRTR_EMP_NO})
+	</select>
+	
+	<select id="selectRqstChangEmpList" resultType="HashMap" parameterType="HashMap">
+		/* agreeSql_selectRqstChangEmpList_협약의뢰자 변경 팝업  */
+		SELECT 
+			A.EMP_NO			/* 직원번호 */
+			, A.EMP_NM			/* 직원명 */
+			, A.DEPT_NO			/* 부서번호 */
+			, A.DEPT_GROUP_NO			/* 부서그룹번호 */
+			, A.DEPT_GROUP_NM			/* 부서그룹명 */
+			, A.UP_DEPT_NO			/* 상위부서번호 */
+			, A.UP_DEPT_NM			/* 상위부서명 */
+			, A.WRC_TELNO			/* 직장전화번호 */
+			,(
+				CASE
+					WHEN LENGTH(WRC_TELNO) = 10 AND SUBSTR(WRC_TELNO, 1, 2) = '02' THEN
+				  		SUBSTR(WRC_TELNO, 1, 2) || '-' || SUBSTR(WRC_TELNO, 3, 4) || '-' || SUBSTR(WRC_TELNO, 7, 4)
+					
+					WHEN LENGTH(WRC_TELNO) = 10 THEN -- 지역번호 3자리 + 3 + 4
+				  		SUBSTR(WRC_TELNO, 1, 3) || '-' || SUBSTR(WRC_TELNO, 4, 3) || '-' || SUBSTR(WRC_TELNO, 7, 4)
+					
+					WHEN LENGTH(WRC_TELNO) = 11 THEN -- 휴대폰 (3-4-4)
+				  		SUBSTR(WRC_TELNO, 1, 3) || '-' || SUBSTR(WRC_TELNO, 4, 4) || '-' || SUBSTR(WRC_TELNO, 8, 4)
+					
+					WHEN LENGTH(WRC_TELNO) = 8 THEN
+				  		SUBSTR(WRC_TELNO, 1, 4) || '-' || SUBSTR(WRC_TELNO, 5, 4)
+					
+					WHEN LENGTH(WRC_TELNO) = 7 THEN
+				  		<!-- '02-' ||  -->SUBSTR(WRC_TELNO, 1, 3) || '-' || SUBSTR(WRC_TELNO, 4, 4)
+					ELSE
+						A.WRC_TELNO
+				END
+			) AS FORMATTED_TELNO
+			, A.MBL_TELNO			/* 휴대전화번호 */
+			, A.EML_ADDR			/* 이메일주소 */
+			, A.JBGD_CD			/* 직급코드 */
+			, A.JBGD_NM			/* 직급명 */
+			, A.JBTTL_CD			/* 직책코드 */
+			, A.JBTTL_NM			/* 직책명 */
+			, A.JBSRS_NM			/* 직렬명 */
+			, A.JBSRS_CD			/* 직렬코드 */
+			, A.HDOF_YN			/* 재직여부 */
+			, A.REG_YMD			/* 등록일자 */
+			, B.DEPT_NM		/* 부서명 */
+		FROM 
+			TB_COM_HRIS	A 
+			LEFT JOIN TB_COM_ORGCHT B ON A.DEPT_NO = B.DEPT_NO
+		WHERE 1=1
+		<if test="srchTxt == null or srchTxt == ''">
+		  AND A.EMP_NO = #{WRT_DEPT_NO}
+<!-- 		  AND JBGD_NM LIKE '%'||#{jbgd_nm}||'%' -->
+		</if>
+		<if test="srchTxt != null and srchTxt != ''">
+		  AND (
+		    A.EMP_NM LIKE '%'||#{srchTxt}||'%' 
+		    OR
+		    B.DEPT_NM LIKE '%'||#{srchTxt}||'%'
+		  )
+		</if>
+	</select>
+	
+	<update id="agreeRqstChang" parameterType="HashMap">
+		/* agreeSql_agreeRqstChang_협약 의뢰자 변경 */
+		UPDATE TB_CVTN_MNG
+		SET 
+			CVTN_RQST_EMP_NO = #{userno}
+			, CVTN_RQST_EMP_NM = #{usernm}
+			, CVTN_RQST_DEPT_NO = #{deptno}
+			, CVTN_RQST_DEPT_NM = #{deptnm}
+		WHERE 
+			CVTN_MNG_NO = #{CVTN_MNG_NO}
+	</update>
+	
+	<select id="getAgreeRole" resultType="int">
+		/* agreeSql.getAgreeRole */
+		SELECT COUNT(*)
+		FROM TB_CVTN_MNG
+		WHERE CVTN_MNG_NO = #{CVTN_MNG_NO}
+		AND (
+		    (RLS_YN = 'Y' AND CVTN_RQST_DEPT_NO = #{WRT_DEPT_NO}) OR
+		    (RLS_YN = 'N' AND CVTN_RQST_EMP_NO = #{WRTR_EMP_NO})
+		)
+	</select>
+	
+	
+	
+	
+	
+	<update id="updateDGSTFN_RSPNS_YN" parameterType="HashMap">
+		UPDATE TB_CVTN_MNG
+		SET DGSTFN_RSPNS_YN = 'Y'
+		WHERE CVTN_MNG_NO = #{CVTN_MNG_NO}
+	</update>
+	
+	
+	<select id="getSatisSendAgreeList" resultType="HashMap">
+		SELECT A.CVTN_MNG_NO        AS DOC_PK
+		     , A.CVTN_DOC_NO        AS DOC_NO
+		     , A.CVTN_TTL           AS DOC_TTL
+		     , A.CVTN_RQST_EMP_NO   AS DOC_EMP_NO
+		     , A.CVTN_RQST_EMP_NM   AS DOC_EMP_NM
+		     , TO_CHAR(TO_DATE(A.CVTN_CMPTN_YMD, 'YYYYMMDD'), 'YYYY-MM-DD') AS DOC_END_YMD
+		     , B.EMP_PK_NO
+		FROM TB_CVTN_MNG A LEFT OUTER JOIN TB_COM_HRIS B ON A.CVTN_RQST_EMP_NO = B.EMP_NO
+		WHERE DECODE(A.DGSTFN_RSPNS_YN, NULL, 'N', A.DGSTFN_RSPNS_YN) = 'N'
+		  AND A.PRGRS_STTS_SE_NM = '완료'
+		  AND A.INSD_OTSD_TASK_SE = 'O'
+	</select>
+	
+	
+	<update id="updateDGSTFN_GIAN" parameterType="HashMap">
+		UPDATE TB_CVTN_MNG
+		SET DRFT_MNG_NO = #{DRFT_MNG_NO}
+		WHERE CVTN_MNG_NO = #{CVTN_MNG_NO}
+	</update>
+	
+	<update id="updateDGSTFN_GIAN_STATE" parameterType="HashMap">
+		UPDATE TB_CVTN_MNG
+		SET PRGRS_STTS_SE_NM = #{PRGRS_STTS_SE_NM}
+		WHERE DRFT_MNG_NO = #{DRFT_MNG_NO}
+	</update>
+	
+	<update id="updateKeyword" parameterType="HashMap">
+		/* agreeSql.updateKeyword */
+		UPDATE TB_CVTN_MNG
+		SET PRVT_SRCH_KYWD_CN = #{PRVT_SRCH_KYWD_CN} 
+		WHERE CVTN_MNG_NO = #{CVTN_MNG_NO}
+	</update>
+	
+	<update id="updateAgreeCmptnYmd" parameterType="HashMap">
+		/* agreeSql_updateAgreeCmptnYmd_협약 완료 일자 변경 */
+		UPDATE TB_CVTN_MNG
+		SET 
+			CVTN_CMPTN_YMD = to_char(sysdate,'YYYYMMDD')
+		WHERE 
+			CVTN_MNG_NO = #{CVTN_MNG_NO}
+	</update>
+</mapper>

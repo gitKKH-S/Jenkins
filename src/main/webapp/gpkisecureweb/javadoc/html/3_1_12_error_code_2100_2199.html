@@ -1,0 +1,341 @@
+<html>
+<head>
+ <TITLE>표준보안API JAVA 메뉴얼</TITLE>
+</head>
+</html>
+
+<body>
+<br><br>
+<p>
+
+<table width="100%">
+<tr>
+ <td align=center valign=bottom>
+   <h1>에러코드 (2100~2199)</h1>
+ </td>
+</table>
+
+<p>
+<blockquote>
+
+<table border=1 width=90% cellspacing=0 cellpadding=5>
+<tr>
+ <td width=100 align=center>에러코드</td>
+ <td>2100</td>
+</tr>
+<tr>
+ <td align=center>설명</td>
+ <td> 통합검증서버에 접속 실패</td>
+</tr>
+<tr>
+ <td align=center>해결방법</td>
+ <td>해당 API가 구동되고 있는 시스템에서 명령어 “telnet ivs.gpki.go.kr 8080”을 수행시켜, 통합검증서버에 접속이 가능한지 확인한다.</td>
+</tr>
+</table>
+
+<br>
+
+<table border=1 width=90% cellspacing=0 cellpadding=5>
+<tr>
+ <td width=100 align=center>에러코드</td>
+ <td>2101</td>
+</tr>
+<tr>
+ <td align=center>설명</td>
+ <td>통합검증서버에 요청 메시지 전송 실패</td>
+</tr>
+<tr>
+ <td align=center>해결방법</td>
+ <td> 환경파일에 지정된 통합검증서버의 IP, Port에서 통합검증서버의 서비스가 제공되고 있는지 확인한다.</td>
+</tr>
+</table>
+
+<br>
+
+<table border=1 width=90% cellspacing=0 cellpadding=5>
+<tr>
+ <td width=100 align=center>에러코드</td>
+ <td>2102</td>
+</tr>
+<tr>
+ <td align=center>설명</td>
+ <td>통합검증서버로부터 응답메시지 수신 실패</td>
+</tr>
+<tr>
+ <td align=center>해결방법</td>
+ <td> 환경파일에 지정된 통합검증서버의 IP, Port에서 통합검증서버의 서비스가 제공되고 있는지 확인한다.</td>
+</tr>
+</table>
+
+<br>
+
+<table border=1 width=90% cellspacing=0 cellpadding=5>
+<tr>
+ <td width=100 align=center>에러코드</td>
+ <td>2103</td>
+</tr>
+<tr>
+ <td align=center>설명</td>
+ <td>잘못된 통합검증서버의 응답 메시지</td>
+</tr>
+<tr>
+ <td align=center>해결방법</td>
+ <td>
+  1. 통합검증서버에서 받은 데이터가 변조되어 서명검증에 실패하였을 수 있다.<br>
+  2. 정확한 원인은 API에서 제공하는 에러 정보를 확인한다.
+</td>
+</tr>
+</table>
+
+<br>
+
+<table border=1 width=90% cellspacing=0 cellpadding=5>
+<tr>
+ <td width=100 align=center>에러코드</td>
+ <td>2104</td>
+</tr>
+<tr>
+ <td align=center>설명</td>
+ <td>통합검증서버에서 서비스를 제공하는 범위의 인증서가 아님</td>
+</tr>
+<tr>
+ <td align=center>해결방법</td>
+ <td> 
+  1. 인증서 검증 시 : 검증하고자한 인증서가 “정부인증기관”이나 “공인인증기관”에서 발급된 인증서 인지를 확인한다.<br>
+  2. 본인확인 시 : 본인확인 하고자 한 인증서가 “정부인증기관”에서 발급된 인증서 인지를 확인한다.
+</td>
+</tr>
+</table>
+
+<br>
+
+<table border=1 width=90% cellspacing=0 cellpadding=5>
+<tr>
+ <td width=100 align=center>에러코드</td>
+ <td>2105</td>
+</tr>
+<tr>
+ <td align=center>설명</td>
+ <td>통합검증서버의 내부 에러 발생</td>
+</tr>
+<tr>
+ <td align=center>해결방법</td>
+ <td> 통합검증서버의 내부 에러입니다. “통합검증서버” 관리자에게 문의한다.</td>
+</tr>
+</table>
+
+<br>
+
+<table border=1 width=90% cellspacing=0 cellpadding=5>
+<tr>
+ <td width=100 align=center>에러코드</td>
+ <td>2106</td>
+</tr>
+<tr>
+ <td align=center>설명</td>
+ <td> 폐지된 서비스 요청자의 인증서임</td>
+</tr>
+<tr>
+ <td align=center>해결방법</td>
+ <td> 서비스 요청 시 사용한 인증서는 이미 폐지된 인증서입니다. 해당 인증기관을 통하여 인증서를 재발급 받아서 서비스를 이용한다.</td>
+</tr>
+</table>
+
+<br>
+
+<table border=1 width=90% cellspacing=0 cellpadding=5>
+<tr>
+ <td width=100 align=center>에러코드</td>
+ <td>2107</td>
+</tr>
+<tr>
+ <td align=center>설명</td>
+ <td>유효하지 않은 요청자 인증서</td>
+</tr>
+<tr>
+ <td align=center>해결방법</td>
+ <td>서비스 요청 시 사용한 인증서는 유효하지 않은 인증서입니다. 해당 인증기관을 통하여 인증서를 재발급 받아서 서비스를 이용한다.</td>
+</tr>
+</table>
+
+<br>
+
+<table border=1 width=90% cellspacing=0 cellpadding=5>
+<tr>
+ <td width=100 align=center>에러코드</td>
+ <td>2109</td>
+</tr>
+<tr>
+ <td align=center>설명</td>
+ <td> 서비스를 이용할 수 없는 요청자임</td>
+</tr>
+<tr>
+ <td align=center>해결방법</td>
+ <td> 서비스를 이용하기 위해서 사용한 요청자 인증서는 서비스 이용을 위해서 등록이 되지 않았습니다. “통합검증서버” 관리자를 통하여 요청 서비스 이용을 위해서 등록합니다.</td>
+</tr>
+</table>
+
+<br>
+
+<table border=1 width=90% cellspacing=0 cellpadding=5>
+<tr>
+ <td width=100 align=center>에러코드</td>
+ <td>2110</td>
+</tr>
+<tr>
+ <td align=center>설명</td>
+ <td> 잘못된 통합검증서버에 전송한 요청 메시지</td>
+</tr>
+<tr>
+ <td align=center>해결방법</td>
+ <td> 통합검증서버에 전송한 메시지가 변조되었거나 통합검증서버에서 받아들이는 요청 메시지의 포맷이 바뀌었을 수 있습니다.</td>
+</tr>
+</table>
+
+<br>
+
+<table border=1 width=90% cellspacing=0 cellpadding=5>
+<tr>
+ <td width=100 align=center>에러코드</td>
+ <td>2111</td>
+</tr>
+<tr>
+ <td align=center>설명</td>
+ <td> 통합검증서버에서 응답한 에러코드는 알수 없는 값임</td>
+</tr>
+<tr>
+ <td align=center>해결방법</td>
+ <td> API에서 제공하는 에러정보를 이용하여 통합검증서버에서 리턴한 에러코드와 에러설명값을 확인한다.</td>
+</tr>
+</table>
+
+<br>
+
+<table border=1 width=90% cellspacing=0 cellpadding=5>
+<tr>
+ <td width=100 align=center>에러코드</td>
+ <td>2112</td>
+</tr>
+<tr>
+ <td align=center>설명</td>
+ <td> 환경파일에서 통합검증서버의 IP 정보를 획득하는데 실패하였음</td>
+</tr>
+<tr>
+ <td align=center>해결방법</td>
+ <td> 환경파일에 “[IVS]” 섹션에 “IP”의 값이 지정되어있는지 확인한다.</td>
+</tr>
+</table>
+
+<br>
+
+<table border=1 width=90% cellspacing=0 cellpadding=5>
+<tr>
+ <td width=100 align=center>에러코드</td>
+ <td>2113</td>
+</tr>
+<tr>
+ <td align=center>설명</td>
+ <td> 환경파일에서 통합검증서버의 Port 정보를 획득하는데 실패하였음</td>
+</tr>
+<tr>
+ <td align=center>해결방법</td>
+ <td> 환경파일에 “[IVS]” 섹션에 “PORT”의 값이 지정되어있는지 확인한다.</td>
+</tr>
+</table>
+
+<br>
+
+<table border=1 width=90% cellspacing=0 cellpadding=5>
+<tr>
+ <td width=100 align=center>에러코드</td>
+ <td>2114</td>
+</tr>
+<tr>
+ <td align=center>설명</td>
+ <td> 환경파일에서 통합검증서버의 인증서 게시 위치를 획득하는데 실패</td>
+</tr>
+<tr>
+ <td align=center>해결방법</td>
+ <td> 환경파일에 “[IVS]” 섹션에 “SVR_KM_CERT_URL”의 값이 지정되어있는지 확인한다.</td>
+</tr>
+</table>
+
+<br>
+
+<table border=1 width=90% cellspacing=0 cellpadding=5>
+<tr>
+ <td width=100 align=center>에러코드</td>
+ <td>2115</td>
+</tr>
+<tr>
+ <td align=center>설명</td>
+ <td> 통합검증서버의 키분배용 인증서 획득 실패</td>
+</tr>
+<tr>
+ <td align=center>해결방법</td>
+ <td> 환경파일에서 지정한 통합검증서버의 게시위치가 올바른지 확인한다.</td>
+</tr>
+</table>
+
+<br>
+
+<table border=1 width=90% cellspacing=0 cellpadding=5>
+<tr>
+ <td width=100 align=center>에러코드</td>
+ <td>2116</td>
+</tr>
+<tr>
+ <td align=center>설명</td>
+ <td> 통합검증서버의 서명용 인증서 획득 실패</td>
+</tr>
+<tr>
+ <td align=center>해결방법</td>
+ <td> 환경파일에서 지정한 통합검증서버의 게시위치가 올바른지 확인한다.</td>
+</tr>
+</table>
+
+<br>
+
+<table border=1 width=90% cellspacing=0 cellpadding=5>
+<tr>
+ <td width=100 align=center>에러코드</td>
+ <td>2117</td>
+</tr>
+<tr>
+ <td align=center>설명</td>
+ <td> 응답메시지 서명시 사용하였던 통합검증서버의 서명용 인증서를 신뢰할 수 없음</td>
+</tr>
+<tr>
+ <td align=center>해결방법</td>
+ <td>
+  1. 환경파일에서 지정한 통합검증서버의 게시위치가 올바른지 확인한다.<br>
+  2. 게시위치가 맞다면, “cache” 디렉토리의 “IVS” 디렉토리에 있는 “IVS_SignCert.der” 파일을 삭제하고 다시 수행한다.
+</tr>
+</table>
+
+</blockquote>
+</p>
+
+<br>
+<hr size=3 noshade>
+<br>
+<table width=100%>
+<tr>
+ <td align=left width=50% rowspan=2>
+   <a href="./3_1_error_code.html"><img src="../img/back.gif" border=0></a>
+   <a href="../index.html"><img src="../img/home.gif" border=0></a>
+ </td>
+ <td align=right width=50%>
+   <font size=2> Copyright &#169; 2003~2016 Government Computerization Center (GCC). </font>
+ </td>
+</tr>
+<tr>
+ <td align=right>
+   <font size=2> All Rights Reserved. </font>
+ </td>
+</tr>
+</table>
+</font>
+
+</body>
+</html>

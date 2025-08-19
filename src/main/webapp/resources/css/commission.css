@@ -1,0 +1,77 @@
+
+
+/* **************************** //���Ǳ���CSS **************************** */
+
+.button_register{ float:right; text-align:right;  padding-bottom:10px; padding-right:20px;}
+.button_approval{ width:99%; text-align:right;  padding:0 0px 10px 0;}
+
+table.basic{margin: 0; padding: 0; line-height: 21px;  width:100%}
+table.basic td{margin: 0; padding: 3px 0;text-align: center;}
+.thead{height:35px;}
+.thead_bg {background-image:url(../images/commitee/list_bar_center.gif); background-repeat:repeat-x;}
+tbody tr:hover {background:#f3ffcb}
+.tbody_list_bg02 {background-color:#f0f3f9}
+.paging{text-align:center; }
+
+table.approval {margin:0 auto; line-height: 30px;  width:100%; border: 2px solid #8da2d1; font-size:12px; }
+table.approval td{text-align:left;padding-left:15px; background-color:#fff; border-bottom: 1px solid #dbe1ec;}
+table.approval th{text-align:center; background-image:url(../images/commitee/approval_bg01a.png); background-repeat:repeat-x; color:#FFF; width:15%;border-bottom: 1px solid #dbe1ec;border-right: 1px solid #dbe1ec}
+
+table.approval01{line-height: 21px;  width:100%; margin-top:10px;}
+table.approval01 td{margin: 0; padding: 3px 0;text-align: center;}
+
+.approval_caption {text-align:left; padding-bottom:5px;}
+
+.button_approval02{float:right; margin-right:-10px; padding-top:20px;}
+table.approval02{ line-height: 21px;  width:100%; margin-top:20px;}
+table.approval02 td{ padding: 3px 0;text-align: center;}
+
+
+table.approval03{ line-height: 21px;  width:100%; margin-top:50px;}
+
+/*------------------------------------------------------------------------------------------
+	...
+------------------------------------------------------------------------------------------*/
+.listsearch {
+	background: url(../images/background/listsearch_bg.gif) repeat-x bottom;
+	padding-bottom: 3px;
+	margin-bottom: 15px;
+}
+
+.listsearch table {
+	background: #f5f8fe;
+	border: 1px solid #9fb7e7;
+}
+
+.listsearch table .search_title {
+	color: #173a88;
+	text-align: left;
+	padding-left: 15px;
+	background: url(../images/background/bar.gif) no-repeat right 50%;
+}
+
+.listsearch table th {
+	text-align: right;
+	padding-right: 10px;
+}
+
+.listsearch table td {
+	padding: 5px;
+}
+
+.listsearch table .btsearch {
+	text-align: center;
+}
+body, code {font:0.82em "돋움", Dotum, AppleGothic, sans-serif; color:#333; }
+.buttonShape {
+	font-weight:bold;
+	font-family:'돋움',dotum,Helvetica;
+	font-size:12px;
+	cursor:pointer;
+	float:right;
+	margin:0 5px;
+}
+.buttonPoll{
+	font-size:12px;
+	float:right;
+}

@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="EUC-KR" ?>
+<!DOCTYPE tiles-definitions PUBLIC
+       "-//Apache Software Foundation//DTD Tiles Configuration 2.1//EN"
+       "http://tiles.apache.org/dtds/tiles-config_2_1.dtd">
+<!-- D:/dev/goyang/WebContent/WEB-INF/dtd/tiles-config_2_1.dtd -->
+<tiles-definitions>
+	<!-- header, left, content -->
+	<definition name="layouts-adm" template="/WEB-INF/jsp/layout/layouts-adm.jsp">
+		<put-attribute name="content"   value="" />
+	</definition>
+
+	<definition name="*.adm" extends="layouts-adm">
+		<put-attribute name="content"   value="/WEB-INF/jsp/bylaw/{1}.jsp" />
+	</definition>
+	<definition name="*/*.adm" extends="layouts-adm">
+		<put-attribute name="content"   value="/WEB-INF/jsp/bylaw/{1}/{2}.jsp" />
+	</definition>
+	<definition name="*/*/*.adm" extends="layouts-adm">
+		<put-attribute name="content"   value="/WEB-INF/jsp/bylaw/{1}/{2}/{3}.jsp" />
+	</definition>
+	
+	<definition name="layouts-extjs" template="/WEB-INF/jsp/layout/layouts-extjs.jsp">
+		<put-attribute name="content"   value="" />
+	</definition>
+
+	<definition name="*.extjs" extends="layouts-extjs">
+		<put-attribute name="content"   value="/WEB-INF/jsp/bylaw/{1}.jsp" />
+	</definition>
+	<definition name="*/*.extjs" extends="layouts-extjs">
+		<put-attribute name="content"   value="/WEB-INF/jsp/bylaw/{1}/{2}.jsp" />
+	</definition>
+	<definition name="*/*/*.extjs" extends="layouts-extjs">
+		<put-attribute name="content"   value="/WEB-INF/jsp/bylaw/{1}/{2}/{3}.jsp" />
+	</definition>
+	
+	<!-- header, left, content -->
+	<definition name="layouts-err" template="/WEB-INF/jsp/layout/layouts-err.jsp">
+		<put-attribute name="content"   value="" />
+	</definition>
+
+	<definition name="*.err" extends="layouts-err">
+		<put-attribute name="content"   value="/WEB-INF/{1}.jsp" />
+	</definition>
+	<definition name="*/*.err" extends="layouts-err">
+		<put-attribute name="content"   value="/WEB-INF/{1}/{2}.jsp" />
+	</definition>
+	<definition name="*/*/*.err" extends="layouts-err">
+		<put-attribute name="content"   value="/WEB-INF/{1}/{2}/{3}.jsp" />
+	</definition>
+	<definition name="*/*/*/*.err" extends="layouts-err">
+		<put-attribute name="content"   value="/WEB-INF/{1}/{2}/{3}/{4}.jsp" />
+	</definition>
+
+	<definition name="layouts-main" template="/WEB-INF/jsp/layout/layouts-main.jsp">
+		<put-attribute name="meta"   value="/WEB-INF/jsp/web/common/meta.jsp" />
+		<put-attribute name="topmenu"   value="/WEB-INF/jsp/web/common/headinfo.jsp" />
+		<put-attribute name="footer"   value="/WEB-INF/jsp/web/common/footer.jsp" />
+	</definition>
+	<definition name="*.main" extends="layouts-main">
+		<put-attribute name="content"   value="/WEB-INF/jsp/web/{1}.jsp" />
+	</definition>
+	<definition name="*/*.main" extends="layouts-main">
+		<put-attribute name="content"   value="/WEB-INF/jsp/web/{1}/{2}.jsp" />
+	</definition>
+	<definition name="*/*/*.main" extends="layouts-main">
+		<put-attribute name="content"   value="/WEB-INF/jsp/web/{1}/{2}/{3}.jsp" />
+	</definition>
+
+	<definition name="layouts-pop" template="/WEB-INF/jsp/layout/layouts-pop.jsp">
+		<put-attribute name="meta"   value="/WEB-INF/jsp/web/common/meta.jsp" />
+	</definition>
+	<definition name="*.pop" extends="layouts-pop">
+		<put-attribute name="content"   value="/WEB-INF/jsp/web/{1}.jsp" />
+	</definition>
+	<definition name="*.pop" extends="layouts-pop">
+		<put-attribute name="content"   value="/WEB-INF/jsp/out/{1}.jsp" />
+	</definition>
+	<definition name="*/*.pop" extends="layouts-pop">
+		<put-attribute name="content"   value="/WEB-INF/jsp/web/{1}/{2}.jsp" />
+	</definition>
+	<definition name="*/*/*.pop" extends="layouts-pop">
+		<put-attribute name="content"   value="/WEB-INF/jsp/web/{1}/{2}/{3}.jsp" />
+	</definition>
+	<definition name="*/*/*/*.pop" extends="layouts-pop">
+		<put-attribute name="content"   value="/WEB-INF/jsp/web/{1}/{2}/{3}/{4}.jsp" />
+	</definition>
+	
+	<definition name="layouts-web" template="/WEB-INF/jsp/layout/layouts-web.jsp">
+		<put-attribute name="meta"   value="/WEB-INF/jsp/web/common/meta.jsp" />
+		<put-attribute name="topmenu"   value="/WEB-INF/jsp/web/common/headinfo.jsp" />
+		<put-attribute name="search"   value="/WEB-INF/jsp/web/common/searchinfo.jsp" />
+		<put-attribute name="treemenu"   value="/WEB-INF/jsp/web/common/treemenu.jsp" />
+		<put-attribute name="pagenavi"   value="/WEB-INF/jsp/web/common/pagenavi.jsp" />
+		<put-attribute name="content"   value="" />
+		<put-attribute name="footer"   value="/WEB-INF/jsp/web/common/footer.jsp" />
+	</definition>
+	<definition name="*.web" extends="layouts-web">
+		<put-attribute name="content"   value="/WEB-INF/jsp/web/{1}.jsp" />
+	</definition>
+	<definition name="*/*.web" extends="layouts-web">
+		<put-attribute name="content"   value="/WEB-INF/jsp/web/{1}/{2}.jsp" />
+	</definition>
+	<definition name="*/*/*.web" extends="layouts-web">
+		<put-attribute name="content"   value="/WEB-INF/jsp/web/{1}/{2}/{3}.jsp" />
+	</definition>
+	<definition name="*/*/*/*.web" extends="layouts-web">
+		<put-attribute name="content"   value="/WEB-INF/jsp/web/{1}/{2}/{3}/{4}.jsp" />
+	</definition>
+	
+	<definition name="layouts-sch" template="/WEB-INF/jsp/layout/layouts-sch.jsp">
+		<put-attribute name="meta"   value="/WEB-INF/jsp/web/common/meta.jsp" />
+		<put-attribute name="topmenu"   value="/WEB-INF/jsp/web/common/headinfo.jsp" />
+		<put-attribute name="search"   value="/WEB-INF/jsp/web/common/searchinfo.jsp" />
+		<put-attribute name="pagenavi"   value="/WEB-INF/jsp/web/common/pagenavi.jsp" />
+		<put-attribute name="content"   value="" />
+		<put-attribute name="footer"   value="/WEB-INF/jsp/web/common/footer.jsp" />
+	</definition>
+	<definition name="*.sch" extends="layouts-sch">
+		<put-attribute name="content"   value="/WEB-INF/jsp/web/{1}.jsp" />
+	</definition>
+	<definition name="*/*.sch" extends="layouts-sch">
+		<put-attribute name="content"   value="/WEB-INF/jsp/web/{1}/{2}.jsp" />
+	</definition>
+	<definition name="*/*/*.sch" extends="layouts-sch">
+		<put-attribute name="content"   value="/WEB-INF/jsp/web/{1}/{2}/{3}.jsp" />
+	</definition>
+	<definition name="*/*/*/*.sch" extends="layouts-sch">
+		<put-attribute name="content"   value="/WEB-INF/jsp/web/{1}/{2}/{3}/{4}.jsp" />
+	</definition>
+	
+	<definition name="layouts-frm" template="/WEB-INF/jsp/layout/layouts-frm.jsp">
+		<put-attribute name="content"   value="" />
+	</definition>
+	<definition name="*.frm" extends="layouts-frm">
+		<put-attribute name="content"   value="/WEB-INF/jsp/web/{1}.jsp" />
+	</definition>
+	<definition name="*/*.frm" extends="layouts-frm">
+		<put-attribute name="content"   value="/WEB-INF/jsp/web/{1}/{2}.jsp" />
+	</definition>
+	<definition name="*/*/*.frm" extends="layouts-frm">
+		<put-attribute name="content"   value="/WEB-INF/jsp/web/{1}/{2}/{3}.jsp" />
+	</definition>
+	<definition name="*/*/*/*.frm" extends="layouts-frm">
+		<put-attribute name="content"   value="/WEB-INF/jsp/web/{1}/{2}/{3}/{4}.jsp" />
+	</definition>
+		
+	<definition name="layouts-dll" template="/WEB-INF/jsp/layout/layouts-dll.jsp">
+		<put-attribute name="content"   value="" />
+	</definition>
+	<definition name="*.dll" extends="layouts-dll">
+		<put-attribute name="content"   value="/WEB-INF/jsp/{1}.jsp" />
+	</definition>
+	<definition name="*/*.dll" extends="layouts-dll">
+		<put-attribute name="content"   value="/WEB-INF/jsp/web/{1}/{2}.jsp" />
+	</definition>
+	<definition name="*/*/*.dll" extends="layouts-dll">
+		<put-attribute name="content"   value="/WEB-INF/jsp/web/{1}/{2}/{3}.jsp" />
+	</definition>
+	
+	<definition name="layouts-out" template="/WEB-INF/jsp/layout/layouts-out.jsp">
+		<put-attribute name="content"   value="" />
+	</definition>
+	<definition name="*.out" extends="layouts-out">
+		<put-attribute name="content"   value="/WEB-INF/jsp/out/{1}.jsp" />
+	</definition>
+	<definition name="*/*.out" extends="layouts-out">
+		<put-attribute name="content"   value="/WEB-INF/jsp/out/{1}/{2}.jsp" />
+	</definition>
+	<definition name="*/*/*.out" extends="layouts-out">
+		<put-attribute name="content"   value="/WEB-INF/jsp/out/{1}/{2}/{3}.jsp" />
+	</definition>
+	<definition name="*/*/*/*.out" extends="layouts-out">
+		<put-attribute name="content"   value="/WEB-INF/jsp/out/{1}/{2}/{3}/{4}.jsp" />
+	</definition>
+</tiles-definitions>

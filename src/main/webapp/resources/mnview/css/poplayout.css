@@ -1,0 +1,275 @@
+/*
+	popUp CSS
+*/
+#popHeader {
+	width:500px;
+}
+#popHeader .popTitle {
+	font-size:16px;
+	font-weight:bold;
+	color:#FFFFFF;
+	padding:0 0 0 20px;
+}
+#popBody {
+	width:500px;
+}
+#popBody TABLE {
+	margin:10px 15px 10px 15px;
+}
+#popBody TD {
+	padding:5px 5px 2px 10px;
+	border-bottom:#CCC dotted 1px;
+	font-size:12px;
+}
+#popBody INPUT {
+	font-size:12px;
+	color:#333;
+	width:250px;
+	height:20px;
+}
+#popButton {
+	text-align:center;
+	padding:12px 0 0 0 ;
+	height:28px;
+	width:500px;
+	background:url(../images/statute/bg_popBottom.gif) repeat-x top;
+}
+#popHeaderList {
+	width:900px;
+}
+.popTitle {
+	font-size:16px;
+	font-weight:bold;
+	color:#FFFFFF;
+	padding:0 0 0 20px;
+}
+#popBodyList {
+	width:900px;
+}
+
+#popBody INPUT {
+	font-size:12px;
+	color:#333;
+	width:250px;
+	height:20px;
+}
+#popListHeader {
+	padding:5px 0 0 10px;
+}
+#popListBody {
+	padding:0 0 0 10px;	
+	height:300px;
+	overflow-y:auto;
+}
+#popListHeader TD{
+	font-size:12px;
+	font-weight:bold;
+	text-align:center;
+}
+#popListBody TD {
+	font-size:12px;
+	text-align:center;
+	border-bottom:1px #CCC solid;
+}
+#popButtonList {
+	text-align:center;
+	padding:12px 0 0 0 ;
+	height:28px;
+	width:900px;
+	background:url(../images/statute/bg_popBottom.gif) repeat-x top;
+}
+#popHeaderRevReason {
+	width: 600px;
+}
+#popBodyRevReason {
+	width: 600px;
+	padding-bottom:15px;
+}
+#popBodyRevReason TEXTAREA{
+	margin: 0 10px 0 25px;
+	padding: 3px 3px 3px 3px;
+	width:530px;
+}
+#popButtonRevReason {
+	text-align:center;
+	padding:12px 0 0 0 ;
+	height:28px;
+	width:600px;
+	background:url(../images/statute/bg_popBottom.gif) repeat-x top;
+}
+.revReaTitle {
+	margin: 15px 0 5px 15px;
+	padding : 0 0 0 25px;
+	background:url(../img/icon_subject.gif) no-repeat center left;
+	font-size:12px;
+	font-weight:bold;
+	color:#003b59;
+}
+.popSchTitle {
+	margin: 15px 15px 5px 15px;
+	padding : 0 0 3px 25px;
+	background:url(../img/icon_txtSch.gif) no-repeat center left;
+	font-size:12px;
+	font-weight:bold;
+	color:#003b59;
+	border-bottom:#CCC 1px solid;
+}
+#popHeaderSch {
+	width:300px;
+}
+#popBodySch {
+	width:300px;
+}
+#popButtonSch {
+	text-align:center;
+	padding:12px 0 0 0 ;
+	height:28px;
+	width:300px;
+	background:url(../images/statute/bg_popBottom.gif) repeat-x top;
+}
+#popSchForm {
+	margin : 20px 15px 20px 25px;
+}
+.printSave {
+	padding : 0 0 0 25px;
+	font-size:12px;
+	background:url(../img/save_print.gif) no-repeat center left;
+	font-weight:bold;
+	color:#003b59;
+}
+.printSaveChk {
+	padding : 0 0 0 25px;
+	font-size:12px;
+	background:url(../img/save_printchk.gif) no-repeat center left;
+	font-weight:bold;
+	color:#003b59;
+}
+.printAll {
+	padding : 0 0 0 25px;
+	font-size:12px;
+	background:url(../img/icon_printAll.gif) no-repeat center left;
+	font-weight:bold;
+	color:#003b59;
+}
+.linkedRule {
+	padding: 0 0 0 22px;
+	background:url(../img/dot_link.gif) no-repeat center left;
+	font-weight:bold;
+	color:#003b59;
+}
+.printSelected {
+	font-size:12px;
+	padding : 0 0 0 25px;
+	background:url(../img/icon_printSelected.gif) no-repeat center left;
+	font-weight:bold;
+	color:#003b59;
+}
+.popPrintButt A {
+	font-size:12px;
+	text-decoration:none;
+}
+.popPrintButt A:hover {
+	font-size:12px;
+	text-decoration:underline;
+}
+#popButtonPrint {
+	text-align:center;
+	padding:12px 0 5px; 0 ;
+	height:28px;
+	background:url(../img/regul/bg_popBottom.gif) repeat-x top;
+}
+.printTitle {
+	font-size : 16px;
+	font-weight:bold;
+	margin:0 0 0 20px;
+	color:#FFFFFF;
+}
+#popHeaderHist {
+	width:100%;
+}
+.popTitleHist {
+	font-size:16px;
+	font-weight:bold;
+	color:#FFFFFF;
+	padding:0 0 0 20px;
+}
+#popHeaderHist A {
+	font-size:12px;
+	font-weight:bold;
+	padding: 0 0 0 25px;
+	background:url(../img/icon_printAll.gif) no-repeat left center;
+	text-decoration:none;
+	color:#FFFFFF;
+	border-bottom:#CCC 2px dotted;
+}
+#popHeaderHist A:hover {
+	font-size:12px;
+	font-weight:bold;
+	padding: 0 0 0 25px;
+	background:url(../img/icon_printAll.gif) no-repeat left center;
+	text-decoration:none;
+	color:#FFFFFF;
+	border-bottom:#CCC 2px solid;
+}
+.tbDetSch {
+	margin:10px 0 10px 25px;
+}
+.input_sch_cal {
+	width:140px;
+	height:18px;
+	color:#666;
+	font-size:12px;
+}
+.input_sch_text {
+	width: 400px;
+	height:22px;
+	font-size:14px;
+	font-weight:bold;
+	color:#003b59;
+}
+.tbDetSch TD {
+	font-size:12px;
+	color:#333;
+	border-bottom:#CCC 1px solid;
+	height:33px;
+}
+.tbDetSchTitle {
+	font-weight: bold;
+	padding: 0 0 0 25px;
+	background:url(../img/icon_txtSch.gif) no-repeat left center;
+}
+.tbDetSchSubmitTitle {
+	font-weight:bold;
+	padding:0 0 0 25px;
+	background:url(../img/icon_sch.gif) no-repeat left center;
+}
+#popHeaderMain_t1 {
+	width: 800px;	
+}
+#popBodyMain_t1 {
+	width: 800px;
+}
+#viewContMain_t1 {
+	width:780px;
+	height:345px;
+	overflow-x:hidden;
+	overflow-y:auto;
+	border:1px #7ca6bb solid;
+	margin: 3px 0 3px 2px;
+	padding: 5px 5px 5px 10px;
+	line-height:20px;
+	font-size:12px;
+}
+#popButtonMain_t1 {
+	text-align:center;
+	padding:12px 0 0 0 ;
+	height:28px;
+	width:800px;
+	background:url(../images/statute/bg_popBottom.gif) repeat-x top;	
+}
+#popButton3dan {
+	text-align:center;
+	padding:12px 0 0 0 ;
+	height:28px;
+	background:url(../images/statute/bg_popBottom.gif) repeat-x top;		
+}

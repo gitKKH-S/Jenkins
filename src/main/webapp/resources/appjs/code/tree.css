@@ -1,0 +1,57 @@
+@CHARSET "EUC-KR";
+
+IMG {
+	border: none;
+}
+.icon-grid {
+    background-image:url( ../../../resources/images/grid.png ) !important;
+}
+
+.menuRoot .x-tree-node-icon {
+	background-image: url(../../../resources/images/common/tree/tree-root-menu.gif)
+		!important
+}
+
+.doc .x-tree-node-icon {
+	background-image: url(../../../resources/images/common/tree/tree-node-menu.gif)
+		!important
+}
+
+.menuLeafDis .x-tree-node-icon {
+	background-image:
+		url(../../../resources/images/common/tree/tree-node-menu-inactive.gif)
+		!important
+}
+
+.code .x-tree-node-icon {
+	background-image: url(../../../resources/images/common/tree/tree-node-code.gif)
+		!important
+}
+
+.code .x-tree-node-icon {
+	background-image: url(../../../resources/images/common/tree/tree-node-code.gif)
+		!important
+}
+
+.newCode {
+	background-image: url(../../../resources/images/common/icon_code_add.gif)
+		!important;
+}
+
+.delCode {
+	background: url(../../../resources/images/common/icon_code_del.gif) no-repeat
+		left center !important;
+}
+
+.modCode {
+	background: url(../../../resources/images/common/icon_code_mod.gif) no-repeat
+		left center !important;
+}
+/*
+ * ������
+ */
+
+/*
+.folder{background-image:url(../../../resources/extjs/resources/images/default/tree/folder.gif) !important}
+.doc{background-image:url(../../../resources/extjs/resources/images/default/tree/leaf.gif) !important}
+*/

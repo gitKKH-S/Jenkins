@@ -1,0 +1,196 @@
+#gnbW{
+    background:#fff;
+    overflow: hidden;
+    height: 62px;
+}
+/* 로고 */
+.logoW{
+    height: 60px;
+    padding: 10px;
+    float: left;
+    /*width: 13%;*/
+    width: 20%;
+    
+    display: none;
+}
+.logoW .logo{
+    display: block;
+    /*width: 80%;*/
+    width: 100%;
+    /*height: 36px;*/
+    height: 30px;
+    
+    /* background: url('../images/logo_2.png') no-repeat 0 0; */
+    background: url('../images/logo_2.png') no-repeat 0 100%;
+    /* background-size: auto 36px; */
+    background-size: contain;
+    
+    min-width: 40px;
+    max-width: 180px;
+    margin: 0 auto;
+    text-indent: -9999px;
+}
+
+@media (max-width: 1000px) {
+	.logoW .logo{
+		margin: 0 10px;
+		width: 90%;
+	}
+}
+
+.gnbC{
+    float: left;
+    /*width: 80%;*/
+    
+    width: 95%;
+    margin-left:10px;
+    /*margin-top: 10px;*/
+}
+.gnb li{
+    float: left;
+    width: 9%;
+    margin-top: 5px;
+}
+.gnb li a{
+    display: block;
+    text-align: center;
+    padding: 10px 0;
+    font-size: 14px;
+}
+.gnb li a i{
+    display: block;
+    font-size: 20px;
+    margin-bottom: 5px;
+    margin-right: 0px !important; /* 24.10.23 */
+    color:#6843E2;
+}
+.gnb li a:hover i{
+    color:#C5A8F7;
+}
+
+.gnbC.mo{
+    display: none;
+}
+#contentW{
+    clear: both;
+    background: #EFF0F6;
+    margin: 0;
+}
+#contentW.mainContW{
+    /* padding: 25px 40px; */
+    padding:10px 15px;
+}
+
+/**/
+.topW{
+    position: absolute;
+    top:0;
+    right:0;
+}
+.topC .topA{
+    float: left;
+}
+
+#footer{
+    text-align: center;
+/*     241023_psy 수정_시작 */
+    margin-top: 10px;
+/*     241023_psy 수정_끝 */
+}
+
+
+/**/
+.topW .topC{
+    float: right;
+    margin-top:10px;
+    /*width:300px;*/
+}
+.topW .topC .topA{
+    /*float: left;*/
+    float: right;
+    overflow: hidden;
+    padding-left: 10px;
+}
+
+/*검색창:검색버튼 - 마우스 오버나 클릭시 검색창이 보이게 해주세요!*/
+.btn_srch{
+    /*
+    width:42px;
+    height: 42px;
+    */
+    width:30px;
+    height: 30px;
+    background:#6843E2;
+    color:#fff;
+    display: block;
+    border-radius: 25px;
+    text-align: center;
+    line-height: 30px;
+    font-size: 15px;
+}
+/*검색창*/
+.topW .topC .topA.searchW{
+    display: none;
+    overflow: hidden;
+    border:2px solid #6843E2;
+    border-radius: 25px;
+    padding: 0 20px;
+    position: relative;
+    min-width: 250px;
+    background: #fff;
+    z-index: 99;
+}
+.topW .topC .topA.searchW input[type=text]{
+    height: 38px;
+    line-height: 38px;
+    width:80%;
+    font-size: 16px;
+    background: none;
+}
+.topW .topC .topA.searchW .top_srchBtn{
+    display: block;
+    color:#6843E2;
+    font-size: 20px;
+    position: absolute;
+    top:0;
+    right:15px;
+    border-radius: 20px;
+    line-height: 34px;
+    text-align: center;
+}
+.topW .topC .topA.searchW .top_srchBtn p{
+    text-indent: -9999px;
+}
+
+/*기타 버튼*/
+.topW .topC .topA .iconT{
+    width:42px;
+    height: 42px;
+    background:#D3D6E9;
+    color:#fff;
+    display: inline-block;
+    margin-right: 5px;
+    border-radius: 25px;
+    text-align: center;
+    line-height: 36px;
+    font-size: 20px;
+}
+.topW .topC .topA .iconT i{
+    display: inline-block;
+}
+.topW .topC .topA p{
+    display: none;
+}
+
+.btn_edit{
+    width:42px;
+    height: 42px;
+    background:#6843E2;
+    color:#fff;
+    display: inline-block;
+    margin-right: 5px;
+    border-radius: 25px;
+    text-align: center;
+    line-height: 36px;
+    font-size: 20px;
+}

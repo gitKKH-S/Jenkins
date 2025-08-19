@@ -1,0 +1,348 @@
+.subCW{
+    height: 100%;
+    /*min-width: 1000px;*/
+    /*margin: 80px auto 0 auto;*/
+    margin: 80px 0 0 0;
+}
+.subCW::after{
+    content: "";
+    display: block;
+    clear: both;
+}
+.categoryW{
+    /* width: 300px; */
+    /* width: 250px; */
+    width: 290px;
+    height: 100%;
+    background: #fff;
+    position: fixed;
+}
+
+/*사이드바 240805추가*/
+.sideBarW{
+    /* width:300px; */
+    /* width:250px; */
+    width:290px;
+    min-width: 120px;
+    height: 100%;
+    min-height: 100%;
+    background:#fff;
+   /** position: fixed;**/
+    z-index: 9;
+    border-right: 1px solid #eee;
+}
+.sideBarW .sideTTW{
+    color:#333;
+    font-size: 18px;
+    font-weight: 500;
+    display: block;
+    border-top:1px solid #eee;
+    border-bottom: 1px solid #ddd;
+    padding:12px 20px;
+    position: relative;
+}
+.btn_gear{
+    position: absolute;
+    top:10px;
+    display: block;
+}
+.btn_gear i{
+    font-size: 15px;
+    color:#666;
+}
+.sideBtnW{
+    text-align: center;
+    padding: 10px 0;
+}
+.sideBtn{
+    display: inline-block;
+    background:#379FFF;
+    margin:0 3px;
+    padding:10px 20px;
+    color:#fff;
+    font-size: 14px;
+    border-radius: 5px;
+}
+
+.sideListW{
+    font-size: 14px;
+    color:#333;
+}
+.sideListC strong{
+    display:block;
+    font-size: 16px;
+    position: relative;
+    font-weight: bold;
+}
+.sideListC strong i{
+    display: block;
+    position: absolute;
+    top:6px;
+    right:0;
+    font-size: 13px;
+}
+.sideListC li{
+}
+.sideListA{
+}
+.sideListA li{
+    border: none;
+}
+.sideListA li.active a{
+    color:#379FFF;
+}
+.sideListA li i{
+    font-size: 14px;
+    display: inline-block;
+    margin-right:5px;
+    margin-bottom: 1px;
+	width:20px;
+    text-align: left;
+	color:#6843E2;
+}
+.sideListA li span{
+    display: inline-block;
+    background:#FD9A3D;
+    color:#fff;
+    font-size: 10px;
+    padding: 0px 8px;
+    border-radius:10px;
+    margin-top:3px;
+    margin-left: 5px;
+}
+
+.categoryW strong{
+    display: block;
+    background: #E9DCFF url('../images/icon_list.png') no-repeat 10px 50%;
+    height: 30px;
+    line-height: 30px;
+    padding: 0 0 0 28px;
+    font-size: 14px;
+    font-weight: bold;
+}
+.categoryL{
+    /**margin-top: 14px;**/
+}
+.categoryL li a{
+	display:block;
+    font-size: 16px;
+    color:#888;
+	padding:10px 20px;
+}
+.categoryL li a:hover{
+    background: #F9F5FF;
+    color:#6843E2;
+}
+.categoryL li a.active{
+    background: #F9F5FF;
+    color:#6843E2;
+}
+/**/
+.subCC{
+    /*min-width: 650px;*/
+    /* margin-left: 300px; */
+    /* margin-left: 250px; */
+    margin-left: 290px;
+    overflow-y: auto;
+}
+.naviW{
+    background: #F2EBFF;
+    height: 30px;
+    line-height: 30px;
+    padding: 0 20px;
+    position: fixed;
+    width: 100%;
+    z-index: 10;
+    font-size: 14px;
+	font-weight:600;
+}
+
+.subCA{
+    padding: 30px 30px 0px 30px;
+}
+.subTT{
+    display: inline-block;
+    font-size: 20px;
+    font-weight: bold;
+    margin: 0 0 20px 0;
+    color:#222;
+    position: relative;
+    padding: 0 0 0 12px;
+}
+.subTT::before{
+    content:"";
+    width: 5px;
+    height: 5px;
+    background:#6843E2;
+    display: block;
+    position: absolute;
+    top:12px;
+    left:0;
+    border-radius: 3px;
+}
+.subST{
+    display: inline-block;
+    font-size: 17px;
+    font-weight: bold;
+    margin: 0 0 15px 0;
+    color:#222;
+    position: relative;
+    padding: 0 0 0 12px;
+}
+.subST::before{
+    content: "";
+    display: block;
+    width: 5px;
+    height: 3px;
+    border-radius: 3px;
+    background:#6843E2;
+    position: absolute;
+    top:50%;
+    left:0;
+    margin-top:-1px;
+}
+
+.subTabW ul{
+    overflow: hidden;
+    margin: 0 0 20px 0;
+    border-left:1px solid #dbdee2;
+    width: 100%;
+    position: relative;
+}
+.subTabW ul::after{
+    content: "";
+    display: block;
+    width: 100%;
+    height: 2px;
+    background: #dbdee2;
+    width: 100%;
+    position: absolute;
+    bottom:0;
+}
+.subTabW ul li{
+    float: left;
+    border-top:1px solid #dbdee2;
+}
+.subTabW.set8 ul li{
+    width: 12.5%;
+}
+.subTabW ul li a{
+    display: block;
+    padding: 15px 0;
+    font-size: 14px;
+    /*
+    border-right:1px solid #dbdee2;
+    border-bottom: 2px solid #dbdee2;
+    */
+    border-right:1px solid #F2EBFF;
+    border-bottom: 2px solid #F2EBFF;
+    /*color:#6f777f;*/
+    color:black;
+    text-align: center;
+    /*background: #e7eaed;*/
+    background: #E9DCFF;
+    position: relative;
+    z-index: 1;
+}
+.subTabW ul li a.active{
+    background: #fff;
+    border-right:1px solid #dbdee2;
+    /*border-bottom: 2px solid #57b9ba;*/
+    border-bottom: 2px solid #6843E2;
+    /*color:#2f8e8f;*/
+    color:#6843E2;
+    font-weight: bold;
+}
+
+.textStyle.black{
+    color:#222;
+}
+
+.subTTW{
+    overflow: hidden;
+}
+.subTTC.left{
+    float: left;
+}
+.subTTC.right{
+    float: right;
+}
+/* 서브 - 사규 카테고리 */
+.categoryIW{
+    overflow: hidden;
+    /**
+    margin-bottom: 12px;
+    **/
+}
+.categoryIW li{
+    float:left;
+    width:50%;/***33.33333333333333**/
+}
+.categoryIW li a{
+    display: block;
+    text-align: center;
+    padding: 13px 0;
+	border-right:1px solid #eee;
+	border-bottom:1px solid #eee;
+    color:#333;
+}
+.categoryIW li a i{
+	color:#6843E2;
+}
+.categoryIW li a:hover{
+    background: #C5A8F7;
+    color:#fff;
+}
+.categoryIW li a:hover i{
+    color:#fff;
+}
+.categoryIW li a.active{
+    background: #C5A8F7;
+    color:#fff;
+}
+.categoryIW li a.active i{
+    color:#fff;
+}
+.categoryIW li i{
+    font-size: 20px;
+
+}
+.categoryIW li:nth-child(2) i{
+
+}
+.categoryIW li:nth-child(3) i{
+ 
+}
+.categoryIW li:nth-child(4) i{
+
+}
+.categoryIW li:nth-child(5) i{
+
+}
+.categoryIW li:nth-child(6) i{
+    
+}
+.categoryIW li span{
+    display: block;
+    margin-top: 7px;
+    font-size: 15px;
+}
+.list_navi{
+	padding:10px;
+	text-align: center;
+}
+.list_navi li{
+    display: inline-block;
+    width: 30px;
+    height: 30px;
+    border-radius: 7px;
+    border:1px solid #ddd;
+    line-height: 28px;
+    text-align: center;
+    cursor:pointer;
+}
+.list_navi li.active{
+    background: #6843E2;
+    color: #fff;
+}
+/**/

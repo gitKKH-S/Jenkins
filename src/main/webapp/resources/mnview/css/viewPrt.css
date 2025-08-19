@@ -1,0 +1,334 @@
+* {
+	font-size: 12px;
+}
+.lawlk {
+	color: #0e5376;
+	border-bottom: #CCC 1px dotted;
+	text-decoration: none;
+	font-weight: bold;
+}
+
+A {
+	color: #333;
+	text-decoration: none;
+}
+
+/* appBon */
+.title {
+	font-size: 14pt;
+	font-weight: bold;
+	text-align: center;
+	padding: 5px 0 5px 0;
+	margin: 5px 0 0 0;
+}
+
+.selBox {
+	font-size: 12px;
+	background-color: #efefef;
+	text-align: right;
+	padding: 3px 15px 3px 0;
+}
+
+.pyun {
+	font-size: 15px;
+	font-weight: bold;
+	padding: 10px 0 0 0;
+	text-align: center
+}
+
+.jang {
+	font-size: 14px;
+	font-weight: bold;
+	padding: 3px 0 3px 0;
+	text-align: center
+}
+
+.jeol {
+	font-size: 13px;
+	font-weight: bold;
+	padding: 3px 0 3px 0px;
+	text-align: center
+}
+
+.gwan {
+	font-size: 12px;
+	font-weight: bold;
+	padding: 3px 0 3px 0px;
+	text-align: center
+}
+
+#jo {
+	font-size: 12px;
+	margin: 4px 0 8px 20px;
+	line-height: 150%;
+}
+
+#jotag {
+	font-size: 12px;
+	margin: 4px 0 8px 55px;
+	line-height: 80%;
+}
+
+
+#jo STRONG {
+	color: #06C;
+	font-weight: bold;
+}
+
+.histIcon {
+	float: left;
+	margin: 3px 0 0 3px;
+	border: 0;
+	cursor: pointer;
+}
+
+#ho {
+	font-size: 12px;
+	margin: 0 0 3px 30px;
+	text-indent: -1.2em;
+}
+
+#mok {
+	font-size: 12px;
+	margin: 0 0 2px 50px;
+	text-indent: -1.2em;
+}
+
+#dan {
+	font-size: 12px;
+	margin: 0 0 2px 70px;
+	text-indent: -1.2em;
+}
+
+.buchik_title {
+	font-size: 14px;
+	font-weight: bold;
+	padding: 5px 0 3px 0;
+}
+
+body {
+	scrollbar-shadow-color: #FFFFFF;
+	scrollbar-highlight-color: #FFFFFF;
+	scrollbar-face-color: #9EBFEB;
+	scrollbar-3dlight-color: #9EBFEB;
+	scrollbar-darkshadow-color: #9EBFEB;
+	scrollbar-track-color: #FFFFFF;
+	scrollbar-arrow-color: #FFFFFF;
+}
+
+.byultext {
+	margin: 2 0 0 0;
+	/*background: url(/high1/jsp/lkms3/images/common/icon_file.gif) left	center no-repeat;*/
+}
+
+.byulText SPAN {
+	font-size: 12px;
+	margin: 0 0 0 25px;
+	font-weight: bold;
+	color: #03C;
+}
+
+.highlite {
+	font-size: 12px;
+	font-weight: bold;
+	color: red;
+}
+/* sub_top */
+.txt_jang {
+	font-size: 12px;
+	font-weight: bold;
+	color: #333;
+}
+
+.txt_jo {
+	font-size: 12px;
+	padding-left: 5px;
+}
+
+.txt_buchick {
+	font-size: 12px;
+	color: #333;
+}
+
+/* sub_bottom */
+.jocontent2 {
+	font-size: "9pt";
+	text-decoration: none;
+	line-height: "130%";
+}
+
+.attachText {
+	margin: 2px 1px 1px 0;
+	padding: 0 0 0 0px;
+	/*padding: 0 0 0 20px;*/
+	/*background: url(../jsp/lkms3/images/common/icon_dn.gif) left no-repeat;*/
+	border: 1px dotted #ccc;
+} /**/
+.attachText SPAN {
+	font-size: 12px;
+	text-decoration: none;
+	color: #03C;
+}
+
+.textBold {
+	font-size: 12px;
+	color: #333;
+	font-weight: bold;
+}
+
+.textNormal {
+	font-size: 12px;
+	color: #333;
+}
+
+.textLink {
+	font-size: 12px;
+	margin: 2px 1px 1px 2px;
+	padding: 0px;
+	!
+	important
+}
+
+.textLink A {
+	font-size: 12px;
+	color: #06F;
+	padding-left: 20px;
+	text-decoration: none;
+	!
+	important
+}
+
+.textLink A:hover {
+	font-size: 12px;
+	color: #930;
+	padding-left: 20px;
+	background: url(/high1/images/common/dot_link.gif) left center no-repeat;
+	text-decoration: underline;
+	!
+	important
+}
+
+.hyunheng {
+	font-size: 9pt;
+	color: "#CC3333"
+}
+
+.yunhyuk {
+	font-size: 9pt;
+	color: "#007099"
+}
+
+.history {
+	font-size: 9pt;
+	color: "#007099"
+}
+
+.attachedtitle {
+	font-size: 10pt;
+	font-weight: bold;
+}
+
+.preambletitle {
+	font-size: 10pt;
+	font-weight: bold;
+}
+
+.preamble {
+	font-size: 10pt;
+	TEXT-ALIGN: justify;
+}
+
+.jonumber {
+	font-size: 9pt;
+	font-weight: bold;
+	color: #0066CC;
+}
+
+.jotitle {
+	font-size: 9pt;
+	font-weight: bold;
+	color: #0066CC;
+}
+
+.jocontent {
+	font-size: 9pt;
+	TEXT-ALIGN: justify;
+}
+
+.mten {
+	text-decoration: underline;
+	color: red;
+}
+
+.nomalcontent {
+	font-size: 9pt;
+	TEXT-ALIGN: justify;
+}
+
+.fixedcontent {
+	line-height: 100%;
+	font-size: 9pt;
+	margin-top: 10px;
+	margin-bottom: 10px;
+}
+
+.tableLine1 {
+	border: 1px solid #31639C;
+}
+
+.tableLine2 {
+	border: 1px solid #ED8A38;
+}
+
+.tableLine3 {
+	border: 1px solid #7D7D7D;
+}
+
+.list5 {
+	text-decoration: "none";
+	font-size: "9pt";
+	color: "#006666";
+	line-height: "14pt";
+}
+
+.list5:hover {
+	text-decoration: "none";
+	color: "#999900";
+}
+
+.list6 {
+	text-decoration: "none";
+	font-size: "9pt";
+	color: "#990033";
+	line-height: "14pt";
+}
+
+.list6:hover {
+	text-decoration: "none";
+	color: "orange";
+}
+
+.list7 {
+	text-decoration: "none";
+	color: "#006666";
+	font-size: "9pt";
+}
+
+.list7:hover {
+	text-decoration: "underline";
+	color: "#999900";
+}
+
+.listLink {
+	text-decoration: "underline";
+	font-size: "9pt";
+	color: "006666";
+	line-height: "14pt";
+	font-weight: bold;
+}
+
+.listLink:hover {
+	text-decoration: "underline";
+	color: "orange";
+	font-weight: bold;
+}

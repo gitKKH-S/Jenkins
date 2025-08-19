@@ -1,0 +1,423 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "/WEB-INF/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="lawbbsSql">
+	<insert id="Insert">
+		<selectKey keyProperty="PST_MNG_NO" resultType="String" order="BEFORE">
+			SELECT KEYID.NEXTVAL FROM DUAL
+		</selectKey>
+		INSERT INTO TB_BBS_MNG
+		(
+		PST_MNG_NO,BBS_SE,UP_PST_MNG_NO,PST_TTL,PST_CN,PST_INQ_CNT,MENU_MNG_NO,WRTR_EMP_NO,WRTR_EMP_NM,WRT_YMD,WRT_DEPT_NM,WRT_DEPT_NO,PST_NTC_YN
+		, RMRK_CN, PRCS_STTS_SE_NM, DOC_MNG_NO, TKCG_EMP_NM
+		)
+		VALUES(#{PST_MNG_NO},#{BBS_SE},
+			<choose>
+				<when test="UP_PST_MNG_NO != '' and UP_PST_MNG_NO != null">
+					#{UP_PST_MNG_NO}
+				</when>
+				<otherwise>
+					'0'
+				</otherwise>
+			</choose>
+			,#{PST_TTL},#{PST_CN},0,#{MENU_MNG_NO},#{WRTR_EMP_NO},#{WRTR_EMP_NM},to_char(sysdate,'YYYYMMDD'),#{WRT_DEPT_NM},#{WRT_DEPT_NO},#{PST_NTC_YN}
+			, #{RMRK_CN}, #{PRCS_STTS_SE_NM}, #{DOC_MNG_NO}, #{TKCG_EMP_NM}
+		)
+	</insert>
+	
+	<insert id="fileInsert">
+
+		INSERT INTO TB_BBS_FILE
+		(
+		FILE_MNG_NO,PST_MNG_NO,PHYS_FILE_NM,SRVR_FILE_NM,FILE_EXTN_NM,FILE_SE
+		)
+		VALUES(#{FILE_MNG_NO},#{PST_MNG_NO},#{PHYS_FILE_NM},#{SRVR_FILE_NM},#{FILE_EXTN_NM},#{FILE_SE})
+		
+	</insert>
+
+	<select id="Select" resultType="HashMap">
+		SELECT
+		PST_MNG_NO,BBS_SE,UP_PST_MNG_NO,PST_TTL,PST_CN,WRTR_EMP_NO,WRTR_EMP_NM,TO_CHAR(TO_DATE(WRT_YMD, 'YYYYMMDD'), 'YYYY-MM-DD') AS WRT_YMD,PST_INQ_CNT,MENU_MNG_NO,WRT_DEPT_NM,PST_NTC_YN, RMRK_CN, PRCS_STTS_SE_NM, DOC_MNG_NO, TKCG_EMP_NM
+		FROM TB_BBS_MNG a WHERE PST_MNG_NO=#{PST_MNG_NO}			
+	</select>
+
+	<resultMap type="HashMap" id="pdsinfodata">
+        <result property="PST_CN" column="PST_CN" jdbcType="CLOB" javaType="java.lang.String" />
+    </resultMap>
+    
+	<sql id="getSch">
+		<trim prefix="WHERE" prefixOverrides="AND |OR ">
+			<if test="MENU_MNG_NO != null and MENU_MNG_NO != ''">
+				and MENU_MNG_NO in (
+								select MENU_MNG_NO from TB_COM_MENU start with MENU_MNG_NO = #{MENU_MNG_NO}
+								connect by prior MENU_MNG_NO = UP_MENU_MNG_NO
+							)
+			</if>
+			<if test="Schtxt != null and Schtxt != ''">
+			AND (
+				<if test="schMenu == '제목'">
+					AND PST_TTL LIKE '%'||#{schtxt}||'%' 
+				</if>
+				<if test="schMenu == '내용'">
+					AND DBMS_LOB.INSTR(PST_CN,#{schtxt}) > 0
+				</if>
+				<if test="schMenu == '작성자'">
+					AND WRTR_EMP_NM LIKE '%'||#{schtxt}||'%' 
+				</if>
+				<trim prefix="" prefixOverrides="AND |OR ">
+					<if test='stitle == "Y"'>
+						or PST_TTL LIKE '%'||#{Schtxt}||'%' 
+					</if>
+					<if test='scontent == "Y"'>
+						or PST_CN LIKE '%'||#{Schtxt}||'%' 
+					</if>
+					<if test='swriter == "Y"'>
+						or WRTR_EMP_NM LIKE '%'||#{Schtxt}||'%' 
+					</if>
+				</trim>
+			)
+			</if>
+		</trim>
+	</sql>
+	
+	<select id="pdsList" resultType="HashMap">
+		SELECT b.*
+		FROM (
+		    SELECT a.*, ROWNUM AS ROWNUMBER, ceil(ROWNUM/#{pagesize}) AS page
+		    FROM (
+		        SELECT A.PST_MNG_NO,A.BBS_SE,A.UP_PST_MNG_NO,A.PST_TTL,A.WRTR_EMP_NO,A.WRTR_EMP_NM, TO_CHAR(TO_DATE(A.WRT_YMD, 'YYYYMMDD'), 'YYYY-MM-DD') AS WRT_YMD,A.PST_INQ_CNT,
+		        A.WRT_DEPT_NM,(select MENU_TTL from TB_COM_MENU where MENU_MNG_NO = a.MENU_MNG_NO) AS MENU_TTL,
+		        (select COUNT(FILE_MNG_NO) from TB_BBS_FILE where PST_MNG_NO=a.PST_MNG_NO) as FCNT,MENU_MNG_NO,A.RMRK_CN,A.PRCS_STTS_SE_NM,A.DOC_MNG_NO
+		        FROM TB_BBS_MNG A
+		        <include refid="getSch"/>
+		        START WITH a.UP_PST_MNG_NO = 0
+		        CONNECT BY PRIOR  a.PST_MNG_NO = a.UP_PST_MNG_NO
+   		        <choose>
+		          <when test="orderby == null or orderby == ''">
+		      	 	 ORDER BY WRT_YMD DESC
+		          </when>
+		          <otherwise>
+		        	<include refid="commonSql.orderbysql"></include>
+		          </otherwise>
+		        </choose>
+<!-- 		        <if test="orderby != ''"> -->
+<!-- 					${orderby} -->
+<!-- 				</if>  -->
+<!-- 		        <if test="orderby == '' or orderby == null "> -->
+<!-- 					order by WRT_YMD desc -->
+<!-- 				</if>  -->
+<!-- 				<if test="MENU_MNG_NO != '10119023' and MENU_MNG_NO != '100000133'"> -->
+<!-- 					order by WRT_YMD desc, PST_TTL desc, PST_MNG_NO desc -->
+<!-- 				</if>  -->
+		    ) a
+		) b 
+		<trim prefix="WHERE" prefixOverrides="AND |OR ">
+			<if test="pageno != null and pageno != ''">
+				page = #{pageno}
+			</if>
+		</trim>
+		<if test="MENU_MNG_NO != '10119023'">
+		ORDER BY ROWNUMBER asc
+		</if>
+		<if test="MENU_MNG_NO == '10119023'">
+		ORDER BY ROWNUMBER desc
+		</if>
+	</select>
+	
+	<select id="pdsTopList" resultType="HashMap">
+        SELECT 'T'||A.PST_MNG_NO as PST_MNG_NO,A.BBS_SE,A.UP_PST_MNG_NO,'[공지] '||A.PST_TTL as PST_TTL,A.WRTR_EMP_NO,A.WRTR_EMP_NM,A.WRT_YMD,A.PST_INQ_CNT,
+        A.WRT_DEPT_NM,(select MENU_TTL from TB_COM_MENU where MENU_MNG_NO = a.MENU_MNG_NO) AS MENU_TTL
+        ,(select COUNT(FILE_MNG_NO) from TB_BBS_FILE where PST_MNG_NO=a.PST_MNG_NO) as FCNT,MENU_MNG_NO,'' as "ROWNUM"
+        FROM TB_BBS_MNG A
+        <include refid="getSch"/> and PST_NTC_YN='Y'
+        START WITH a.UP_PST_MNG_NO = 0
+              CONNECT BY PRIOR  a.PST_MNG_NO = a.UP_PST_MNG_NO
+	</select>
+	
+	<select id="pdsListCnt" resultType="int">
+		SELECT COUNT(PST_MNG_NO)  FROM TB_BBS_MNG <include refid="getSch"/>
+	</select>
+	
+	<select id="List2" resultType="HashMap">
+		SELECT b.* FROM    
+		(       
+		    SELECT a.* , ceil(ROWNUM/#{pagesize})  PAGE  FROM        
+		    (           
+		        SELECT     t.PST_MNG_NO,  BBS_SE,  UP_PST_MNG_NO ,  LEVELNO,  ORD ,  PST_TTL,  WRTR_EMP_NO ,  WRTR_EMP_NM,  WRT_YMD ,  MENU_MNG_NO ,  PST_INQ_CNT ,  WRT_DEPT_NM  , 
+		        (select MENU_TTL from TB_COM_MENU where MENU_MNG_NO = t.MENU_MNG_NO) || decode(gbn2,'','',' - '||gbn2) as gbn2,col1,qdt,quser,docno,redt,
+				(SELECT COUNT(PST_MNG_NO)  FROM TB_BBS_MNG  <include refid="getSch"/>) AS TOTAL ,(select count(FILE_MNG_NO) from TB_BBS_FILE where PST_MNG_NO=t.PST_MNG_NO) as fcnt  
+				FROM TB_BBS_MNG t
+				<include refid="getSch"/>
+				START WITH t.UP_PST_MNG_NO = 0
+				CONNECT BY PRIOR  t.PST_MNG_NO = t.UP_PST_MNG_NO 
+				<choose>
+					<when test="orderby != null and orderby != ''">
+						${orderby}
+					</when>
+					<otherwise>
+						ORDER SIBLINGS BY PST_MNG_NO desc
+					</otherwise>
+				</choose>
+		    ) a   
+		) b 
+		<trim prefix="WHERE" prefixOverrides="AND |OR ">
+			<if test="pageno != null and pageno != ''">
+				page = #{pageno}
+			</if>
+		</trim>
+	</select>
+ 
+	<update id="Update">
+		UPDATE TB_BBS_MNG SET 
+			PST_TTL = #{PST_TTL},
+			PST_CN = #{PST_CN},
+			MDFCN_EMP_NO = #{MDFCN_EMP_NO},
+			MDFCN_EMP_NM = #{MDFCN_EMP_NM}, 
+			MDFCN_YMD = to_char(sysdate,'YYYYMMDD'),
+			MDFCN_DEPT_NM= #{MDFCN_DEPT_NM},
+			MDFCN_DEPT_NO= #{MDFCN_DEPT_NO},
+			PST_NTC_YN = #{PST_NTC_YN}
+			, RMRK_CN = #{RMRK_CN}
+			, PRCS_STTS_SE_NM = #{PRCS_STTS_SE_NM}
+			, DOC_MNG_NO = #{DOC_MNG_NO}
+			, TKCG_EMP_NM = #{TKCG_EMP_NM}
+		WHERE 
+			PST_MNG_NO=#{PST_MNG_NO}
+	</update>
+	
+	<update id="updateOpenYn">
+		UPDATE TB_BBS_MNG SET
+		WHERE UP_PST_MNG_NO = #{PST_MNG_NO}
+	</update>
+	
+	<delete id="Delete">
+		DELETE FROM TB_BBS_MNG WHERE PST_MNG_NO=#{PST_MNG_NO}
+	</delete>
+	
+	<select id="getPageOrder" resultType="HashMap">
+		SELECT MENU_MNG_NO,LEVEL,LPAD('',(LEVEL-1)*2,'')||SYS_CONNECT_BY_PATH(MENU_TTL,'>')AS PATH   
+		FROM TB_COM_MENU WHERE MENU_MNG_NO = #{MENU_MNG_NO} START WITH 
+		MENU_MNG_NO = (
+			SELECT MIN(MENU_MNG_NO) MENU_MNG_NO  FROM TB_COM_MENU S START WITH 
+			S.MENU_MNG_NO = #{MENU_MNG_NO}
+			CONNECT BY  S.MENU_MNG_NO= PRIOR S.UP_MENU_MNG_NO 
+		)
+		CONNECT BY PRIOR MENU_MNG_NO = UP_MENU_MNG_NO
+	</select>
+	
+	<update id="setHit">
+		UPDATE TB_BBS_MNG SET 
+			PST_INQ_CNT=PST_INQ_CNT+1
+		WHERE 
+			PST_MNG_NO=#{PST_MNG_NO}
+	</update>
+	
+	<select id="fileList" resultType="HashMap">
+		SELECT FILE_MNG_NO,PST_MNG_NO,PHYS_FILE_NM,SRVR_FILE_NM,FILE_EXTN_NM,FILE_SE 
+		FROM TB_BBS_FILE WHERE PST_MNG_NO=#{PST_MNG_NO} 
+		<if test="BBS_SE != null and BBS_SE != ''">
+		AND FILE_SE=#{BBS_SE}
+		</if>
+	</select>
+	
+	<select id="FileSelect" resultType="String">
+		SELECT SRVR_FILE_NM FROM TB_BBS_FILE WHERE FILE_MNG_NO=#{FILE_MNG_NO}	
+	</select>
+	
+	<delete id="fDelete">
+		DELETE FROM TB_BBS_FILE 
+		<trim prefix="WHERE" prefixOverrides="AND |OR ">
+			<if test="FILE_MNG_NO != null and FILE_MNG_NO != ''">
+				and FILE_MNG_NO = #{FILE_MNG_NO}
+			</if>
+			<if test="BBS_SE != null and BBS_SE != ''">
+				and FILE_SE = #{BBS_SE}
+			</if>
+			<if test="PST_MNG_NO != null and PST_MNG_NO != ''">
+				and PST_MNG_NO = #{PST_MNG_NO}
+			</if>
+		</trim>
+	</delete>
+	
+	<!-- 입법예고 -->
+	<insert id="Prelaw">
+		<selectKey keyProperty="PST_MNG_NO" resultType="String" order="BEFORE">
+			SELECT KEYID.NEXTVAL FROM DUAL
+		</selectKey>
+		INSERT INTO TB_BBS_MNG
+		(
+		PST_MNG_NO,BBS_SE,UP_PST_MNG_NO,PST_TTL,PST_CN,PST_INQ_CNT,MENU_MNG_NO,WRTR_EMP_NO,WRTR_EMP_NM,WRT_YMD,WRT_DEPT_NM,WRT_DEPT_NO
+		)
+		VALUES(#{PST_MNG_NO},#{BBS_SE},
+			<choose>
+				<when test="UP_PST_MNG_NO != ''">
+					#{UP_PST_MNG_NO}
+				</when>
+				<otherwise>
+					#{PST_MNG_NO}
+				</otherwise>
+			</choose>
+			,#{PST_TTL},#{PST_CN},0,#{MENU_MNG_NO},#{WRTR_EMP_NO},#{WRTR_EMP_NM},to_char(sysdate,'YYYYMMDD'),
+			#{WRT_DEPT_NM},#{WRT_DEPT_NO}
+			)
+	</insert>
+	
+	<!-- 메인 리스트 -->
+	<select id="getMainList" resultType="HashMap">
+		SELECT b.* FROM    
+		(       
+		    SELECT a.* , ceil(ROWNUM/7)  PAGE  FROM        
+		    (           
+		        SELECT PST_MNG_NO,BBS_SE,UP_PST_MNG_NO,PST_TTL,WRTR_EMP_NO,WRTR_EMP_NM,WRT_YMD,PST_INQ_CNT
+		        FROM TB_BBS_MNG
+		        WHERE BBS_SE=#{BBS_SE}
+		        ORDER BY UP_PST_MNG_NO DESC DESC
+		    ) a   
+		) b WHERE page = 1
+	</select>
+	<select id="getArtcSize" parameterType="int" resultType="int">
+		SELECT COUNT(PST_MNG_NO)
+		FROM TB_BBS_MNG
+		WHERE UP_PST_MNG_NO = #{UP_PST_MNG_NO}
+	</select>
+	
+	
+	<sql id="getSch2">
+		<trim prefix="WHERE" prefixOverrides="AND |OR ">
+			<if test="schtxt != null and schtxt != ''">
+				and PST_TTL LIKE '%'||#{schtxt}||'%'
+			</if>
+			<if test="BBS_SE != null and BBS_SE != ''">
+				and BBS_SE = #{BBS_SE}
+			</if>
+			
+		</trim>
+	</sql>
+	
+	<select id="getTBlawbbs" resultType="HashMap">
+		SELECT b.* FROM    
+		(       
+		    SELECT a.* , ceil(ROWNUM/#{pagesize})  PAGE  FROM        
+		    (           
+		        SELECT A.PST_MNG_NO,A.BBS_SE,A.UP_PST_MNG_NO,A.PST_TTL,A.WRTR_EMP_NO,A.WRTR_EMP_NM,A.WRT_YMD,A.PST_INQ_CNT,
+		       A.WRT_DEPT_NM,
+		        	(SELECT COUNT(PST_MNG_NO)  FROM TB_BBS_MNG <include refid="getSch2"/>) AS TOTAL ,COUNT(B.FILE_MNG_NO) as FCNT
+		        FROM TB_BBS_MNG A,TB_BBS_FILE B
+		        <include refid="getSch2"/>
+		        AND A.PST_MNG_NO = B.PST_MNG_NO(+) AND A.BBS_SE=B.FILE_SE(+)
+		        GROUP BY A.PST_MNG_NO,A.BBS_SE,A.UP_PST_MNG_NO,A.PST_TTL,A.WRTR_EMP_NO,A.WRTR_EMP_NM,A.WRT_YMD,A.PST_INQ_CNT,
+		        A.WRT_DEPT_NM
+		        ORDER BY A.UP_PST_MNG_NO DESC,A.WRT_YMD DESC
+		    ) a   
+		) b 
+		<trim prefix="WHERE" prefixOverrides="AND |OR ">
+			<if test="pageno != null and pageno != ''">
+				page = #{pageno}
+			</if>
+		</trim>
+	</select>
+	
+	<select id="getTBlawbbsInfo" resultType="HashMap">
+		SELECT
+		PST_MNG_NO,BBS_SE,UP_PST_MNG_NO,PST_TTL,PST_CN,WRTR_EMP_NO,WRTR_EMP_NM,WRT_YMD,PST_INQ_CNT
+		FROM TB_BBS_MNG WHERE PST_MNG_NO=#{PST_MNG_NO}			
+	</select>
+	
+	<select id="TB_FileList" resultType="HashMap">
+		SELECT 
+			FILE_MNG_NO,
+			PST_MNG_NO,
+			PHYS_FILE_NM,
+			SRVR_FILE_NM,
+			FILE_EXTN_NM,
+			FILE_SE
+		FROM TB_BBS_FILE WHERE PST_MNG_NO=#{PST_MNG_NO}
+	</select>
+	
+	<insert id="setTBlawbbsInsert">
+		<selectKey keyProperty="PST_MNG_NO" resultType="String" order="BEFORE">
+			SELECT KEYID.NEXTVAL FROM DUAL
+		</selectKey>
+		INSERT INTO TB_BBS_MNG
+		(
+		PST_MNG_NO,BBS_SE,UP_PST_MNG_NO,PST_TTL,PST_CN,WRTR_EMP_NO,WRTR_EMP_NM,WRT_YMD,PST_INQ_CNT,MENU_MNG_NO
+		)
+		VALUES(#{PST_MNG_NO},#{BBS_SE},
+			<if test="UP_PST_MNG_NO != ''">
+				#{UP_PST_MNG_NO}
+			</if>
+			<if test="UP_PST_MNG_NO == null or UP_PST_MNG_NO == ''">
+				#{PST_MNG_NO}
+			</if>
+			,#{PST_TTL},#{PST_CN},#{WRTR_EMP_NO},#{WRTR_EMP_NM},to_char(sysdate,'YYYYMMDD'),0,#{MENU_MNG_NO})
+	</insert>
+	
+	<insert id="setFileListinsert">
+
+		INSERT INTO TB_BBS_FILE
+		(
+		FILE_MNG_NO,PST_MNG_NO,PHYS_FILE_NM,SRVR_FILE_NM,FILE_EXTN_NM,FILE_SE
+		)
+		VALUES(#{FILE_MNG_NO},#{PST_MNG_NO},#{PHYS_FILE_NM},#{SRVR_FILE_NM},#{FILE_EXTN_NM},#{FILE_SE})
+		
+	</insert>
+	
+	<delete id="setTBlawbbsDelete">
+		DELETE FROM TB_BBS_MNG WHERE PST_MNG_NO=#{PST_MNG_NO}
+	</delete>
+	
+	<delete id="Tb_FileDelete">
+		DELETE FROM TB_BBS_FILE 
+		<trim prefix="WHERE" prefixOverrides="AND |OR ">
+			<if test="FILE_MNG_NO != null and FILE_MNG_NO != ''">
+				and FILE_MNG_NO = #{FILE_MNG_NO}
+			</if>
+			<if test="BBS_SE != null and BBS_SE != ''">
+				and FILE_SE = #{BBS_SE}
+			</if>
+			<if test="PST_MNG_NO != null and PST_MNG_NO != ''">
+				and PST_MNG_NO = #{PST_MNG_NO}
+			</if>
+		</trim>
+	</delete>
+	
+	<update id="setTBlawbbsUpdate">
+		UPDATE TB_BBS_MNG SET 
+			BBS_SE = #{BBS_SE},
+			PST_TTL = #{PST_TTL},
+			PST_CN = #{PST_CN},
+			MDFCN_EMP_NO = #{MDFCN_EMP_NO},
+			MDFCN_EMP_NM = #{MDFCN_EMP_NM},
+			MDFCN_DEPT_NM = #{MDFCN_DEPT_NM},
+			MDFCN_EMP_NO = #{MDFCN_EMP_NO}, 
+			MDFCN_DEPT_NO = #{MDFCN_DEPT_NO}
+		WHERE 
+			PST_MNG_NO=#{PST_MNG_NO}
+	</update>
+	
+	<select id="TB_FileSelect" resultType="String">
+		SELECT SRVR_FILE_NM FROM TB_BBS_FILE WHERE FILE_MNG_NO=#{FILE_MNG_NO}	
+	</select>
+	
+	<select id="getGisaList" resultType="HashMap">
+		SELECT a.codeid,CODE,PST_TTL,SRVR_FILE_NM,PHYS_FILE_NM ,b.PST_MNG_NO,c.FILE_MNG_NO
+		FROM TB_COM_CD A,TB_BBS_MNG B, TB_BBS_FILE C 
+		WHERE A.CODEID=B.CODEID AND  B.PST_MNG_NO = C.PST_MNG_NO(+)
+	</select>
+	
+	<select id="getSubMenuid" resultType="String">
+		select MENU_MNG_NO from TB_COM_MENU where UP_MENU_MNG_NO=#{MENU_MNG_NO} and MENU_SORT_SEQ = (select min(MENU_SORT_SEQ) from TB_COM_MENU where UP_MENU_MNG_NO=#{MENU_MNG_NO})
+	</select>
+	
+	<resultMap type="HashMap" id="webPdsinfodata">
+        <result property="PST_CN" column="PST_CN" jdbcType="CLOB" javaType="java.lang.String" />
+    </resultMap>
+	<select id="getPdsMainImgList" resultType="HashMap">
+		select b.PHYS_FILE_NM,a.PST_CN,a.PST_MNG_NO from TB_BBS_MNG a,TB_BBS_FILE b,TB_COM_MENU c
+		where a.PST_MNG_NO=b.PST_MNG_NO and a.MENU_MNG_NO=c.MENU_MNG_NO and a.MENU_MNG_NO=#{MENU_MNG_NO}
+	</select>
+	
+		
+	<select id="listFileDownload" resultType="HashMap">
+		select FILE_MNG_NO,PST_TTL,PHYS_FILE_NM,SRVR_FILE_NM from TB_BBS_MNG a ,TB_BBS_FILE b where a.PST_MNG_NO=b.PST_MNG_NO and a.MENU_MNG_NO = #{fileMenuid} order by a.PST_MNG_NO desc
+	</select>
+</mapper>

@@ -1,0 +1,219 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xmlns:cache="http://www.springframework.org/schema/cache"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:jdbc="http://www.springframework.org/schema/jdbc"
+	xmlns:jee="http://www.springframework.org/schema/jee"
+	xmlns:lang="http://www.springframework.org/schema/lang"
+	xmlns:mvc="http://www.springframework.org/schema/mvc"
+	xmlns:task="http://www.springframework.org/schema/task"
+	xmlns:tool="http://www.springframework.org/schema/tool"
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	xmlns:util="http://www.springframework.org/schema/util"
+	xmlns:p="http://www.springframework.org/schema/p"
+	xmlns:mybatis="http://mybatis.org/schema/mybatis-spring"
+	default-autowire="byName"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+                http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop.xsd
+                http://www.springframework.org/schema/cache http://www.springframework.org/schema/cache/spring-cache.xsd
+                http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
+                http://www.springframework.org/schema/jdbc  http://www.springframework.org/schema/jdbc/spring-jdbc.xsd
+                http://www.springframework.org/schema/jee  http://www.springframework.org/schema/jee/spring-jee.xsd
+                http://www.springframework.org/schema/lang http://www.springframework.org/schema/lang/spring-lang.xsd
+                http://www.springframework.org/schema/mvc http://www.springframework.org/schema/mvc/spring-mvc.xsd
+                http://www.springframework.org/schema/task http://www.springframework.org/schema/task/spring-task.xsd
+                http://www.springframework.org/schema/tool http://www.springframework.org/schema/tool/spring-tool.xsd
+                http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx.xsd
+                http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util.xsd
+                http://mybatis.org/schema/mybatis-spring http://mybatis.org/schema/mybatis-spring.xsd">
+
+    <!--
+	====================================================================
+	DataSource Encrypter
+	====================================================================
+	-->
+	<bean id="environmentVariablesConfiguration" class="org.jasypt.encryption.pbe.config.EnvironmentStringPBEConfig">
+		<property name="algorithm" value="PBEWithMD5AndDES" />
+		<property name="password" value="MTENBYLAW" />
+	</bean>
+	
+	<bean id="configurationEncryptor" class="org.jasypt.encryption.pbe.StandardPBEStringEncryptor">
+		<property name="config" ref="environmentVariablesConfiguration" />
+	</bean>
+	<bean id="propertyConfigurer" class="org.jasypt.spring31.properties.EncryptablePropertyPlaceholderConfigurer">
+		<constructor-arg ref="configurationEncryptor" />
+		<property name="locations">
+			<list>
+				<value>classpath:/egovframework/property/db.properties</value>
+				<value>classpath:/egovframework/property/schedule.properties</value>
+				<value>classpath:/egovframework/property/url.properties</value>
+			</list>
+		</property>
+	</bean>
+	
+	<bean id="dataSourceSpied" class="org.apache.commons.dbcp.BasicDataSource" destroy-method="close">
+		<property name="driverClassName" value="${db.driverclassname}" />
+		<property name="url" value="${db.url}" />
+		<property name="username" value="${db.username}" />
+		<property name="password" value="${db.password}" />
+		<property name="defaultAutoCommit" value="false" />
+		<property name="poolPreparedStatements" value="true" />
+	</bean>
+	
+	<bean id="dataSource" class="net.sf.log4jdbc.Log4jdbcProxyDataSource">
+		<constructor-arg ref="dataSourceSpied" />
+		<property name="logFormatter">
+			<bean class="net.sf.log4jdbc.tools.Log4JdbcCustomFormatter">
+				<property name="loggingType" value="MULTI_LINE" />
+				<property name="sqlPrefix" value="SQL         :  " />
+			</bean>
+		</property>
+	</bean>
+	
+	<!-- SqlSession setup for MyBatis Database Layer -->
+	<bean id="sqlSession" class="com.mten.cmn.RefreshableSqlMapClientFactoryBean">
+		<property name="dataSource" ref="dataSource" />
+		<property name="configLocation" value="classpath:egovframework/mybatis-config-bylaw.xml" />
+		<property name="mapperLocations" value="classpath*:egovframework/sqlmap/oracle/*Sql.xml" />
+		<property name="checkInterval" value="1000" />
+	</bean>
+
+	<bean id="sqlSessionTemplate" name="sqlSessionTemplate" class="org.mybatis.spring.SqlSessionTemplate" destroy-method="clearCache">
+		<constructor-arg index="0" ref="sqlSession"></constructor-arg>
+    </bean>  
+    
+    <bean id="commonDao" class="com.mten.dao.CommonDao">
+		<property name="sqlSession" ref="sqlSessionTemplate" />
+	</bean>
+    
+    <bean id="dataSourceInfoSms" class="org.apache.commons.dbcp.BasicDataSource" destroy-method="close">
+		<property name="driverClassName" value="${dbsms.driverclassname}" />
+		<property name="url" value="${dbsms.url}" />
+		<property name="username" value="${dbsms.username}" />
+		<property name="password" value="${dbsms.password}" />
+	</bean>
+	
+	<bean id="dataSourceSms" class="net.sf.log4jdbc.Log4jdbcProxyDataSource">
+		<constructor-arg ref="dataSourceInfoSms" />
+		<property name="logFormatter">
+			<bean class="net.sf.log4jdbc.tools.Log4JdbcCustomFormatter">
+				<property name="loggingType" value="MULTI_LINE" />
+				<property name="sqlPrefix" value="SQL         :  " />
+			</bean>
+		</property>
+	</bean>
+	
+	<bean id="sqlSessionSms" class="com.mten.cmn.RefreshableSqlMapClientFactoryBean">
+		<property name="dataSource" ref="dataSourceSms" />
+		<property name="configLocation" value="classpath:egovframework/mybatis-config-bylaw.xml" />
+		<property name="mapperLocations" value="classpath*:egovframework/sqlmap/oracle/*Sql.xml" />
+		<property name="checkInterval" value="1000" />
+	</bean>
+	
+	<bean id="sqlSessionTemplateSms" name="sqlSessionTemplateSms" class="org.mybatis.spring.SqlSessionTemplate" destroy-method="clearCache">
+		<constructor-arg index="0" ref="sqlSessionSms"></constructor-arg>
+    </bean>
+    
+    <bean id="smsDao" class="com.mten.dao.SmsDao">
+		<property name="sqlSession" ref="sqlSessionTemplateSms" />
+	</bean>
+    
+    <bean id="dataSourceInfoInsa" class="org.apache.commons.dbcp.BasicDataSource" destroy-method="close">
+		<property name="driverClassName" value="${dbinsa.driverclassname}" />
+		<property name="url" value="${dbinsa.url}" />
+		<property name="username" value="${dbinsa.username}" />
+		<property name="password" value="${dbinsa.password}" />
+	</bean>
+	
+	<bean id="dataSourceInsa" class="net.sf.log4jdbc.Log4jdbcProxyDataSource">
+		<constructor-arg ref="dataSourceInfoInsa" />
+		<property name="logFormatter">
+			<bean class="net.sf.log4jdbc.tools.Log4JdbcCustomFormatter">
+				<property name="loggingType" value="MULTI_LINE" />
+				<property name="sqlPrefix" value="SQL         :  " />
+			</bean>
+		</property>
+	</bean>
+	
+	<bean id="sqlSessionInsa" class="com.mten.cmn.RefreshableSqlMapClientFactoryBean">
+		<property name="dataSource" ref="dataSourceInsa" />
+		<property name="configLocation" value="classpath:egovframework/mybatis-config-bylaw.xml" />
+		<property name="mapperLocations" value="classpath*:egovframework/sqlmap/oracle/*Sql.xml" />
+		<property name="checkInterval" value="1000" />
+	</bean>
+	
+	<bean id="sqlSessionTemplateInsa" name="sqlSessionTemplateInsa" class="org.mybatis.spring.SqlSessionTemplate" destroy-method="clearCache">
+		<constructor-arg index="0" ref="sqlSessionInsa"></constructor-arg>
+    </bean>
+    
+    <bean id="insaDao" class="com.mten.dao.InsaDao">
+		<property name="sqlSession" ref="sqlSessionTemplateInsa" />
+	</bean>
+	
+
+
+
+
+
+
+
+    <bean id="dataSourceInfoOld" class="org.apache.commons.dbcp.BasicDataSource" destroy-method="close">
+		<property name="driverClassName" value="${dbold.driverclassname}" />
+		<property name="url" value="${dbold.url}" />
+		<property name="username" value="${dbold.username}" />
+		<property name="password" value="${dbold.password}" />
+	</bean>
+	
+	<bean id="dataSourceOld" class="net.sf.log4jdbc.Log4jdbcProxyDataSource">
+		<constructor-arg ref="dataSourceInfoOld" />
+		<property name="logFormatter">
+			<bean class="net.sf.log4jdbc.tools.Log4JdbcCustomFormatter">
+				<property name="loggingType" value="MULTI_LINE" />
+				<property name="sqlPrefix"   value="SQL         :  " />
+			</bean>
+		</property>
+	</bean>
+	
+	<bean id="sqlSessionOld" class="com.mten.cmn.RefreshableSqlMapClientFactoryBean">
+		<property name="dataSource" ref="dataSourceOld" />
+		<property name="configLocation"  value="classpath:egovframework/mybatis-config-bylaw.xml" />
+		<property name="mapperLocations" value="classpath*:egovframework/sqlmap/oracle/*Sql.xml" />
+		<property name="checkInterval"   value="1000" />
+	</bean>
+	
+	<bean id="sqlSessionTemplateOld" name="sqlSessionTemplateOld" class="org.mybatis.spring.SqlSessionTemplate" destroy-method="clearCache">
+		<constructor-arg index="0" ref="sqlSessionOld"></constructor-arg>
+    </bean>
+    
+    <bean id="oldDao" class="com.mten.dao.OldDao">
+		<property name="sqlSession" ref="sqlSessionTemplateOld" />
+	</bean>
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+    <bean id="txManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+        <property name="dataSource" ref="dataSource" />
+    </bean>
+
+	<tx:advice id="txAdvice" transaction-manager="txManager">
+		<tx:attributes>
+			<tx:method name="*" rollback-for="Exception"  propagation="REQUIRED"/>
+		</tx:attributes>
+	</tx:advice>
+	
+	<aop:config>
+		<aop:pointcut id="requiredTx" expression="execution(* *..*service.*Impl.*(..))"/>
+		<aop:advisor advice-ref="txAdvice" pointcut-ref="requiredTx" />
+	</aop:config>
+	
+</beans>

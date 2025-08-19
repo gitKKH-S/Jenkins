@@ -1,0 +1,1902 @@
+var progressGrid; 	//검색결과 그리드
+var dsSchResult;	//검색결과 데이터스토어
+var pageSize=15;
+var step;
+var rowContext;
+var eApproveWin; //결재창
+var prevData;
+// var win_docInfo;
+// var tab_docInfo;
+var smProgGrid; 	//체크박스 셀렉션 모델
+var chkedData;		//체크된 데이터
+var botToolbar;		//그리드 버튼
+var docTitle;		//문서 타이틀
+///////////////////////////////////////////
+//	TODO : 해당 리스트에 따라 버튼 다르게 표시
+///////////////////////////////////////////
+function makeXmlF(revmode,key,statehistoryid){
+	var exeform = '';
+	if(revmode=='P'){
+		exeform = 'prtlaw';
+	}else if(revmode=='F'){
+		exeform='fileview';
+	}
+	var strXML = "<data>";
+	//sample="lawxml=메인,prtlaw=조선택출력,downlaw=cd제작"
+	strXML = strXML + "<exeform>"+exeform+"</exeform>";
+	strXML = strXML + "<statehistoryid>"+statehistoryid+"</statehistoryid>";
+	strXML = strXML + "<before_statehistoryid>0</before_statehistoryid>";
+	strXML = strXML + "<revmode>3</revmode>";
+	if(revmode='F'){
+		strXML = strXML + "<filecd>"+key+"</filecd>";
+	}
+	strXML = strXML + "<LKRMS5configurl>"+URLINFO+"/resources/edit/LKRMS5.config</LKRMS5configurl>";
+	strXML = strXML + "<LawXmlconfigurl>"+URLINFO+"/resources/edit/LawXml.exe.config</LawXmlconfigurl>";
+	strXML = strXML + "</data>";
+	return strXML;
+}
+Ext.onReady(function(){
+	function goRdoc(filecd,statehistoryid){
+		if(statehistoryid==''){
+			alert('선택된 규정이 없습니다.');
+			return;
+		}
+		var rowData = progressGrid.getSelectionModel().getSelected();
+		var statehistoryid = rowData.get('STATEHISTORYID');
+		var xml = makeXmlF('F',filecd,statehistoryid);
+		try{
+			var objWSH = new ActiveXObject("WScript.Shell");
+			if (objWSH == null) return;
+			var retval = objWSH.Run("c:/mten/exe/lkrms5.exe "+xml);
+		}catch (e) {
+	           alert(e.message + "\n도구 > 인터넷 옵션 > 보안 > 사용자 지정 수준 클릭>스크립팅하기 안전하지 않은 것으로 표시된 ActiveX컨트롤 초기화 및 스크립팅을 확인으로 변경하세요!\n");
+		}
+	}
+	
+	function goRdoc2(gbn){
+		var rowData = progressGrid.getSelectionModel().getSelected();
+		var statehistoryid = rowData.get('STATEHISTORYID');
+		var Bookid = rowData.get('BOOKID');
+		var noFormyn = rowData.get('NOFORMYN');
+		win = new Ext.Window({
+			id:'win_upload',
+			title: "제개정문 / 신구조문 파일등록", layout: 'fit', width:870, height:600,
+			closeAction: 'hide',iframe:true, modal: true, plain: true,
+			buttons: [{
+				text: '닫기',
+				handler: function(){ 
+					win.close(); 
+				}
+			}]
+		});
+		win.render(Ext.getBody());
+		win.show();
+		win.body.update('<iframe src='+CONTEXTPATH+'/bylaw/adm/fileUpload.do?Bookid=' + Bookid + '&noFormYn='+noFormyn + '&statehistoryid='+statehistoryid+' width=100% height=100% frameborder=no></iframe>');
+	}
+	
+	function makeXml(sGbn,statehistoryid,gbn,grade,url,fnm){
+		var strXML = "<data>";
+		if(sGbn=="A"){
+			strXML = strXML + "<exeform>lawxml</exeform>";
+		}else if(sGbn=="B"){
+			strXML = strXML + "<exeform>approval</exeform>";
+		}else if(sGbn=="P"){
+			strXML = strXML + "<exeform>promul</exeform>";
+		}else if(sGbn=="G"){
+			strXML = strXML + "<exeform>RULEGIAN</exeform>";
+		}else if(sGbn=="BURES" || sGbn=="ASKSIME"){
+			strXML = strXML + "<exeform>attachfile</exeform>";
+		}
+		
+		if(gbn=="IN"){
+			strXML = strXML + "<busin>Y</busin>";
+			strXML = strXML + "<bures>N</bures>";
+		}else if(gbn=="OUT"){
+			strXML = strXML + "<busin>N</busin>";
+			strXML = strXML + "<bures>Y</bures>";
+		}
+		
+		if(sGbn=="BURES" || sGbn=="ASKSIME"){
+			if(fnm){
+				strXML = strXML + "<attachfile>"+fnm+"</attachfile>";
+			}else{
+				if(sGbn=="BURES"){
+					strXML = strXML + "<attachfile>bures.hwp</attachfile>";
+				}else if(sGbn=="ASKSIME"){
+					strXML = strXML + "<attachfile>asksime.hwp</attachfile>";
+				}
+			}
+			strXML = strXML + "<attachfilecd>"+sGbn+"</attachfilecd>";
+			strXML = strXML + "<attachfilemode>"+grade+"</attachfilemode>";
+		}
+		
+		strXML = strXML + "<sabun>"+userid+"</sabun>";
+		strXML = strXML + "<grade>"+grade+"</grade>";
+		strXML = strXML + "<statehistoryid>"+statehistoryid+"</statehistoryid>";
+		strXML = strXML + "<before_statehistoryid>0</before_statehistoryid>";
+		strXML = strXML + "<revmode>3</revmode>";
+		strXML = strXML + "<LKRMS5configurl>"+URLINFO+"/resources/edit/LKRMS5.config</LKRMS5configurl>";
+		strXML = strXML + "<LawXmlconfigurl>"+URLINFO+"/resources/edit/LawXml.exe.config</LawXmlconfigurl>";
+		if(sGbn=="G"){
+			strXML = strXML + "<gianinfo><![CDATA["+url+"]]></gianinfo>";
+		}
+		strXML = strXML + "</data>";
+		return strXML;
+	}
+	
+	var xg = Ext.grid;	//shortCut
+	
+	var gridView = new Ext.grid.GridView({ 
+		   //forceFit: true, 
+		     getRowClass : function (row, index) { 
+		       var cls = ''; 
+		       var data = row.data;
+	    	   cls = data.nowstateCd+'-row';
+		       return cls; 
+		    } 
+		 });  //end gridView 
+
+	//그리드 컨텍스트 메뉴
+	rowContext = new Ext.menu.Menu({
+		id:'rowContextMenu',
+		items:[
+			{id:'row_viewDocInfo', cls:'icon_viewDocInfo', text:'문서내용 보기',
+			handler:function(){
+				var rowData = progressGrid.getSelectionModel().getSelected();
+				var bookId = rowData.get('bookId');
+				var noFormYn = rowData.get('noFormYn');
+				docTitle = rowData.get('title');
+				getDocInfo(bookId,noFormYn);
+
+			}},
+			{id:'row_Deptopinion', cls:'icon_viewDocInfo', text:'의견 요청 부서 지정',
+				handler:function(){
+					var rowData = progressGrid.getSelectionModel().getSelected();
+					var bookId = rowData.get('bookId');
+					var statehistoryid = rowData.get('statehistoryid');
+					var noFormYn = rowData.get('noFormYn');
+					var ruleDept = new Ext.Window({
+						title:'의견 부서지정', modal:true,
+						height:506, width:317, iconCls:'dan3View',
+						resizable:false,
+						plain: true
+					});
+					ruleDept.render(Ext.getBody());
+					ruleDept.body.update('<iframe src="../ruleDept/ruleDeptView3.jsp?bookid='+bookId+'&statehistoryid='+statehistoryid+'" width="100%" height="100%" scroll="no" frameborder="no"></iframe>');
+					ruleDept.show();		
+
+			}},
+			{id:'row_DeptopinionW', cls:'icon_viewDocInfo', text:'관련부서 의견 작성',
+				handler:function(){
+					var rowData = progressGrid.getSelectionModel().getSelected();
+					var bookId = rowData.get('bookId');
+					var noFormYn = rowData.get('noFormYn');
+					var statehistoryid = rowData.get('statehistoryid');
+					docTitle = rowData.get('title');
+					getDocInfo2(bookId,noFormYn,statehistoryid);
+			}},
+			{id:'row_DeptopinionV', cls:'icon_viewDocInfo', text:'관련부서 의견 확인',
+				handler:function(){
+					var rowData = progressGrid.getSelectionModel().getSelected();
+					var bookId = rowData.get('bookId');
+					var noFormYn = rowData.get('noFormYn');
+					var statehistoryid = rowData.get('statehistoryid');
+					docTitle = rowData.get('title');
+					getDocInfoV2(bookId,noFormYn,statehistoryid);
+			}},
+			{id:'row_BUPEACHK', cls:'icon_viewDocInfo', text:'부패영향평가 대상여부 지정',
+				handler:function(){
+					var rowData = progressGrid.getSelectionModel().getSelected();
+					var Bookid = rowData.get('bookId');
+					var rmInsert = new Ext.FormPanel({
+				        labelWidth:80,
+				        url:CONTEXTPATH + '/jsp/bylaw/progress/proc/proc.jsp',
+				        frame:true,
+				        width:385,
+				        autoHeight:true,
+				        defaultType:'textfield',
+				    	monitorValid:true,
+				    	items: {
+				    		xtype:'fieldset',
+				    		title:"부패영향평가 대상여부 지정",
+					        items:[
+				            	{
+				            		xtype :'radiogroup',//radioBox 
+				            		columns : 2,
+				            		name : 'buyn',//HTML 과 유사하게 name 으로 radioGroup 속성을 이용한다.
+				            		items: 
+				            			[{
+							            	name : 'buyn',
+							            	boxLabel :'지정',// radio 버튼 옆의 이름
+							            	inputValue : 'Y'// radio 버튼의 값
+				            			},{
+							            	name : 'buyn',
+							            	boxLabel :'미지정',
+							            	inputValue : 'N'
+				            			}] //end radio button items
+				            	}
+					        ]
+					},
+				        buttons:[{
+				                text:'등록',
+				                formBind: true,
+				                iconCls:'icon_ok',
+				                handler:function(){
+				        		rmInsert.getForm().submit({
+				                        method:'POST',
+				                        params: {
+				        					job:'buynUpdate',
+				        					Bookid:Bookid
+							              },
+				                        waitTitle:'Connecting',
+				                        waitMsg:'자료를 저장중입니다....',
+
+				                        success:function(form, action){
+				                        	var result = Ext.util.JSON.decode(action.response.responseText);
+				                        	var buyn = result.key.buyn;
+				                        	Ext.Msg.alert('Status', '등록을 성공했습니다!!', function(btn, text){
+				                        		if(buyn=='Y'){
+				                        			goButton('','2750','','','');	//부패영향평가 지정으로 부패영향평가의뢰 대기 상태로 이동한다.
+				                        		}else if(buyn=='N'){
+				                        			goButton('','3100','','','');	//부패영향평가 미지정으로 최종안 작성단계로 간다.
+				                        		}
+				                        		if (btn == 'ok'){
+									   				win2.close();
+									   				rmInsert.getForm().reset();
+									   				getByStateList('');
+				                                   }
+				                        		});
+				                        },
+
+				                        failure:function(form, action){
+				                            if(action.failureType == 'server'){
+				                                Ext.Msg.alert('Failed!');
+				                            }else{
+				                                Ext.Msg.alert('Warning!', 'Authentication server is unreachable : ' + action.response.responseText);
+				                            }
+				                            rmInsert.getForm().reset();
+				                        }
+				                    });
+				                }
+				            }]
+				    });
+
+
+					var win2 = new Ext.Window({
+						title: '부패영향평가 대상여부 검토',
+						  closable:true,
+						  width:400,
+						  autoHeight:true,
+						  items: [rmInsert],
+						  plain:true, modal:true
+						 })
+					win2.show('div');
+			}},
+			{id: 'row_BUPEAIN', cls: 'icon_hwp', text:'부패영향평가 신청서작성',
+				handler:function(){
+				var rowData = progressGrid.getSelectionModel().getSelected();
+				var Obookid = rowData.get('oBookId');
+				var Bookid = rowData.get('bookId');
+				var grade = rowData.get('grade');
+				var statehistoryid = rowData.get('statehistoryid');
+
+				var xml = makeXml("A",statehistoryid,"IN",grade);
+				try{
+					var objWSH = new ActiveXObject("WScript.Shell");
+					if (objWSH == null) return;
+					var retval = objWSH.Run("c:/mten/exe/lkrms5.exe "+xml);
+				}catch (e) {
+		               alert(e.message + "\n도구 > 인터넷 옵션 > 보안 > 사용자 지정 수준 클릭>스크립팅하기 안전하지 않은 것으로 표시된 ActiveX컨트롤 초기화 및 스크립팅을 확인으로 변경하세요!\n");
+				}
+			}},
+			{id: 'row_BUPEAOUT', cls: 'icon_hwp', text:'부패영향평가 결과서작성',
+				handler:function(){
+				var rowData = progressGrid.getSelectionModel().getSelected();
+				var Obookid = rowData.get('oBookId');
+				var Bookid = rowData.get('bookId');
+				var grade = rowData.get('grade');
+				var statehistoryid = rowData.get('statehistoryid');
+
+				var xml = makeXml("A",statehistoryid,"OUT",grade);
+				try{
+					var objWSH = new ActiveXObject("WScript.Shell");
+					if (objWSH == null) return;
+					var retval = objWSH.Run("c:/mten/exe/lkrms5.exe "+xml);
+				}catch (e) {
+		               alert(e.message + "\n도구 > 인터넷 옵션 > 보안 > 사용자 지정 수준 클릭>스크립팅하기 안전하지 않은 것으로 표시된 ActiveX컨트롤 초기화 및 스크립팅을 확인으로 변경하세요!\n");
+				}
+			}},
+			{id: 'doc_addFile', cls: 'icon_hwp', text:'관련첨부문서 관리',
+				handler:function(){
+				var rowData = progressGrid.getSelectionModel().getSelected();
+				var Obookid = rowData.get('oBookId');
+				var Bookid = rowData.get('bookId');
+				var lawTitle = rowData.get('title');
+				var noFormyn = rowData.get('noFormYn');
+				var Revcha = rowData.get('revCha');
+				var catId = rowData.get('catId');
+				var Startdt = rowData.get('startDt');
+				var Enddt = rowData.get('endDt');
+				var Promuldt = rowData.get('promulDt');
+				var stateId = rowData.get('stateId');
+				var revCd = rowData.get('revCd');
+				var Pstate =''; 
+
+				var Pstate = 'FILE';
+
+				var comV;
+				var Work;
+				if(rowData.get('nowstateCd')==comV){
+					Work = "INSERT";
+				}else{
+					if(rowData.get('nowstateCd').indexOf("반려")>0){
+						Work = "VIEW";
+					}else{
+						Work = "QRY";
+					}
+				}
+				
+				if(noFormyn=='Y'){
+					alert('비정형문서는 지원하지 않습니다.');
+				}else{ 
+					win = new Ext.Window({
+				        title:lawTitle+"개정이유 및 주요내용 등록",
+			    	    layout:'fit',
+			    	    width:200,
+			            height:200,
+			            closeAction:'hide',
+			            iframe:'true',
+			            modal:true,
+			            plain: true,
+			                        buttons: [{
+			                text: '닫기',
+			                handler: function(){
+			                    win.hide();
+			                }
+			            }]
+
+			        });
+					win.render(document.body);
+				    win.body.update('<iframe src="'+CONTEXTPATH+"/jsp/bylaw/dllreq/EgcProc.jsp?Bookid="+Bookid+"&Revcha="+Revcha+"&Work="+Work+"&Statecd="+stateId+'" width="100%" height="100%" marginheight="0" marginwidth="0" frameborder="no"></iframe>');
+				    //win.show();
+				}
+			}},
+			{id:'CRevsion',cls:'icon_regmod', text: '수정',
+			handler: function(){
+				var rowData = progressGrid.getSelectionModel().getSelected();
+				var title = rowData.get('TITLE');
+				var Bookid = rowData.get('BOOKID');
+				var Pstate ='';
+				win = new Ext.Window({
+			        title:title+"내용수정",
+		    	    layout:'fit',
+		    	    width:200,
+		            height:200,
+		            closeAction:'hide',
+		            iframe:'true',
+		            modal:true,
+		            plain: true,
+		                        buttons: [{
+		                text: '닫기',
+		                handler: function(){
+		                	getByStateList('');
+		                    win.hide();
+		                }
+		            }]
+
+		        });
+				win.render(document.body);
+				win.body.update('<iframe src="'+CONTEXTPATH+'/bylaw/adm/EgcProc.do?BOOKID='+Bookid+'&PSTATE=YURE" width="100%" height="100%" marginheight="0" marginwidth="0" frameborder="no"></iframe>');
+			    win.show();
+				
+			}},
+			{id:'PromulI',cls:'icon_ca', text: '개정일/공포일 입력',
+				handler: function(){
+				
+				var rowData = progressGrid.getSelectionModel().getSelected();
+				var Bookid = rowData.get('BOOKID');
+				var lawTitle = rowData.get('TITLE');
+				var bookcode = rowData.get('BOOKCODE');
+				var promulno = rowData.get('PROMULNO');
+				var rmInsert = new Ext.FormPanel({
+			        labelWidth:80,
+			        url:CONTEXTPATH + '/bylaw/adm/promuldtInsert.do',
+			        frame:true,
+			        width:385,
+			        autoHeight:true,
+			        defaultType:'textfield',
+			    	monitorValid:true,
+			    	items: {
+			    		xtype:'fieldset',
+			    		title:"개정일/공포일 입력",
+			        items:[
+		           		{
+			        	xtype: 'datefield', fieldLabel:'공포일', name: 'promuldt', allowBlank:false, format : 'Y-m-d', value:(new Date()).format('Y-m-d'),width:230
+			            },{
+			        	xtype: 'datefield', fieldLabel:'개정일', name: 'startdt', allowBlank:false, format : 'Y-m-d', value:(new Date()).format('Y-m-d'),width:230
+			            },
+		           		{
+				        	xtype: 'textfield', fieldLabel:'공포번호', name: 'promulno', allowBlank:true,  value:promulno,width:230
+				        }
+			            /**
+			            ,{
+			        	xtype: 'datefield', fieldLabel:'종료일', name: 'Enddt', allowBlank:false, format : 'Y-m-d', value:"9998-12-31",width:230
+			            }
+			            **/
+			            ]
+				},
+			        buttons:[{
+			                text:'등록',
+			                formBind: true,
+			                iconCls:'icon_ok',
+			                handler:function(){
+			        		rmInsert.getForm().submit({
+			                        method:'POST',
+			                        params: {
+			        					bookid:Bookid,
+			        					enddt : '9998-12-31',
+			        					bookcode : ''
+						              },
+			                        waitTitle:'Connecting',
+			                        waitMsg:'자료를 저장중입니다....',
+
+			                        success:function(form, action){
+
+			                        	Ext.Msg.alert('Status', '등록을 성공했습니다!!', function(btn, text){
+							   if (btn == 'ok'){
+								   				win2.close();
+								   				rmInsert.getForm().reset();
+								   				getByStateList('');
+			                                   }
+						        });
+			                        },
+
+			                        failure:function(form, action){
+			                            if(action.failureType == 'server'){
+			                                Ext.Msg.alert('Failed!');
+			                            }else{
+			                                Ext.Msg.alert('Warning!', 'Authentication server is unreachable : ' + action.response.responseText);
+			                            }
+			                            rmInsert.getForm().reset();
+			                        }
+			                    });
+			                }
+			            }]
+			    });
+
+
+				var win2 = new Ext.Window({
+					title: lawTitle+'개정일 등록',
+					  closable:true,
+					  width:400,
+					  autoHeight:true,
+					  items: [rmInsert],
+					  plain:true, modal:true
+					 })
+				win2.show('div');
+				
+			}},
+			{id:'PromulI2',cls:'icon_ca', text: '사규등록번호 입력',
+				handler: function(){
+				
+				var rowData = progressGrid.getSelectionModel().getSelected();
+				var Bookid = rowData.get('bookId');
+				var lawTitle = rowData.get('title');
+				var bookcode = rowData.get('bookcode');
+				var rmInsert = new Ext.FormPanel({
+			        labelWidth:80,
+			        url:CONTEXTPATH + '/jsp/bylaw/progress/proc/proc.jsp',
+			        frame:true,
+			        width:385,
+			        autoHeight:true,
+			        defaultType:'textfield',
+			    	monitorValid:true,
+			    	items: {
+			    		xtype:'fieldset',
+			    		title:"개정일/문서번호 입력",
+			        items:[
+			            {
+			        		xtype: 'textfield', fieldLabel:'규정명', name: 'Title', value:lawTitle, allowBlank:false,width:230
+		            	},
+		           		{
+				        	xtype: 'textfield', fieldLabel:'사규등록번호', name: 'bookcode', allowBlank:true,  value:bookcode,width:230
+				        }
+			            ]
+				},
+			        buttons:[{
+			                text:'등록',
+			                formBind: true,
+			                iconCls:'icon_ok',
+			                handler:function(){
+			        		rmInsert.getForm().submit({
+			                        method:'POST',
+			                        params: {
+			        					job:'promuldtInsert',
+			        					Bookid:Bookid
+						              },
+			                        waitTitle:'Connecting',
+			                        waitMsg:'자료를 저장중입니다....',
+
+			                        success:function(form, action){
+
+			                        	Ext.Msg.alert('Status', '등록을 성공했습니다!!', function(btn, text){
+							   if (btn == 'ok'){
+								   				win2.close();
+								   				rmInsert.getForm().reset();
+								   				getByStateList('');
+			                                   }
+						        });
+			                        },
+
+			                        failure:function(form, action){
+			                            if(action.failureType == 'server'){
+			                                Ext.Msg.alert('Failed!');
+			                            }else{
+			                                Ext.Msg.alert('Warning!', 'Authentication server is unreachable : ' + action.response.responseText);
+			                            }
+			                            rmInsert.getForm().reset();
+			                        }
+			                    });
+			                }
+			            }]
+			    });
+
+
+				var win2 = new Ext.Window({
+					title: lawTitle+'개정일 등록',
+					  closable:true,
+					  width:400,
+					  autoHeight:true,
+					  items: [rmInsert],
+					  plain:true, modal:true
+					 })
+				win2.show('div');
+				
+				
+				
+				
+				}},
+				{id:'Ctitle',cls:'icon_ca', text: '규정명 변경',
+					handler: function(){
+					
+					var rowData = progressGrid.getSelectionModel().getSelected();
+					var Bookid = rowData.get('BOOKID');
+					var lawTitle = rowData.get('TITLE');
+					var statehistoryid = rowData.get('STATEHISTORYID');
+					var revcha = rowData.get('REVCHA');
+					var OBOOKID = rowData.get('OBOOKID');
+					var rmInsert = new Ext.FormPanel({
+				        labelWidth:80,
+				        url:CONTEXTPATH + '/bylaw/adm/changeTitle.do',
+				        frame:true,
+				        width:385,
+				        autoHeight:true,
+				        defaultType:'textfield',
+				    	monitorValid:true,
+				    	items: {
+				    		xtype:'fieldset',
+				    		title:"명칭 변경",
+				        items:[
+				            {
+				        		xtype: 'textfield', fieldLabel:'규정명', name: 'TITLE', value:lawTitle, allowBlank:false,width:230
+			            	}
+				            ]
+					},
+				        buttons:[{
+				                text:'등록',
+				                formBind: true,
+				                iconCls:'icon_ok',
+				                handler:function(){
+				        		rmInsert.getForm().submit({
+				                        method:'POST',
+				                        params: {
+				        					BOOKID:Bookid,
+				        					STATEHISTORYID : statehistoryid,
+				        					REVCHA : revcha,
+				        					OBOOKID : OBOOKID
+							              },
+				                        waitTitle:'Connecting',
+				                        waitMsg:'자료를 저장중입니다....',
+
+				                        success:function(form, action){
+
+				                        	Ext.Msg.alert('Status', '변경을 성공했습니다!!', function(btn, text){
+				                        		if (btn == 'ok'){
+									   				win2.close();
+									   				rmInsert.getForm().reset();
+									   				getByStateList('');
+				                                   }
+				                        	});
+				                        },
+
+				                        failure:function(form, action){
+				                            if(action.failureType == 'server'){
+				                                Ext.Msg.alert('Failed!');
+				                            }else{
+				                                Ext.Msg.alert('Warning!', 'Authentication server is unreachable : ' + action.response.responseText);
+				                            }
+				                            rmInsert.getForm().reset();
+				                        }
+				                    });
+				                }
+				            }]
+				    });
+
+
+					var win2 = new Ext.Window({
+						title: '규정명 변경',
+						  closable:true,
+						  width:400,
+						  autoHeight:true,
+						  items: [rmInsert],
+						  plain:true, modal:true
+					})
+					win2.show('div');
+					
+			}},
+			{id:'row_delDoc', cls:'icon_del', text:'문서 삭제(제,개정작업 취소)',
+			handler:function(){
+				var rowData = progressGrid.getSelectionModel().getSelected();
+				var bookId = rowData.get('BOOKID');
+				var noFormYn = rowData.get('NOFORMYN');
+				var catId = rowData.get('CATID');
+				var revCha = rowData.get('REVCHA');
+				var Obookid = rowData.get('OBOOKID');
+				//삭제 로직 호출
+				Ext.Msg.confirm('삭제', '현재자료가 완전 삭제됩니다 !! 삭제하시겠습니까??', function(btn, text){
+					if (btn == 'yes'){
+						Ext.MessageBox.wait('자료를 저장중입니다. ...','Wait',{interval:20, text:'데이터 삭제중입니다!!!'});
+						Ext.Ajax.request({
+							url: CONTEXTPATH + '/bylaw/adm/deleteProc.do',
+							params: {
+								gbn:'ONE',
+								BOOKID:bookId,
+								NOFORMYN:noFormYn,
+								CATID:catId,
+								REVCHA:revCha,
+								OBOOKID:Obookid
+							},
+							success: function(res, opts){
+								Ext.MessageBox.hide();
+								Ext.MessageBox.alert('데이터삭제성공','데이터가 삭제 되었습니다.');
+								getByStateList('');
+
+							},
+							failure: function(res, opts){
+								Ext.MessageBox.hide();
+								Ext.MessageBox.alert('데이터삭제성공','서버와의 연결상태가 좋지 않습니다.');
+							}
+						});
+					}else{
+						Ext.Msg.alert('취소','작업이 취소 되었습니다.');
+					}
+				});
+			}}
+		]
+	});//그리드 컨텍스트 메뉴 끝
+	
+	botToolbar = new Ext.Toolbar({
+		//		buttonAlign: 'center'
+		items:[
+			{
+				id:'hkk10',
+				text:'<strong style="font-weight:bold;color:#003b59;">전문</strong>',
+				iconCls:'pnextStep',
+				handler:goRdoc.createDelegate(this,["JUN"])
+			},
+			{
+				id:'hkk20',
+				text:'<strong style="font-weight:bold;color:#003b59;">신구조문</strong>',
+				iconCls:'pnextStep',
+				handler:goRdoc.createDelegate(this,["SIN"])
+			},
+			{
+				id:'hkk30',
+				text:'<strong style="font-weight:bold;color:#003b59;">개정문</strong>',
+				iconCls:'pnextStep',
+				handler:goRdoc.createDelegate(this,["GAE"])
+			},
+			{
+				id:'hkk40',
+				text:'<strong style="font-weight:bold;color:#003b59;">관련문서등록</strong>',
+				iconCls:'pnextStep',
+				handler:goRdoc2.createDelegate(this,["ETC"])
+			},
+			{
+				id:'hkk50',
+				text:'<strong style="font-weight:bold;color:#003b59;">결재생성문서확인</strong>',
+				iconCls:'pnextStep',
+				handler:goRdoc.createDelegate(this,["BANGCHIMAN"])
+			},
+			/**
+			{
+				id:'hkk50',
+				text:'<strong style="font-weight:bold;color:#003b59;">심의요청서</strong>',
+				iconCls:'pnextStep',
+				handler:goRdoc2.createDelegate(this,["ASKSIME"])
+			},
+			{
+				id:'hkk40',
+				text:'<strong style="font-weight:bold;color:#003b59;">규정 제·개정검토의뢰서</strong>',
+				iconCls:'pnextStep',
+				handler:goRdoc.createDelegate(this,["REA"])
+			},**/
+			{xtype: 'tbfill'},'-'
+		]
+	});
+	
+	
+	var botPan = new Ext.Panel({
+		renderTo:'gridBut',
+		items:[botToolbar]
+	});
+	//그리드하단 버튼들 끝
+	
+	//그리드
+	dsSchResult = new Ext.data.Store ({
+		id:'p_ds',
+		proxy: new Ext.data.HttpProxy({
+			url: CONTEXTPATH + '/bylaw/adm/progressList.do'
+		}),
+		listeners:{
+			load:function(store, records, success) {
+				MenuHide();
+			}
+		},
+		sorters: [
+	          {
+	              property : 'TITLE',
+	              direction: 'DESC'
+	          }
+	      ]
+		,remoteSort: true,
+		reader: new Ext.data.JsonReader({
+			root: 'result', totalProperty: 'total', idProperty: 'BOOKID'
+		},
+		['BOOKID','STATEHISTORYID', 'CATID', 'OBOOKID','REVCD','REVCHA','STATEID','STATECD','NOFORMYN', 'PROMULDT', 'STARTDT', 'ENDDT', 'TITLE', 'UPDT', 'BOOKCD', 'BOOKSUBCD','PATH','BUYN','ACTIONYN','ADDR','BSTATEHISTORYID','APPROVEYN','MAILYN','SANCTIONYN','BOOKCODE','PROMULNO'])
+	});
+	 
+	smProgGrid = new Ext.grid.CheckboxSelectionModel({
+		singleSelect: false,
+		listeners:{
+			selectionchange:function(){
+				chkedData = smProgGrid.getSelected();
+				//선택된 데이터로 필요 로직 처리
+				
+				var gsel=progressGrid.getSelectionModel().getSelections();
+				if(gsel.length==0){
+					MenuHide();
+				}
+			},
+			//rowselect : ( SelectionModel this, Number rowIndex, Ext.data.Record r )
+			rowselect:function(sModel, rIndex, data){
+				var prevStateCd = data.get('stateId');
+				MenuHide();
+				var imgsrc="";
+				var simgsrc="pro";
+				
+				
+				prevData = data;
+				//alert(data.get('title'));
+				var gsel=progressGrid.getSelectionModel().getSelections();
+				if(gsel.length>1){
+					var ssid = gsel[0].json.STATEID;
+					var chklist = new Array();
+					var chk1 = true;
+					for(i=0; i<gsel.length; i++){
+						if(ssid != gsel[i].json.STATEID){
+							MenuHide();
+							alert("선택된 문서들은 같은 단계에 있어야 합니다.");
+							//var sModel = progressGrid.getSelectionModel();
+						    //sModel.selectAll(false);
+							chk1 = false;
+						    progressGrid.getSelectionModel().clearSelections();
+						    MenuHide();
+						}
+					}
+					if(chk1){
+						var nowstateCd = gsel[0].json.STATEID;
+						var bookcd = gsel[0].json.BOOKCD;
+						var bookId = gsel[0].json.BOOKID;
+						var buyn = gsel[0].json.BUYN;
+						var actionyn = gsel[0].json.ACTIONYN;
+						var statehistoryid = gsel[0].json.STATEHISTORYID;
+						
+						Ext.Ajax.request({
+							url: CONTEXTPATH + '/bylaw/setting/getButtonList.do',
+							params: {
+								STATEID : nowstateCd,
+								BOOKID : bookId,
+								BOOKCD : bookcd,
+								BUYN : buyn,
+								ACTIONYN : actionyn
+							},
+							success: function(res, opts){
+								MenuHide();
+								var jsonData =Ext.util.JSON.decode(res.responseText);
+								var achk = '';
+								var asss = false;
+								for(var i=0; i<jsonData.result.length; i++) {
+								    var bacd =jsonData.result[i].BACD;
+								    var refstateid =jsonData.result[i].REFSTATEID;
+								    var approveyn =jsonData.result[i].APPROVEYN;
+								    var mailyn =jsonData.result[i].MAILYN;
+								    var sanctionyn =jsonData.result[i].SANCTIONYN;
+								    
+								    if(Grpcd2!='S'){
+								    	var len =1;
+								    	var arr = new Array(); 
+								    	for (var hh=0,k=0; hh<Grpcd.length; hh=hh+len,k++) { 
+								    		    arr[k] = Grpcd.substr(hh,len); 
+								    	} 
+								    	//if(sanctionyn.indexOf(arr[0])>-1||sanctionyn.indexOf(arr[1])>-1){
+								    		if(bacd.indexOf('반려')==-1){
+												botToolbar.add({
+													id:'butStep'+i,
+													text:'<strong style="font-weight:bold;color:#003b59;">'+bacd+'</strong>',
+													iconCls:'pnextStep',
+													handler:goButton.createDelegate(this,[bacd,refstateid,approveyn,mailyn,sanctionyn])//제/개정신청결재중
+												}); 
+												asss = true;
+											}else{
+												if(asss){
+													botToolbar.add({
+													id:'butStep'+i,
+													text:'<strong style="font-weight:bold;color:#003b59;">'+bacd+'</strong>',
+													iconCls:'pnextStep',
+													handler:goButton.createDelegate(this,[bacd,refstateid,approveyn,mailyn,sanctionyn])//제/개정신청결재중
+												}); 
+												}
+											}
+								    	//}
+								    }else{
+								    	botToolbar.add({
+											id:'butStep'+i,
+											text:'<strong style="font-weight:bold;color:#003b59;">'+bacd+'</strong>',
+											iconCls:'pnextStep',
+											handler:goButton.createDelegate(this,[bacd,refstateid,approveyn,mailyn,sanctionyn])//제/개정신청결재중
+										});
+								    }
+								    
+								    
+								}   
+								if(achk=='D'){
+									botToolbar.add({
+										id:'butStep1000',
+										text:'<strong style="font-weight:bold;color:#003b59;">승인요청</strong>',
+										iconCls:'nextStep',
+										handler:function(){
+											var ruleDept = new Ext.Window({
+												title:'승인요청', modal:true,
+												height:504, width:850, iconCls:'dan3View',
+												resizable:false,
+												plain: true
+											});
+											ruleDept.render(Ext.getBody());
+											//if(key=='2100'){
+											//	ruleDept.body.update('<iframe src="../ruleDept/ruleDeptView2.jsp?bookid='+bookId+'&statehistoryid='+statehistoryid+'" width="100%" height="100%" scroll="no" frameborder="no"></iframe>');
+											//}else{Deptcd
+												ruleDept.body.update('<iframe src="../ruleDept/ruleDeptViewTree.jsp?bookid='+bookId+'&statehistoryid='+statehistoryid+'" width="100%" height="100%" scroll="no" frameborder="no"></iframe>');	
+											//}
+											
+											ruleDept.show();
+										}
+									});
+								}
+								botToolbar.doLayout();
+							},
+							failure: function(res, opts){
+								MenuHide();
+								Ext.MessageBox.alert('버튼생성 실패','서버와의 연결상태가 좋지 않습니다. 에러코드:' + response.status);
+							}
+						});
+					}
+				}
+			}
+		}
+	});
+	var height = window.innerHeight;
+	progressGrid = new xg.GridPanel({
+		id:'p_grid',
+		renderTo:'grid',
+		store:dsSchResult,
+		autoWidth : true,
+		width : '100%',
+		height : height-250,
+		view: gridView,
+		cm:new xg.ColumnModel({
+			columns:[
+				smProgGrid,
+				{header:"규정명", width:300, dataIndex:'TITLE'},
+				{header:"제/개정", width:70, dataIndex:'REVCD'},
+				{header:"진행상태", width:150,dataIndex:'STATECD', sortable: true},
+				{header:"심의회차", width:150,dataIndex:'BOOKSUBCD', sortable: true},
+				{header:"문서경로", width:300, dataIndex:'PATH'},
+				{header:"공포일", dataIndex:'PROMULDT'}
+				//{header:"시행번호", dataIndex:'PROMULNO'}
+			]
+		}),
+		sm:smProgGrid,
+		loadMask:{
+			msg:'로딩중입니다. 잠시만 기다려주세요...'
+		},
+		stripeRows:true,
+		viewConfig:{
+			forceFit:true
+		},
+		bbar:new Ext.PagingToolbar({
+			pageSize:pageSize, store: dsSchResult,
+			displayInfo:true, displayMsg:'전체 {2}의 결과중 {0} - {1}',
+			emptyMsg:"검색된 결과가 없습니다."
+		}),
+        title: '검색결과',
+        iconCls: 'icon_reguSch',
+		listeners: {
+			rowcontextmenu:function(grid, idx, e){
+				var selModel=grid.getSelectionModel();
+				selModel.selectRow(idx);
+				var rowData = selModel.getSelected();
+				var revCha = rowData.get('REVCHA');
+				var noFormYn = rowData.get('NOFORMYN');
+				var STATEID = rowData.get('STATEID');
+
+					if(rowData.get('noFormYn')=='Y'){
+						rowContext.items.get('CRevsion').hide();
+						//rowContext.items.get('doc_modDocCont').hide();
+						rowContext.showAt(e.getXY());
+					}else{
+						var comV;
+						//row_viewDocInfo 문서냉냉
+							rowContext.items.get('row_viewDocInfo').hide(); //문서내용보기
+							rowContext.items.get('doc_addFile').hide(); //첨부문서관리
+							if (rowData.get('STATEID')=='4000'||rowData.get('STATEID')=='1000'){
+								rowContext.items.get('PromulI').show(); //공포일입력
+							}else{
+								rowContext.items.get('PromulI').hide(); //공포일입력
+							}
+							
+							if (rowData.get('STATEID')=='3400'){
+								rowContext.items.get('PromulI2').show(); //공포일입력
+							}else{
+								rowContext.items.get('PromulI2').hide(); //공포일입력
+							}
+							
+							if(STATEID=='2000'){
+								rowContext.items.get('row_Deptopinion').hide(); //검토부서 설정
+							}else{
+								rowContext.items.get('row_Deptopinion').hide(); //검토부서 설정
+							}
+							
+							if(STATEID=='2200'){
+								rowContext.items.get('row_DeptopinionW').hide(); //검토부서 의견작성
+							}else{
+								rowContext.items.get('row_DeptopinionW').hide(); //검토부서 의견작성
+							}
+							
+							if(STATEID=='2300'){
+								rowContext.items.get('row_DeptopinionV').hide(); //검토의견확인
+							}else{
+								rowContext.items.get('row_DeptopinionV').hide(); //검토의견확인
+							}
+
+							if(STATEID=='2700'){
+								rowContext.items.get('row_BUPEACHK').hide(); //부패영향평가여부검토
+							}else{
+								rowContext.items.get('row_BUPEACHK').hide(); //부패영향평가여부검토
+							}
+							
+							if(STATEID=='2500'){
+								rowContext.items.get('row_BUPEAIN').hide(); //부패영향평가요청서
+							}else{
+								rowContext.items.get('row_BUPEAIN').hide(); //부패영향평가요청서
+							}
+							
+							if(STATEID=='3000'){
+								rowContext.items.get('row_BUPEAOUT').hide(); //부패영향평가결과서
+							}else{
+								rowContext.items.get('row_BUPEAOUT').hide(); //부패영향평가결과서
+							}
+							rowContext.items.get('CRevsion').show(); //수정
+							rowContext.items.get('row_delDoc').show(); //문서삭제
+							
+						rowContext.showAt(e.getXY());
+					}
+			},
+			contextmenu:function(e){
+				e.preventDefault();
+			},
+			//cellcontextmenu : ( Grid this, Number rowIndex, Number cellIndex, Ext.EventObject e )
+			cellcontextmenu:function(grid, idx, cIdx, e){
+				e.preventDefault();
+			},
+			rowclick: function (grid, idx, e){
+				MenuHide();
+				var selModel=grid.getSelectionModel();
+				//selModel.selectRow(idx);
+				var rowData = selModel.getSelected();
+				if(!rowData){
+					return;
+				}
+				var nowstateCd = rowData.get('STATEID');
+				var bookcd = rowData.get('BOOKCD');
+				var bookId = rowData.get('BOOKID');
+				var buyn = rowData.get('BUYN');
+				var actionyn = rowData.get('ACTIONYN');
+				var statehistoryid = rowData.get('STATEHISTORYID');
+				Ext.Ajax.request({
+					url: CONTEXTPATH + '/bylaw/setting/getProcessListButton2.do',
+					params: {
+						key:nowstateCd,
+						bookcd:bookcd
+					},
+					success: function(res, opts){
+						Ext.get('p_roc').update(res.responseText);
+						MenuHide();
+					},
+					failure: function(res, opts){
+					}
+				});
+				
+				Ext.Ajax.request({
+					url: CONTEXTPATH + '/bylaw/setting/getButtonList.do',
+					params: {
+						STATEID : nowstateCd,
+						BOOKID : bookId,
+						BOOKCD : bookcd,
+						BUYN : buyn,
+						ACTIONYN : actionyn
+					},
+					success: function(res, opts){
+						MenuHide();
+						var jsonData =Ext.util.JSON.decode(res.responseText);
+						var achk = '';
+						var asss = false;
+						for(var i=0; i<jsonData.result.length; i++) {
+						    var bacd =jsonData.result[i].BACD;
+						    var refstateid =jsonData.result[i].REFSTATEID;
+						    var approveyn =jsonData.result[i].APPROVEYN;
+						    var mailyn =jsonData.result[i].MAILYN;
+						    var sanctionyn =jsonData.result[i].SANCTIONYN;
+						    
+						    if(Grpcd2!='S'){
+						    	var len =1;
+						    	var arr = new Array(); 
+						    	for (var hh=0,k=0; hh<Grpcd.length; hh=hh+len,k++) { 
+						    		    arr[k] = Grpcd.substr(hh,len); 
+						    	} 
+						    	//if(sanctionyn.indexOf(arr[0])>-1||sanctionyn.indexOf(arr[1])>-1){
+						    		if(bacd.indexOf('반려')==-1){
+										botToolbar.add({
+											id:'butStep'+i,
+											text:'<strong style="font-weight:bold;color:#003b59;">'+bacd+'</strong>',
+											iconCls:'pnextStep',
+											handler:goButton.createDelegate(this,[bacd,refstateid,approveyn,mailyn,sanctionyn])//제/개정신청결재중
+										}); 
+										asss = true;
+									}else{
+										if(asss){
+											botToolbar.add({
+											id:'butStep'+i,
+											text:'<strong style="font-weight:bold;color:#003b59;">'+bacd+'</strong>',
+											iconCls:'pnextStep',
+											handler:goButton.createDelegate(this,[bacd,refstateid,approveyn,mailyn,sanctionyn])//제/개정신청결재중
+										}); 
+										}
+									}
+						    	//}
+						    }else{
+						    	botToolbar.add({
+									id:'butStep'+i,
+									text:'<strong style="font-weight:bold;color:#003b59;">'+bacd+'</strong>',
+									iconCls:'pnextStep',
+									handler:goButton.createDelegate(this,[bacd,refstateid,approveyn,mailyn,sanctionyn])//제/개정신청결재중
+								});
+						    }
+						    
+						    
+						}   
+						if(achk=='D'){
+							botToolbar.add({
+								id:'butStep1000',
+								text:'<strong style="font-weight:bold;color:#003b59;">승인요청</strong>',
+								iconCls:'nextStep',
+								handler:function(){
+									var ruleDept = new Ext.Window({
+										title:'승인요청', modal:true,
+										height:504, width:850, iconCls:'dan3View',
+										resizable:false,
+										plain: true
+									});
+									ruleDept.render(Ext.getBody());
+									//if(key=='2100'){
+									//	ruleDept.body.update('<iframe src="../ruleDept/ruleDeptView2.jsp?bookid='+bookId+'&statehistoryid='+statehistoryid+'" width="100%" height="100%" scroll="no" frameborder="no"></iframe>');
+									//}else{Deptcd
+										ruleDept.body.update('<iframe src="../ruleDept/ruleDeptViewTree.jsp?bookid='+bookId+'&statehistoryid='+statehistoryid+'" width="100%" height="100%" scroll="no" frameborder="no"></iframe>');	
+									//}
+									
+									ruleDept.show();
+								}
+							});
+						}
+						botToolbar.doLayout();
+					},
+					failure: function(res, opts){
+						MenuHide();
+						Ext.MessageBox.alert('버튼생성 실패','서버와의 연결상태가 좋지 않습니다. 에러코드:' + response.status);
+					}
+				});
+				
+			}
+		}
+	});
+	//그리드 끝  
+	
+    var viewport = new Ext.Viewport({
+        layout: 'border',
+        items: [
+				new Ext.BoxComponent({ // raw
+		            region: 'north',
+		            el: 'topMenuHolder',
+		            height: 75
+		        }),
+		        {
+		        	region: 'center',
+		        	items:[
+			                   new Ext.BoxComponent({
+			                	   id:"p_roc", regin:"north",
+			                	   height: 40, 
+			                       autoScroll: true
+			                   }),
+			                   new Ext.BoxComponent({
+			                	   id: 'p_section',regin:"center", el:'gridHolder'
+			                   })
+		                   ]
+		        },
+				new Ext.BoxComponent({
+					region:'south',
+					el:'botMenuHolder',
+					height:10
+				}),
+				{
+                    region:'south',
+                    split:true,
+                    height: 100,
+                    minSize: 100,
+                    maxSize: 200,
+                    collapsible: true,
+                    autoScroll:true,
+                    iconCls:'icon_tip',
+                    title:'규정관리시스템 사용팁',
+                    margins:'0 0 0 0',
+                    html: '<div style="padding:5px 20px;">'
+                    		+'<div>&#8226;&nbsp; 제정신청 : 해당 카테고리 폴더에서 우클릭후  제정신청 선택.</div>'
+                    		+'<div>&#8226;&nbsp; 개정/폐지 신청 : 해당  규정목록에서 우클릭후  개정신청이나 폐지신청 선택.</div>'
+                    		+'</div>'	
+                }
+		]
+    });
+    /*
+    Ext.get('p_roc').update("<img src='"+CONTEXTPATH+"/images/progress/pro_00.gif'/>");
+	Ext.getCmp('p_docNum').getUpdater().update({
+		url:'progLeft.jsp'
+	});*/
+	
+	function fileChk(key){
+		chkedData = smProgGrid.getSelections();
+		var bookIds='';
+		for(var i=0; i<chkedData.length;i++){
+			bookIds+=chkedData[i].get('bookId');
+			
+			if(!(i==chkedData.length-1)){
+				bookIds+=',';
+			}
+		}
+		Ext.Ajax.request({
+			url: CONTEXTPATH + '/jsp/bylaw/progress/proc/proc.jsp',
+			params: {
+				job:'fileChk',
+				bookid:bookIds
+			},
+			success: function(res, opts){
+				var result = Ext.decode(res.responseText);
+				if(result.key.re > 0){
+					goButton(key);
+					//gian(key);
+				}else{
+					alert("부패영향평가 기초자료를 작성하셔야 합니다.");
+					return;
+				}
+			},
+			failure: function(res, opts){
+				Ext.MessageBox.alert('데이터입력 실패','서버와의 연결상태가 좋지 않습니다.');
+			}
+		}); 
+	}
+	function askingYn(key){
+		if(confirm('입안 처리중 변경할 내용이 없어 공포요청을 하겠습니까?')){
+			gian(key);
+		}
+	}
+	
+	function gian(key){
+		chkedData = smProgGrid.getSelections();
+		var bookIds='';
+		for(var i=0; i<chkedData.length;i++){
+			bookIds+=chkedData[i].get('bookId');
+		}
+		makeGian(bookIds, key);
+		//goButton(key);
+	}
+	
+	function makeGian(bookIds, key){
+		//alert(bookIds+'/'+key);
+		eApproveWin = new Ext.Window({
+			height:600,
+			width:1024,
+			modal:true,
+			title: '결재상신'
+		});
+		eApproveWin.render(Ext.getBody());
+		eApproveWin.body.update('<iframe src="../eApprove/eApprove.jsp?bookId='+bookIds+'&stateCd='+key+'" width="100%" height="100%" scroll="no" frameborder="no"></iframe>');	 
+		eApproveWin.show();
+	}
+	function goButton(bacd,key,approveyn,mailyn,sanctionyn){
+		chkedData = smProgGrid.getSelections();
+		var bookIds='';
+		var statehistoryids ='';
+		var startDts='';
+		var titles = '';
+		var obookid = '';
+		var revcd = '';
+		var STATEID = '';
+		var BOOKCDS = '';
+		for(var i=0; i<chkedData.length;i++){
+			if(key=='5000'||key=='6000'){
+				var promulDt = chkedData[i].get('PROMULDT');
+				if(promulDt == ""){
+					Ext.Msg.alert('Status', '시행일을 입력해야 합니다.!!', function(btn, text){
+						if (btn == 'ok'){
+							setPromuldt();
+                        }
+			        });
+					return;
+				}
+			}
+			bookIds += chkedData[i].get('BOOKID');
+			statehistoryids += chkedData[i].get('STATEHISTORYID');
+			startDts += chkedData[i].get('STARTDT');
+			titles += chkedData[i].get('TITLE');
+			obookid += chkedData[i].get('OBOOKID');
+			revcd += chkedData[i].get('REVCD');
+			STATEID = chkedData[i].get('STATEID');
+			BOOKCDS += chkedData[i].get('BOOKCD');
+			if(!(i==chkedData.length-1)){
+				bookIds+=',';
+				statehistoryids+=',';
+				startDts+=',';
+				titles+=',';
+				BOOKCDS+=',';
+			}
+		}
+		
+		//문서 생성 부분
+		if(key=='9000'){
+			if(bacd=='방침안작성'){
+				goRdoc('BangChimAn',statehistoryids);
+			}else if(bacd=='입법예고안작성'){
+				goRdoc('IbBubYegoAn',statehistoryids);
+			}else if(bacd=='최종안작성'){
+				goRdoc('LastAn',statehistoryids);
+			}else if(bacd=='공포문작성'){
+				goRdoc('GongPoMun',statehistoryids);
+			}else if(bacd=='발령문작성'){
+				goRdoc('HunBalReongMun',statehistoryids);
+			}
+			return;
+		}
+		
+		if(key=='2700' || key=='3100' || key=='3300'){ //전자결제
+			if(key=='2700'){
+				makeKian(bookIds, "x",statehistoryids);
+			}else if(key=='3100'){
+				makeKian(bookIds, "y",statehistoryids);
+			}else if(key=='3300'){
+				makeKian(bookIds, "z",statehistoryids);
+			}
+			Ext.Msg.alert('Status', '기안문 작성후 클릭 바랍니다.', function(btn, text){
+        			if (btn == 'ok'){
+        				getByStateList('');
+        				MenuHide();
+        			}
+        	});
+			return;
+		}
+		if(key=='9999'){
+			var NSTATECD = '9998';
+			if(STATEID=='1700'){
+				NSTATECD = '완료';
+			}
+			$.ajax({
+				type : "POST",
+				url : CONTEXTPATH+"/gian/ons/gianOnsStart.do",
+				data : {
+					STATEHISTORYIDS : statehistoryids,		
+					BOOKIDS : bookIds,
+					DOCGBN : 'BYLAW',
+					DOCID : statehistoryids,
+					FPATH : 'ATTACH',
+					filecd : '',
+					STATECD : STATEID,
+					STATEID : STATEID,
+					NSTATECD : NSTATECD,
+					OKSTATECD : '',
+					NOSTATECD : STATEID,
+					bacd : bacd,
+					BOOKCDS : BOOKCDS,
+					titles : titles
+				},
+				datatype: "json",
+				error: function(){},
+				success:function(data){
+					var obj = JSON.parse(data);
+					window.open(obj.callUrl,"", "left="+0+",top="+0+",width="+860+",height="+710+",scrollbars=yes,resizable=no,status=yes");
+				}
+			});
+			
+			return;
+		}
+		if(key=='9996' || key=='9997' || key=='9998'){ 
+			if(key=='9996' || key=='9997'){
+				var gbn = '';
+				if(key=='9996'){
+					gbn = "BURES";
+				}else if(key=='9997'){
+					gbn = "ASKSIME";
+				}
+				Ext.Ajax.request({
+					async : false,
+					scope:this,
+					url: CONTEXTPATH+"/bylaw/admin/getBuV.do",
+					params: {
+						statehistoryid:statehistoryids,
+						filecd:gbn
+					},
+					success: function(res, opts){
+						var jsonData =Ext.util.JSON.decode(res.responseText);
+						strXml = makeXml(gbn,statehistoryids,"","1","",jsonData.fnm);	//부패영향평가신청서보기
+						try{
+							var objWSH = new ActiveXObject("WScript.Shell");
+							if(objWSH == null) return;
+							strXml = strXml.replace(/ /gi,'^');
+							strXml = strXml.replace(/"/gi,'#');
+							var retval = objWSH.Run("c:/mten/exe/lkrms5.exe "+strXml.trim());
+						}catch(e){
+							alert(e.message + "\n도구 > 인터넷 옵션 > 보안 > 사용자 지정 수준 클릭>스크립팅하기 안전하지 않은 것으로 표시된 ActiveX컨트롤 초기화 및 스크립팅을 확인으로 변경하세요!\n");
+						}
+					},
+					failure: function(res, opts){
+						alert(res);
+					}
+				});
+			}
+			
+			return;
+		}
+	
+		Ext.Ajax.request({
+			url: CONTEXTPATH + '/bylaw/adm/updateStep.do',
+			params: {
+				bookIds:bookIds,
+				statehistoryids:statehistoryids,
+				startDts:startDts,
+				nowstateCd:key,
+				mailyn:mailyn,
+				obookid : obookid,
+				titles : titles,
+				revcd : revcd
+			},
+			success: function(res, opts){
+					getByStateList('');
+					MenuHide();
+			},
+			failure: function(res, opts){
+				Ext.MessageBox.alert('데이터입력 실패','서버와의 연결상태가 좋지 않습니다.');
+			}
+		});
+	}
+		 
+	
+	MenuHide();
+	getByStateList('');
+});
+
+function dfileChk(statehistoryids){
+	var as = true;
+	var af = 0;
+	alert("결재문서에 첨부될 신구대비표파일을 생성중입니다.");
+	while(as){
+		af++;
+		try{
+			var objWSH = new ActiveXObject("Scripting.FileSystemObject");
+			if (objWSH == null) return;
+			var retval = objWSH.openTextFile("C:/mten/ApprovalPath/"+statehistoryids+".txt",1);
+			var fileC = retval.ReadAll();
+			retval.Close();
+			as = false;
+			return "Y";
+		}catch (e) {
+	         if(as==10000){
+	        	 return "N";
+	         }
+		}
+	}
+}
+//최초로딩시 메뉴 숨기기
+function MenuHide(){
+	if(botToolbar.items.length>2){
+		for(var hk=6; hk<botToolbar.items.length; hk++){
+			var temp = botToolbar.items.get(hk); // select first item  
+			botToolbar.remove(temp); //remove temp (first item) from displayQty(toolbar)
+		}
+	}
+}
+
+//문서정보 가져오기
+function getDocInfo(bookId,noFormYn){
+	if(noFormYn=='Y'){
+		bonValue='noxml';
+		window.open('../existing/hwp.jsp?Bookid='+bookId,'','');
+	}else{
+		//row 클릭시 현행/연혁 문서와 신구조문 대비표 보여줄 윈도
+		var win_docInfo = new Ext.Window({
+			title:'',
+			height:600, width:916, iconCls:'docView',
+			resizable:false,
+			items:[
+				new Ext.TabPanel({
+		        id: 'tab_view1', deferredRender: false, activeTab: 0, defaults: {autoScroll:true},
+				height:525,
+		        margins: '0 5 0 0',
+		        items: [{
+		                id: 't_view1', contentEl: 't_view1', title: '현행/연혁'
+		            },{
+		                id: 't_view2', contentEl: 't_view2', title: '신구조문대비표'
+					},{
+		                id: 't_view3', contentEl: 't_view3', title: '개정안'
+					},{
+		                id: 't_view4', contentEl: 't_view4', title: '개정문'
+					},{
+		                id: 't_view5', contentEl: 't_view5', title: '개정이유'
+					},{
+		                id: 't_view6', contentEl: 't_view6', title: '의견서'
+					}
+				]
+				})
+			],
+			plain: true, buttons: [
+				{ text: '닫기', handler: function(){ win_docInfo.hide(); }
+			}]
+		});
+		win_docInfo.setTitle(docTitle);
+		win_docInfo.show();
+		bonValue='xml';
+		getDocView('t_view1','../existing/bon.jsp',bookId,'bon');//본문
+		///jsp/bylaw/existing/createHwp.jsp?Bookid=10021576&Pstate=NOW
+		getDocView('t_view2','../existing/bon.jsp',bookId,'oldnew');//신구조문대비표
+		getDocView('t_view3','../existing/bon.jsp',bookId,'oldnew');//신구조문대비표
+		getDocView('t_view4','../existing/bon.jsp',bookId,'bon');//신구조문대비표
+		getDocView('t_view5','../existing/bon.jsp',bookId,'bon');//신구조문대비표
+		getDocView('t_view6','../existing/bon.jsp',bookId,'bon');//신구조문대비표
+		Ext.getCmp('tab_view1').activate('t_view1');
+	}
+}
+
+function getDocInfo2(bookId,noFormYn,statehistoryid){
+	if(noFormYn=='Y'){
+		bonValue='noxml';
+		window.open('../existing/hwp.jsp?Bookid='+bookId,'','');
+	}else{
+		var bb = new Ext.Panel({
+			title:'의견작성 부서'
+		})
+		
+		Ext.Ajax.request({
+			url: './proc/proc.jsp',
+			params: {
+				job: "getDeptList",
+				statehistoryid : statehistoryid,
+				bookid : bookId
+			},
+			success: function(res, opts){
+				var jsonData =Ext.util.JSON.decode(res.responseText);
+				for(var i=0; i<jsonData.result.length; i++) {
+				    var deptname =jsonData.result[i].deptname;
+				    var opinionid = jsonData.result[i].opinionid;
+				    var checkyn = jsonData.result[i].checkyn;
+				    var de = jsonData.result[i].deptcd;
+				    if((de==Deptcd || Deptcds.indexOf(de)>-1) && Grpcd.indexOf('Y')==-1){
+					    bb.add(
+					    	new Ext.Button({
+					    		text    : '<strong style="font-weight:bold;color:#003b59;">'+deptname+'</strong>',
+						        split: true,
+						        width:100,
+						        iconAlign: 'right',
+						        iconCls: 'nextStep',
+						        defaultType: 'splitbutton',
+						        handler:goOpinionWrite.createDelegate(this,[opinionid,checkyn])
+						    })
+					    );
+				    }
+				    if(Grpcd.indexOf('Y')>-1){
+				    	bb.add(
+					    	new Ext.Button({
+					    		text    : '<strong style="font-weight:bold;color:#003b59;">'+deptname+'</strong>',
+						        split: true,
+						        width:100,
+						        iconAlign: 'right',
+						        iconCls: 'nextStep',
+						        defaultType: 'splitbutton',
+						        handler:goOpinionWrite.createDelegate(this,[opinionid,checkyn])
+						    })
+					    );
+				    }
+				}   
+				
+				var win_docInfo = new Ext.Window({
+					title:'',
+					height:600, width:916, iconCls:'docView',
+					resizable:false,
+					items:[
+					    new Ext.Container({
+							region: 'center',
+							items:[
+							    new Ext.Container ({
+									region: 'center',
+									layout : 'hbox',
+									items:[
+									    new Ext.TabPanel({
+									        id: 'tab_view1_1', deferredRender: false, activeTab: 0, defaults: {autoScroll:true},
+											height:525,
+											width:800,
+									        margins: '0 5 0 0',
+									        items: [{
+									                id: 't_view1_1', contentEl: 't_view1_1', title: '현행/연혁'
+									            },{
+									                id: 't_view2_1', contentEl: 't_view2_1', title: '신구조문대비표'
+												}
+											]
+										}),
+										bb
+									]
+								})
+							  ]
+						})
+					],
+					plain: true, buttons: [
+						{ text: '닫기', handler: function(){ win_docInfo.hide(); }
+					}]
+				});
+				win_docInfo.setTitle(docTitle);
+				win_docInfo.show();
+				bonValue='xml';
+				getDocView('t_view1_1','../existing/bon.jsp',bookId,'bon');//본문
+				getDocView('t_view2_1','../existing/bon.jsp',bookId,'oldnew');//신구조문대비표
+				Ext.getCmp('tab_view1_1').activate('t_view1_1');
+			},
+			failure: function(res, opts){
+				Ext.MessageBox.alert('검토부서생성 실패','서버와의 연결상태가 좋지 않습니다. 에러코드:' + response.status);
+			}
+		});
+	}
+}
+function getDocInfoV2(bookId,noFormYn,statehistoryid){
+	if(noFormYn=='Y'){
+		bonValue='noxml';
+		window.open('../existing/hwp.jsp?Bookid='+bookId,'','');
+	}else{
+		Ext.Ajax.request({
+			url: './proc/proc.jsp',
+			params: {
+				job: "getDeptList",
+				statehistoryid : statehistoryid,
+				bookid : bookId
+			},
+			success: function(res, opts){
+				var win_docInfo = new Ext.Window({
+					title:'',
+					height:600, width:916, iconCls:'docView',
+					resizable:false,
+					items:[
+					    new Ext.Container({
+							region: 'center',
+							items:[
+							    new Ext.Container ({
+									region: 'center',
+									layout : 'hbox',
+									items:[
+									    new Ext.TabPanel({
+									        id: 'tab_view1_1', deferredRender: false, activeTab: 0, defaults: {autoScroll:true},
+											height:525,
+											width:908,
+									        margins: '0 5 0 0',
+									        items: [{
+									                id: 't_view1_1', contentEl: 't_view1_1', title: '현행/연혁',iconCls:'icon_hyunhang'
+									            },{
+									                id: 't_view2_1', contentEl: 't_view2_1', title: '신구조문대비표',iconCls:'icon_singu'
+												}
+											]
+										})
+									]
+								})
+							  ]
+						})
+					],
+					plain: true, buttons: [
+						{ text: '닫기', handler: function(){ win_docInfo.hide(); }
+					}]
+				});
+				
+				var jsonData =Ext.util.JSON.decode(res.responseText);
+				for(var i=0; i<jsonData.result.length; i++) {
+				    var deptname =jsonData.result[i].deptname;
+				    var opinionid = jsonData.result[i].opinionid;
+				    var checkyn = jsonData.result[i].checkyn;
+				    Ext.getCmp('tab_view1_1').add(this.opinionids = new Ext.Panel( {
+				    	id : opinionid,
+		                title    : deptname,
+		                closable : true
+                    }));
+				    
+				    this.opinionids.on('activate', function(panel) {
+						    var view = Ext.getCmp(panel.getId());
+							view.getUpdater().update({
+								url: './proc/proc.jsp',
+								scripts: true,
+						        method : 'post',
+						        params: {
+						        	job: "getopinion",
+									opinionid : panel.getId()
+						          }
+							});
+							
+					    }, this);
+				    
+				}   
+				
+				
+				win_docInfo.setTitle(docTitle);
+				win_docInfo.show();
+				bonValue='xml';
+				getDocView('t_view1_1','../existing/bon.jsp',bookId,'bon');//본문
+				getDocView('t_view2_1','../existing/bon.jsp',bookId,'oldnew');//신구조문대비표
+				Ext.getCmp('tab_view1_1').activate('t_view1_1');
+			},
+			failure: function(res, opts){
+				Ext.MessageBox.alert('검토부서생성 실패','서버와의 연결상태가 좋지 않습니다. 에러코드:' + response.status);
+			}
+		});
+	}
+}
+function setPromuldt(){
+	var rowData = progressGrid.getSelectionModel().getSelected();
+	var Bookid = rowData.get('BOOKID');
+	var lawTitle = rowData.get('TITLE');
+	var bookcode = rowData.get('BOOKCODE');
+	var promulno = rowData.get('PROMULNO');
+	var rmInsert = new Ext.FormPanel({
+        labelWidth:80,
+        url:CONTEXTPATH + '/bylaw/adm/promuldtInsert.do',
+        frame:true,
+        width:385,
+        autoHeight:true,
+        defaultType:'textfield',
+    	monitorValid:true,
+    	items: {
+    		xtype:'fieldset',
+    		title:"공포일/개정일 입력",
+        items:[
+            /**
+        	{
+        		xtype: 'textfield', fieldLabel:'규정명', name: 'Title', value:lawTitle, allowBlank:false,width:230
+        	},
+       		{
+	        	xtype: 'textfield', fieldLabel:'규정등록번호', name: 'bookcode', allowBlank:true,  value:bookcode,width:230
+	        },
+	        **/
+       		{
+        	xtype: 'datefield', fieldLabel:'공포일', name: 'promuldt', allowBlank:false, format : 'Y-m-d', value:(new Date()).format('Y-m-d'),width:230
+            },{
+        	xtype: 'datefield', fieldLabel:'개정일', name: 'startdt', allowBlank:false, format : 'Y-m-d', value:(new Date()).format('Y-m-d'),width:230
+            },
+       		{
+	        	xtype: 'textfield', fieldLabel:'공포번호', name: 'promulno', allowBlank:true,  value:promulno,width:230
+	        }
+            /**
+            ,{
+        	xtype: 'datefield', fieldLabel:'종료일', name: 'Enddt', allowBlank:false, format : 'Y-m-d', value:"9998-12-31",width:230
+            }
+            **/
+            ]
+	},
+        buttons:[{
+                text:'등록',
+                formBind: true,
+                iconCls:'icon_ok',
+                handler:function(){
+        		rmInsert.getForm().submit({
+                        method:'POST',
+                        params: {
+        					bookid:Bookid,
+        					enddt:'9998-12-31',
+        					bookcode:''	
+			              },
+                        waitTitle:'Connecting',
+                        waitMsg:'자료를 저장중입니다....',
+
+                        success:function(form, action){
+
+                        	Ext.Msg.alert('Status', '등록을 성공했습니다!!', function(btn, text){
+				   if (btn == 'ok'){
+					   				win2.close();
+					   				rmInsert.getForm().reset();
+					   				getByStateList('');
+                                   }
+			        });
+                        },
+
+                        failure:function(form, action){
+                            if(action.failureType == 'server'){
+                                Ext.Msg.alert('Failed!');
+                            }else{
+                                Ext.Msg.alert('Warning!', 'Authentication server is unreachable : ' + action.response.responseText);
+                            }
+                            rmInsert.getForm().reset();
+                        }
+                    });
+                }
+            }]
+    });
+
+
+	var win2 = new Ext.Window({
+		title: lawTitle+'개정일 등록',
+		  closable:true,
+		  width:400,
+		  autoHeight:true,
+		  items: [rmInsert],
+		  plain:true, modal:true
+		 })
+	win2.show('div');
+}
+function goOpinionWrite(opinionid,checkyn){
+	cw=1000;
+	ch=668;
+	sw=screen.availWidth;
+	sh=screen.availHeight;
+	px=(sw-cw)/2;
+	py=(sh-ch)/2;
+	property="left="+px+",top="+py+",width="+cw+",height="+ch+",scrollbars=no,resizable=no,status=no,toolbar=no";
+	window.open("hwpopinion.jsp?opinionid="+opinionid+"&checkyn="+checkyn, opinionid, property);
+}
+function getDocView(viewId,pageurl,bookId,para){
+	var view = Ext.getCmp(viewId);
+	view.getUpdater().update({
+		url: pageurl,
+		scripts: true,
+        method : 'post',
+        params: {
+			Bookid:bookId,
+			Pstate:para
+          }
+	});
+}
+function getByStateList(stateCd){
+	Ext.Ajax.request({
+		url: CONTEXTPATH + '/bylaw/setting/getProcessListButton2.do',
+		params: {},
+		success: function(res, opts){
+			Ext.get('p_roc').update(res.responseText);
+		},
+		failure: function(res, opts){
+			
+		}
+	});
+	MenuHide();
+	
+	//Y : 전체관리자 
+	//A: 심사자
+	//G: 표준절차서등록자
+	//B: 감사자
+	//H: 사규등록자
+	//T: 팀장
+	
+	var opt = '';
+	if (Grpcd.indexOf('H')>-1){
+		opt = 'H';
+	}
+	
+	var DeptTmp = DEPTPATH;
+	var DeptTmps = Deptcds;
+	
+	if (Grpcd.indexOf('Y')>-1 || Grpcd.indexOf('H')>-1){
+		DeptTmp = '';
+		opt = '';
+		DeptTmps = '';
+		suserid = '';
+	}
+	dsSchResult.on('beforeload', function(){
+		dsSchResult.baseParams = {
+			job:'getList',
+			//stateCd:stateCd,
+			Deptcd:DeptTmp,
+			Deptcds:DeptTmps,
+			suserid : suserid,
+			opt:opt
+		};
+	});
+	dsSchResult.load({
+		params:{
+			start:0, limit:pageSize
+		}
+	});
+}
+
+function reStore(key,obj){
+	Ext.Ajax.request({
+		url: CONTEXTPATH + '/bylaw/setting/getProcessListButton2.do',
+		params: {
+			key : key
+		},
+		success: function(res, opts){
+			Ext.get('p_roc').update(res.responseText);
+		},
+		failure: function(res, opts){
+			
+		}
+	});
+	MenuHide();
+	
+	//Y : 전체관리자 
+	//A: 심사자
+	//G: 표준절차서등록자
+	//B: 감사자
+	//H: 사규등록자
+	//T: 팀장
+	
+	var opt = '';
+	if (Grpcd.indexOf('H')>-1){
+		opt = 'H';
+	}
+	
+	var DeptTmp = DEPTPATH;
+	var DeptTmps = Deptcds;
+	
+	if (Grpcd.indexOf('Y')>-1 || Grpcd.indexOf('H')>-1){
+		DeptTmp = '';
+		opt = '';
+		DeptTmps = '';
+		suserid = '';
+	}
+	
+	dsSchResult.on('beforeload', function(){
+		dsSchResult.baseParams = {
+			job:'getList',
+			//stateCd:stateCd,
+			Deptcd:DeptTmp,
+			Deptcds:DeptTmps,
+			suserid : suserid,
+			opt:opt,
+			stateCd : key
+		};
+	});
+	dsSchResult.load({
+		params:{
+			start:0, limit:pageSize
+		}
+	});
+}
+$(window).resize(function() {
+	var wheight = window.innerHeight;
+	progressGrid.setHeight(wheight-250);
+	progressGrid.setWidth("100%");
+})

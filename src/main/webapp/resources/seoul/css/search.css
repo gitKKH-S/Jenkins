@@ -1,0 +1,134 @@
+.subTabW.set7 ul li{
+    /* width: 12.5%; */
+    width: 16.8%;
+}
+.categoryW.none{
+    display: none;
+}
+.subCC.no_category{
+    margin-left: 0;
+}
+.subSSTitle{
+	font-size:16px;
+	color:#000;
+	margin:0 0 10px 0;
+	font-weight:600;
+}
+.textBox{
+	border:1px solid #ddd;
+	padding:10px 15px;
+	line-height:18px;
+}
+.textBox.scroll{
+	height:140px;
+	overflow-y:auto;
+}
+.srchResultW{
+	border:2px solid #005681;
+	padding:15px 10px;
+	background-color: white;
+}
+.srchResultW.noPadding{
+    padding: 0;
+}
+.srchResultW.scroll{
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+/**/
+.preViewList{
+	margin:7px 0 0 0;
+}
+.btnInTable{
+	height:25px;
+	line-height:25px;
+	border-radius:5px;
+	vertical-align:middle;
+	background:#6c7c88;
+	color:#fff;
+	font-size:11px;
+	display:inline-block;
+	padding:0 10px;
+}
+.preViewList li{
+	font-size:14px;
+	background:#f6f6f6;
+	border:1px solid #eee;
+	margin:0 0 2px 0;
+	padding:3px 10px;
+	overflow: hidden;
+	line-height: 30px;
+}
+.preViewList li .btnInTable{
+	float: right;
+	margin:2px 0 0 0;
+	display: block;
+}
+.preViewOpen{
+	border-top:1px dashed #ddd;
+	margin-top: 5px;
+	padding:5px;
+	font-size:13px;
+}
+
+.iconStyle{
+	display:inline-block;
+	vertical-align:middle;
+	width:20px;
+	height:23px;
+	text-indent:-9999px;
+}
+.iconStyle.hwp{
+	background:url('../../images/file/hwp.gif') no-repeat;
+}
+.iconStyle.hwpx{
+	background:url('../../images/file/hwp.gif') no-repeat;
+}
+.iconStyle.doc{
+	background:url('../../images/file/doc.gif') no-repeat;
+}
+.iconStyle.docx{
+	background:url('../../images/file/docx.gif') no-repeat;
+}
+.iconStyle.ppt{
+	background:url('../../images/file/ppt.gif') no-repeat;
+}
+.iconStyle.pptx{
+	background:url('../../images/file/pptx.gif') no-repeat;
+}
+.iconStyle.xls{
+	background:url('../../images/file/xls.gif') no-repeat;
+}
+.iconStyle.xlsx{
+	background:url('../../images/file/xlsx.gif') no-repeat;
+}
+.iconStyle.zip{
+	background:url('../../images/file/zip.gif') no-repeat;
+}
+.iconStyle.exe{
+	background:url('../../images/file/exe.gif') no-repeat;
+}
+.iconStyle.jpg{
+	background:url('../../images/file/jpg.gif') no-repeat;
+}
+.iconStyle.file{
+	background:url('../../images/file/file.gif') no-repeat;
+}
+.iconStyle.pdf{
+	background:url('../../images/file/pdf.gif') no-repeat;
+}
+
+.schblue{
+	color:#005681;
+}
+.schred{
+	color:#c90000;
+	padding-right:1px;
+}
+
+.fileSubTitle {
+	margin-top:-10px;
+	font-size:14px;
+	color:gray;
+}

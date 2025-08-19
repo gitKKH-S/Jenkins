@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "/WEB-INF/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="logSql">
+	<insert id="setLog" parameterType="HashMap" >
+		<selectKey keyProperty="LOG_MNG_NO" resultType="int" order="BEFORE">
+			SELECT LOGID.NEXTVAL FROM DUAL 
+		</selectKey>
+		INSERT INTO TB_COM_SYS_LOG
+		VALUES (#{LOG_MNG_NO}, sysdate, #{LOG_SE}, #{ACSR_NM}, #{ACSR_NO}, #{ACSR_DEPT_NO}, #{ACSR_DEPT_NM}, #{ACSR_IP_ADDR}, #{LOG_CRT_URL_ADDR}, #{TRSM_ARTCL_CN}, #{RMRK_CN})
+	</insert>
+	
+	<select id="selectLogList" resultType="HashMap">
+		SELECT B.*
+		FROM (
+		    SELECT A.*,
+		           CEIL(ROWNUM/#{pagesize}) PAGE
+		    FROM (
+				select LOG_MNG_NO, TO_CHAR(LOG_CRT_DT, 'YYYY/MM/DD AM HH:MI:SS', 'NLS_DATE_LANGUAGE = KOREAN') as LOG_CRT_DT,LOG_SE,ACSR_NM,ACSR_NO,ACSR_DEPT_NO,ACSR_DEPT_NM,ACSR_IP_ADDR,LOG_CRT_URL_ADDR,TRSM_ARTCL_CN,RMRK_CN 
+				from TB_COM_SYS_LOG
+				<trim prefix="WHERE" prefixOverrides="AND |OR ">
+					<if test="mgbn != 'ALL'">
+						LOG_SE = #{mgbn}
+					</if>
+					<if test="Schtxt != null and Schtxt != ''">
+					and (
+						<if test='stitle == "Y"'>
+							ACSR_NM LIKE '%'||#{Schtxt}||'%' or ACSR_DEPT_NM LIKE '%'||#{Schtxt}||'%' 
+						</if>
+					)
+					</if>
+				</trim>
+				order by TO_NUMBER(LOG_MNG_NO) desc
+		    ) A
+		) B
+		<trim prefix="WHERE" prefixOverrides="AND |OR ">
+        	page = #{pageno}
+		</trim>
+	</select>
+	
+	<select id="selectLogTotal" resultType="int">
+		select count(LOG_MNG_NO)
+		from TB_COM_SYS_LOG
+		<trim prefix="WHERE" prefixOverrides="AND |OR ">
+			<if test="mgbn != 'ALL'">
+				LOG_SE = #{mgbn}
+			</if>
+			<if test="Schtxt != null and Schtxt != ''">
+			and (
+				<if test='stitle == "Y"'>
+					ACSR_NM LIKE '%'||#{Schtxt}||'%' or ACSR_DEPT_NM LIKE '%'||#{Schtxt}||'%' 
+				</if>
+			)
+			</if>
+		</trim>
+	</select>
+</mapper>

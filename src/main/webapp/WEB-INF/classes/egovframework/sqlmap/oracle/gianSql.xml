@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "/WEB-INF/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="gianSql">
+	<delete id="gianAllDelete">
+		delete from TB_LM_GIAN WHERE DOCID=#{DOCID} and DOCGBN=#{DOCGBN} 
+		<if test="DOCSUBID != null and DOCSUBID != ''">
+			and DOCSUBID=#{DOCSUBID} 
+		</if>
+		AND GIANSTATE IS NULL
+	</delete>
+	<insert id="gianAllInsert">
+		<selectKey keyProperty="GIANID" resultType="String" order="BEFORE">
+			SELECT KEYID.NEXTVAL FROM DUAL
+		</selectKey>
+		INSERT INTO TB_LM_GIAN ( GIANID,PGIANID,DOCGBN,DOCID,DOCSUBID,STATEID,NEXTSTATEID,NSTATECD,OKSTATECD,NOSTATECD,GIANSTATE,GIANINFO,GIANKEY,UPDT,ENDDT) 
+		VALUES ( #{GIANID},
+		<choose>
+		    <when test="PGIANID == null or PGIANID == ''">
+		        #{GIANID},
+		    </when>
+		    <otherwise>
+		        #{PGIANID},
+		    </otherwise>
+		</choose>
+		 #{DOCGBN},
+		 #{DOCID},
+		 #{DOCSUBID},
+		 <choose>
+		    <when test="DOCGBN == 'BYLAW'">
+		        #{STATECD},
+		 		(select refstateid2 from TB_LM_BASTATE where stateid=#{STATECD} and bacd=#{bacd}),
+		    </when>
+		    <otherwise>
+		        #{STATECD},
+		 		'',
+		    </otherwise>
+		</choose>
+		 #{NSTATECD},
+		 <choose>
+		    <when test="DOCGBN == 'BYLAW'">
+		 		(select refstateid2 from TB_LM_BASTATE where stateid=#{STATECD} and bacd=#{bacd}),
+		    </when>
+		    <otherwise>
+		        #{OKSTATECD},
+		    </otherwise>
+		</choose>
+		 #{NOSTATECD},
+		 #{GIANSTATE},
+		 #{GIANINFO},
+		 #{GIANKEY},
+		 #{UPDT},
+		 #{ENDDT} )
+	</insert>
+	
+	<update id="gianAllUpdate">
+		update TB_LM_GIAN set
+		gianstate=#{GIANSTATE} ,
+		gianinfo = #{GIANINFO} ,
+		giankey = #{GIANKEY} ,
+		updt = to_char(sysdate, 'YYYY-MM-DD'),
+		enddt = to_char(sysdate, 'YYYY-MM-DD')
+		where pgianid=#{GIANID}
+	</update>
+	
+	<select id="gianAllList" resultType="HashMap">
+		select 
+			GIANID,
+			PGIANID,
+			DOCGBN,
+			DOCID,
+			DOCSUBID,
+			STATEID,
+			NEXTSTATEID,
+			GIANSTATE,
+			NSTATECD,
+			OKSTATECD,
+			NOSTATECD,
+			GIANINFO,
+			GIANKEY,
+			UPDT,
+			ENDDT 
+		from TB_LM_GIAN a where PGIANID = #{GIANID}
+	</select>
+	
+	<select id="gianAllList2" resultType="HashMap">
+		select a.* , (select startdt from tb_lm_rulehistory where bookid = a.bookid) as STARTDT,
+			(select refstateid2 from  TB_LM_BASTATE where refstateid=a.stateid) as nextid,
+			(select d.stateid from tb_lm_statehistory c,tb_lm_state d
+				where c.stateid=d.stateid and statehistoryid = (select MAX(statehistoryid) from TB_LM_statehistory where BOOKID =a.bookid and  a.stateid>STATEID)
+			) as preid
+		from TB_LM_GIAN a where PGIANID = #{GIANID}
+	</select>
+</mapper>

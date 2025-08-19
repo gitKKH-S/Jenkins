@@ -1,0 +1,488 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "/WEB-INF/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="commonSql">
+	<select id="dllReqSelect" resultType="mtenMap">
+        ${query}
+    </select>
+    
+   	<sql id="orderbysql">
+		${orderby}
+	</sql>
+
+    <select id="getSeq" resultType="String" useCache="false" flushCache="true">
+        SELECT KEYID.NEXTVAL FROM DUAL
+    </select>
+    
+    <select id="getWebMenu" resultType="HashMap">
+    	SELECT T.*,LEVEL AS LVL, CONNECT_BY_ROOT T.MENU_MNG_NO AS TOPMENUID 
+    	FROM TB_COM_MENU T WHERE USE_YN='Y' AND MENU_RLS_YN='Y'
+    	<if test='RLS_SCP_NM=="Y"'> 
+    	AND RLS_SCP_NM IN ('Y','P')
+    	</if>
+    	<if test='RLS_SCP_NM=="N"'>
+    	AND RLS_SCP_NM IN ('P')
+    	</if>
+		START WITH 
+		UP_MENU_MNG_NO = 0
+		CONNECT BY PRIOR MENU_MNG_NO = UP_MENU_MNG_NO
+		ORDER SIBLINGS BY MENU_SORT_SEQ
+    </select>
+    
+    <insert id="schlogInsert" parameterType="mtenMap">
+		<selectKey keyProperty="LOG_MNG_NO" resultType="int" order="BEFORE">
+			SELECT KEYID.NEXTVAL FROM DUAL
+		</selectKey>
+		INSERT INTO TB_COM_SCH_LOG (LOG_MNG_NO, LOG_CRT_DT, LOG_CN, LOG_RSLT_NM)
+		VALUES (
+			#{LOG_MNG_NO},SYSDATE,#{LOG_CN},#{LOG_RSLT_NM}
+		)
+	</insert>
+	
+	<select id="getPageNavi" resultType="HashMap">
+		SELECT MENU_MNG_NO,UP_MENU_MNG_NO,FLDR_SE,URL_INFO_CN,'HOME' || LPAD('',(LEVEL-1)*2,'')||SYS_CONNECT_BY_PATH(REPLACE(MENU_TTL,' > ',''),' > ')AS PATH   
+		FROM TB_COM_MENU
+		<if test='MENU_MNG_NO == "10000225"'>
+		WHERE ROWNUM=1
+		  AND URL_INFO_CN IS NOT NULL
+		  AND UP_MENU_MNG_NO != '0'
+		</if>
+		<if test='MENU_MNG_NO != "10000225"'>
+		WHERE ROWNUM=1
+		  AND FLDR_SE='DOC' 
+		</if>
+		START WITH MENU_MNG_NO = #{MENU_MNG_NO}
+		CONNECT BY PRIOR MENU_MNG_NO = UP_MENU_MNG_NO
+		ORDER SIBLINGS BY MENU_SORT_SEQ
+	</select>
+	
+	<select id="getSubTitle" resultType="HashMap">
+		select MENU_MNG_NO, UP_MENU_MNG_NO, MENU_TTL, USE_YN, MENU_SE_NM, URL_INFO_CN,MENU_SORT_SEQ, FLDR_SE, MENU_RLS_YN, MDFCN_PSBLTY_YN, UP_MENU_YN, RLS_SCP_NM from TB_COM_MENU where MENU_MNG_NO = #{MENU_MNG_NO}
+	</select>
+	
+	<select id="getRoleChk" resultType="int">
+		select count(ROLEID) from TB_LM_ROLE where DOCID = #{docid} and docgbn=#{rolegbn} AND (ROLEWRITERID=#{writerid} or ROLEDEPTID=#{sdeptid})
+	</select>
+	
+	<select id="getSts1" resultType="HashMap">
+		select sum(decode(statecd,'5000',cnt)) as BSTATE5000,sum(decode(statecd,'5000',0,cnt)) as BSTATE0000 from (
+			select distinct(count(*) over (partition by statecd)) as cnt,statecd from tb_lm_rulehistory where statecd not in ('6000','7000')
+		) t
+	</select>
+	
+	<select id="getSts2" resultType="HashMap">
+		<![CDATA[
+		select sum(decode(statcd,'완료',cnt)) as CSTATE5000,sum(decode(statcd,'완료',0,cnt)) as CSTATE0000 from (
+			select distinct(count(*) over(partition by statcd)) as cnt , statcd from tb_su_consult
+		) t
+        ]]>
+	</select>
+	
+	<select id="getSts3" resultType="HashMap">
+		<![CDATA[
+		select sum(decode(statecd,'완료',cnt)) as AGREE5000,sum(decode(statecd,'완료',0,cnt)) as AGREE0000 from (
+			select distinct(count(*) over(partition by statecd)) as cnt , statecd from tb_su_agree
+		) t
+        ]]>
+	</select>
+	
+	<select id="getSts4" resultType="HashMap">
+		<![CDATA[
+		select 
+			NVL(SUM(NVL(decode(bookcd,'조례',cnt),0)),0) as SBSTATE1
+			,NVL(SUM(NVL(decode(bookcd,'규정',cnt),0)),0) as SBSTATE2
+			,NVL(SUM(NVL(decode(bookcd,'규칙',cnt),0)),0) as SBSTATE3 
+			,NVL(SUM(NVL(decode(bookcd,'시행세칙',cnt),0)),0) as SBSTATE4 
+			,NVL(SUM(NVL(decode(bookcd,'예규',cnt),0)),0) as SBSTATE5
+			,NVL(SUM(NVL(decode(bookcd,'의회훈령',cnt),0)),0) as SBSTATE6
+			,NVL(SUM(NVL(decode(bookcd,'훈령',cnt),0)),0) as SBSTATE7
+		from (
+			select distinct(count(*) over (partition by bookcd)) as cnt,bookcd from tb_lm_rulehistory where statecd not in ('5000','6000','7000')
+		) t
+        ]]>
+	</select>
+	
+	<select id="getMenuDocList" resultType="HashMap">
+		SELECT
+			FILE_MNG_NO,
+			MENU_MNG_NO,
+			DOC_NM,
+			DOC_EXPLN_CN,
+			PHYS_FILE_NM,
+			SRVR_FILE_NM
+		FROM
+			TB_COM_DOC_FORM
+		where
+			MENU_MNG_NO = #{MENU_MNG_NO}
+	</select>
+	
+	<insert id="insertDoctype">
+		INSERT INTO
+			TB_COM_DOC_FORM (FILE_MNG_NO,MENU_MNG_NO,DOC_NM,DOC_EXPLN_CN,PHYS_FILE_NM,SRVR_FILE_NM,DOC_SE)
+		VALUES
+			(#{FILE_MNG_NO},#{MENU_MNG_NO},#{DOC_NM},#{DOC_EXPLN_CN},#{PHYS_FILE_NM},#{SRVR_FILE_NM},#{DOC_SE})
+	</insert>
+	
+	<delete id="deleteDoctype">
+		delete from TB_COM_DOC_FORM WHERE FILE_MNG_NO=#{FILE_MNG_NO}
+	</delete>
+	
+	<select id="getDocFnm" resultType="String">
+		SELECT
+			SRVR_FILE_NM
+		FROM
+			TB_COM_DOC_FORM
+		where
+			DOC_SE = #{DOC_SE}
+	</select>
+	
+	<insert id="setSMS">
+		insert into sms_msg(subject,phone,callback,status,rslt,msg,type,reqdate,etc1,etc2,etc3,etc4,etc5,etc6)
+		values
+		('제목','01059100717','01059100717','0','00','내용','1',getdate(),'10001104','0','9999999','0','',convert(varchar(20),getdate(),120))
+		<!-- http://localhost:9500/goyang/web/testSmS.do -->
+	</insert>
+	
+	<select id="schRank" resultType="HashMap">
+		<![CDATA[
+		SELECT KEYWORD,
+		       RANKING,
+		       CNT,
+		       STATE,
+		       STATE_CNT,
+		       CDATE
+		FROM (
+		    SELECT *
+		    FROM WEEK_POP
+		    WHERE TO_CHAR(CDATE, 'YYYYMMDD') >= TO_CHAR(SYSDATE - 7, 'YYYYMMDD')
+		    ORDER BY CNT DESC
+		)
+		WHERE ROWNUM <= 10
+		]]>
+	</select>
+	
+	<select id="getDeptNode" resultType="HashMap">
+		<![CDATA[
+		SELECT DEPT_NO as "id"
+				, UP_DEPT_NO
+				, SORT_SEQ
+				, DEPT_NM as "text"
+		FROM TB_COM_ORGCHT
+		where up_dept_no = #{node} and USE_YN='Y'
+		order by dept_no
+		]]>
+	</select>
+	
+	<select id="getUserList" resultType="HashMap">
+		<![CDATA[
+		SELECT EMP_NO, EMP_NM,UP_DEPT_NM || ' ' || DEPT_NM as DEPT_NM,JBGD_NM,DEPT_NM as GDEPT ,A.DEPT_NO as GDEPTID
+		FROM TB_COM_HRIS A ,TB_COM_ORGCHT B WHERE A.DEPT_NO=B.DEPT_NO
+		and (EMP_NM like '%'||#{schTxt}||'%' or a.DEPT_NO = #{schTxt}) and HDOF_YN='Y'
+		order by EMP_NM
+		]]>
+	</select>
+	
+	<select id="getTotalTaskCnt" resultType="int">
+		SELECT COUNT(*)
+		FROM TB_COM_TASK
+		WHERE EMP_NO = #{EMP_NO}
+		  AND PRCS_YN = 'N'
+	</select>
+	
+	<select id="getTaskCnt" resultType="int">
+		SELECT COUNT(*)
+		FROM TB_COM_TASK
+		WHERE EMP_NO = #{EMP_NO}
+		  AND TASK_SE = #{TASK_SE}
+		  AND DOC_MNG_NO = #{DOC_MNG_NO}
+		  AND PRCS_YN = 'N'
+	</select>
+	
+	<insert id="insertTask" parameterType="HashMap">
+		/* commonSql.insertTask */
+		INSERT INTO TB_COM_TASK (
+		    EMP_NO
+		  , TASK_SE
+		  , DOC_MNG_NO
+		  , OCRN_YMD
+		  , PRCS_YN
+		) VALUES (
+		    #{EMP_NO}
+		  , #{TASK_SE}
+		  , #{DOC_MNG_NO}
+		  , to_char(sysdate,'YYYYMMDD')
+		  , #{PRCS_YN}
+		)
+	</insert>
+	
+	<update id="updateTask" parameterType="HashMap">
+		/* commonSql.insertTask */
+		UPDATE TB_COM_TASK
+		SET PRCS_YN = #{PRCS_YN}
+		WHERE TASK_SE = #{TASK_SE}
+		  AND DOC_MNG_NO = #{DOC_MNG_NO}
+		<if test="EMP_NO != null and EMP_NO != ''">
+		  AND EMP_NO = #{EMP_NO}
+		</if>
+	</update>
+	
+	<delete id="setTaskAllDel">
+		DELETE FROM TB_COM_TASK
+		WHERE TASK_SE = #{TASK_SE}
+		  AND DOC_MNG_NO = #{DOC_MNG_NO}
+	</delete>
+	
+	
+	
+	
+	<select id="suitWorkList" resultType="HashMap">
+		/* commonSql.suitWorkList */
+		SELECT 'SUIT' AS TASK_GBN
+		     , CASE WHEN A.TASK_SE = 'S1' THEN '외부변호사 비용 미지급'
+		            WHEN A.TASK_SE = 'S2' THEN '담당지정 미열람'
+		            WHEN A.TASK_SE = 'S3' THEN '검토의견 미열람'
+		            WHEN A.TASK_SE = 'S4' THEN '만족도 조사 필요'
+		            ELSE '기타'
+		       END TASK_SE_NM
+		     , B.LWS_MNG_NO AS DOC_PK1
+		     , C.INST_MNG_NO  AS DOC_PK2
+		     , B.LWS_NO || ' ' || B.LWS_INCDNT_NM || ' ' || REPLACE(C.INCDNT_NO, '@', '') AS DOC_NM
+		FROM TB_COM_TASK A
+		   , TB_LWS_MNG B
+		   , TB_LWS_INST C
+		WHERE A.EMP_NO = #{WRTR_EMP_NO}
+		  AND A.DOC_MNG_NO = C.INST_MNG_NO
+		  AND B.LWS_MNG_NO = C.LWS_MNG_NO
+		  AND A.TASK_SE LIKE 'S%'
+		  AND A.PRCS_YN = 'N'
+	</select>
+	
+	<select id="suitWorkListCnt" resultType="int">
+		/* commonSql.suitWorkListCnt */
+		SELECT COUNT(*)
+		FROM (
+		    SELECT 'SUIT' AS TASK_GBN
+		         , CASE WHEN A.TASK_SE = 'S1' THEN '외부변호사 비용 미지급'
+		                WHEN A.TASK_SE = 'S2' THEN '담당지정 미열람'
+		                WHEN A.TASK_SE = 'S3' THEN '검토의견 미열람'
+		                WHEN A.TASK_SE = 'S4' THEN '만족도 조사 필요'
+		                ELSE '기타'
+		           END TASK_SE_NM
+		         , B.LWS_MNG_NO AS DOC_PK1
+		         , C.INST_MNG_NO  AS DOC_PK2
+		         , B.LWS_NO || ' ' || B.LWS_INCDNT_NM || ' ' || REPLACE(C.INCDNT_NO, '@', '') AS DOC_NM
+		    FROM TB_COM_TASK A
+		       , TB_LWS_MNG B
+		       , TB_LWS_INST C
+		    WHERE A.EMP_NO = #{WRTR_EMP_NO}
+		      AND A.DOC_MNG_NO = C.INST_MNG_NO
+		      AND B.LWS_MNG_NO = C.LWS_MNG_NO
+		      AND A.TASK_SE LIKE 'S%'
+		      AND A.PRCS_YN = 'N'
+		)
+	</select>
+	
+	<select id="consultWorkList" resultType="HashMap">
+		/* commonSql.consultWorkList */
+		SELECT 'CONSULT' AS TASK_GBN
+		     , CASE WHEN A.TASK_SE = 'C1' THEN '담당자 지정'
+		            WHEN A.TASK_SE = 'C3' THEN '고문변호사 위임 거부'
+		            WHEN A.TASK_SE = 'C4' THEN '고문변호사 위임 승인'
+		            WHEN A.TASK_SE = 'C5' THEN '외부소통창구 의견 등록'
+		            WHEN A.TASK_SE = 'C6' THEN '외부 자문 답변 등록'
+		            WHEN A.TASK_SE = 'C7' THEN '만족도 조사 필요'
+		            ELSE '기타'
+		       END TASK_SE_NM
+		     , B.CNSTN_MNG_NO AS DOC_PK1
+		     , B.CNSTN_MNG_NO AS DOC_PK2
+		     , B.CNSTN_DOC_NO || ' ' || B.CNSTN_TTL AS DOC_NM
+		FROM TB_COM_TASK A
+		   , TB_CNSTN_MNG B
+		WHERE A.EMP_NO = #{WRTR_EMP_NO} 
+		  AND A.DOC_MNG_NO = B.CNSTN_MNG_NO
+		  AND A.TASK_SE LIKE 'C%'
+		  AND A.PRCS_YN = 'N'
+	</select>
+	
+	<select id="consultWorkListCnt" resultType="int">
+		/* commonSql.consultWorkList */
+		SELECT COUNT(*)
+		FROM (
+		    SELECT 'CONSULT' AS TASK_GBN
+		         , CASE WHEN A.TASK_SE = 'C1' THEN '담당자 지정'
+		                WHEN A.TASK_SE = 'C3' THEN '고문변호사 위임 거부'
+		                WHEN A.TASK_SE = 'C4' THEN '고문변호사 위임 승인'
+		                WHEN A.TASK_SE = 'C5' THEN '외부소통창구 의견 등록'
+		                WHEN A.TASK_SE = 'C6' THEN '외부 자문 답변 등록'
+		                WHEN A.TASK_SE = 'C7' THEN '만족도 조사 필요'
+		                ELSE '기타'
+		           END TASK_SE_NM
+		         , B.CNSTN_MNG_NO AS DOC_PK1
+		         , B.CNSTN_MNG_NO AS DOC_PK2
+		         , B.CNSTN_DOC_NO || ' ' || B.CNSTN_TTL AS DOC_NM
+		    FROM TB_COM_TASK A
+		       , TB_CNSTN_MNG B
+		    WHERE A.EMP_NO = #{WRTR_EMP_NO} 
+		      AND A.DOC_MNG_NO = B.CNSTN_MNG_NO
+		      AND A.TASK_SE LIKE 'C%'
+		      AND A.PRCS_YN = 'N'
+		)
+	</select>
+	
+	<select id="agreeWorkList" resultType="HashMap">
+		/* commonSql.agreeWorkList */
+		SELECT 'AGREE' AS TASK_GBN
+		     , CASE WHEN A.TASK_SE = 'A1' THEN '담당자 지정'
+		            WHEN A.TASK_SE = 'A3' THEN '고문변호사 위임 거부'
+		            WHEN A.TASK_SE = 'A4' THEN '고문변호사 위임 승인'
+		            WHEN A.TASK_SE = 'A5' THEN '외부소통창구 의견 등록'
+		            WHEN A.TASK_SE = 'A6' THEN '외부 협약 답변 등록'
+		            WHEN A.TASK_SE = 'A7' THEN '만족도 조사 필요'
+		            ELSE '기타'
+		       END TASK_SE_NM
+		     , B.CVTN_MNG_NO AS DOC_PK1
+		     , B.CVTN_MNG_NO AS DOC_PK2
+		     , B.CVTN_DOC_NO || ' ' || B.CVTN_TTL AS DOC_NM
+		FROM TB_COM_TASK A
+		   , TB_CVTN_MNG B
+		WHERE A.EMP_NO = #{WRTR_EMP_NO}
+		  AND A.DOC_MNG_NO = B.CVTN_MNG_NO
+		  AND A.TASK_SE LIKE 'A%'
+		  AND A.PRCS_YN = 'N'
+	</select>
+	
+	<select id="agreeWorkListCnt" resultType="int">
+		/* commonSql.agreeWorkListCnt */
+		SELECT COUNT(*)
+		FROM (
+		    SELECT 'AGREE' AS TASK_GBN
+		         , CASE WHEN A.TASK_SE = 'A1' THEN '담당자 지정'
+		                WHEN A.TASK_SE = 'A3' THEN '고문변호사 위임 거부'
+		                WHEN A.TASK_SE = 'A4' THEN '고문변호사 위임 승인'
+		                WHEN A.TASK_SE = 'A5' THEN '외부소통창구 의견 등록'
+		                WHEN A.TASK_SE = 'A6' THEN '외부 협약 답변 등록'
+		                WHEN A.TASK_SE = 'A7' THEN '만족도 조사 필요'
+		                ELSE '기타'
+		           END TASK_SE_NM
+		         , B.CVTN_MNG_NO AS DOC_PK1
+		         , B.CVTN_MNG_NO AS DOC_PK2
+		         , B.CVTN_DOC_NO || ' ' || B.CVTN_TTL AS DOC_NM
+		    FROM TB_COM_TASK A
+		       , TB_CVTN_MNG B
+		    WHERE A.EMP_NO = #{WRTR_EMP_NO}
+		      AND A.DOC_MNG_NO = B.CVTN_MNG_NO
+		      AND A.TASK_SE LIKE 'A%'
+		      AND A.PRCS_YN = 'N'
+		)
+	</select>
+	
+	<select id="pWorkList" resultType="HashMap">
+		SELECT 'SUIT' AS TASK_GBN, '나의 업무' AS TASK_SE_NM, A.LWS_MNG_NO AS DOC_PK1, B.INST_MNG_NO AS DOC_PK2, '['||A.LWS_NO||'] '|| A.LWS_INCDNT_NM || ' ' || REPLACE(B.INCDNT_NO, '@', '') AS DOC_NM
+		FROM TB_LWS_MNG A, TB_LWS_INST B
+		WHERE A.SPRVSN_EMP_NO = #{WRTR_EMP_NO}
+		  AND A.LWS_MNG_NO = B.LWS_MNG_NO
+		  AND A.LAST_INST_CD = B.INST_CD
+		  AND B.JDGM_UP_TYPE_CD IS NULL
+		UNION ALL
+		SELECT 'SCONSULT' AS TASK_GBN
+		     , '미접수 제소소송' AS TASK_SE_NM
+		     , LWS_RQST_MNG_NO AS DOC_PK1
+		     , LWS_RQST_MNG_NO AS DOC_PK2
+		     , LWS_INCDNT_NM || ' ' || LWS_RQST_DEPT_NM AS DOC_NM
+		FROM TB_LWS_RQST
+		WHERE PRGRS_STTS_NM NOT IN ('접수', '반려')
+		  AND LWS_RQST_EMP_NO = #{WRTR_EMP_NO}
+		UNION ALL
+		SELECT 'CONSULT' AS TASK_GBN, '나의 업무' AS TASK_SE_NM, CNSTN_MNG_NO AS DOC_PK1 , CNSTN_MNG_NO AS DOC_PK2, CNSTN_DOC_NO || ' ' || CNSTN_TTL AS DOC_NM
+		FROM TB_CNSTN_MNG
+		WHERE CNSTN_RQST_EMP_NO = #{WRTR_EMP_NO}
+		  AND PRGRS_STTS_SE_NM NOT IN ('종료', '완료')
+		UNION ALL
+		SELECT 'AGREE' AS TASK_GBN, '나의 업무' AS TASK_SE_NM, CVTN_MNG_NO AS DOC_PK1 , CVTN_MNG_NO AS DOC_PK2, CVTN_DOC_NO || ' ' || CVTN_TTL AS DOC_NM
+		FROM TB_CVTN_MNG
+		WHERE CVTN_RQST_EMP_NO = #{WRTR_EMP_NO}
+		  AND PRGRS_STTS_SE_NM NOT IN ('종료', '완료')
+	</select>
+	
+	<select id="pWorkListCnt" resultType="int">
+		SELECT COUNT(*)
+		FROM (
+		    SELECT 'SUIT' AS TASK_GBN, '나의 업무' AS TASK_SE_NM, A.LWS_MNG_NO AS DOC_PK1, B.INST_MNG_NO AS DOC_PK2, '['||A.LWS_NO||'] '|| A.LWS_INCDNT_NM || ' ' || REPLACE(B.INCDNT_NO, '@', '') AS DOC_NM
+		    FROM TB_LWS_MNG A, TB_LWS_INST B
+		    WHERE A.SPRVSN_EMP_NO = #{WRTR_EMP_NO}
+		      AND A.LWS_MNG_NO = B.LWS_MNG_NO
+		      AND A.LAST_INST_CD = B.INST_CD
+		      AND B.JDGM_UP_TYPE_CD IS NULL
+		    UNION ALL
+		    SELECT 'SCONSULT' AS TASK_GBN
+		         , '미접수 제소소송' AS TASK_SE_NM
+		         , LWS_RQST_MNG_NO AS DOC_PK1
+		         , LWS_RQST_MNG_NO AS DOC_PK2
+		         , LWS_INCDNT_NM || ' ' || LWS_RQST_DEPT_NM AS DOC_NM
+		    FROM TB_LWS_RQST
+		    WHERE PRGRS_STTS_NM NOT IN ('접수', '반려')
+		      AND LWS_RQST_EMP_NO = #{WRTR_EMP_NO}
+		    UNION ALL
+		    SELECT 'CONSULT' AS TASK_GBN, '나의 업무' AS TASK_SE_NM, CNSTN_MNG_NO AS DOC_PK1 , CNSTN_MNG_NO AS DOC_PK2, CNSTN_DOC_NO || ' ' || CNSTN_TTL AS DOC_NM
+		    FROM TB_CNSTN_MNG
+		    WHERE CNSTN_RQST_EMP_NO = #{WRTR_EMP_NO}
+		      AND PRGRS_STTS_SE_NM NOT IN ('종료', '완료')
+		    UNION ALL
+		    SELECT 'AGREE' AS TASK_GBN, '나의 업무' AS TASK_SE_NM, CVTN_MNG_NO AS DOC_PK1 , CVTN_MNG_NO AS DOC_PK2, CVTN_DOC_NO || ' ' || CVTN_TTL AS DOC_NM
+		    FROM TB_CVTN_MNG
+		    WHERE CVTN_RQST_EMP_NO = #{WRTR_EMP_NO}
+		      AND PRGRS_STTS_SE_NM NOT IN ('종료', '완료')
+		)
+	</select>
+	
+	<select id="sConsultWorkList" resultType="HashMap">
+		/* commonSql.sConsultWorkList */
+		SELECT 'SCONSULT' AS TASK_GBN
+		     , '미접수 제소소송' AS TASK_SE_NM
+		     , LWS_RQST_MNG_NO AS DOC_PK1
+		     , LWS_RQST_MNG_NO AS DOC_PK2
+		     , LWS_INCDNT_NM || ' ' || LWS_RQST_DEPT_NM AS DOC_NM
+		FROM TB_LWS_RQST
+		WHERE PRGRS_STTS_NM NOT IN ('접수', '반려')
+	</select>
+	
+	<select id="sConsultWorkListCnt" resultType="int">
+		/* commonSql.sConsultWorkListCnt */
+		SELECT COUNT(*)
+		FROM (
+		    SELECT 'SCONSULT' AS TASK_GBN
+		         , '미접수 제소소송' AS TASK_SE_NM
+		         , LWS_RQST_MNG_NO AS DOC_PK1
+		         , LWS_RQST_MNG_NO AS DOC_PK2
+		         , LWS_INCDNT_NM || ' ' || LWS_RQST_DEPT_NM AS DOC_NM
+		    FROM TB_LWS_RQST
+		    WHERE PRGRS_STTS_NM NOT IN ('접수', '반려')
+		)
+	</select>
+	
+	
+	
+	
+	
+	<insert id="insertNotiLog" parameterType="HashMap">
+		<selectKey keyProperty="NOTI_LOG_MNG_NO" resultType="int" order="BEFORE">
+			SELECT KEYID.NEXTVAL FROM DUAL
+		</selectKey>
+		INSERT INTO TB_COM_NOTI_LOG (
+		    NOTI_LOG_MNG_NO     /* 알림로그관리번호 */
+		  , NOTI_RCPTN_EMP_NO   /* 알림수신직원번호 */
+		  , NOTI_RCPTN_TELNO    /* 알림수신전화번호 */
+		  , NOTI_TTL            /* 알림제목 */
+		  , NOTI_CN             /* 알림내용 */
+		  , NOTI_TRSM_YMD       /* 알림전송일자 */
+		  , NOTI_TRSM_RSLT_CN   /* 알림전송결과내용 */
+		) VALUES ( 
+		    #{NOTI_LOG_MNG_NO}
+		  , #{NOTI_RCPTN_EMP_NO}
+		  , #{NOTI_RCPTN_TELNO}
+		  , #{NOTI_TTL}
+		  , #{NOTI_CN}
+		  , TO_CHAR(SYSDATE, 'YYYYMMDD')
+		  , #{NOTI_TRSM_RSLT_CN}
+		)
+	</insert>
+</mapper>

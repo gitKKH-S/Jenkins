@@ -1,0 +1,115 @@
+@CHARSET "UTF-8";
+
+#container_main {
+	
+}
+
+#container_top {
+	vertical-align: middle;
+}
+
+#container_top H1 {
+	font-size: 16px;
+	margin-top: 10px;
+	padding-left: 20px;
+}
+
+#container_menu {
+	
+}
+
+#div_docTree {
+	background: #efefef;
+	border: #CCC solid 1px;
+}
+
+#div_docHistory {
+	border: #ccc solid 1px;
+}
+
+#container_menu UL {
+	margin: 0px;
+	padding: 0px;
+	margin-left: 15px;
+	list-style-type: none;
+	text-align: left;
+}
+
+#container_menu UL LI {
+	display: inline;
+}
+
+#container_menu LI {
+	padding: 5px;
+	color: #FFF;
+	font-weight: bold;
+}
+
+#container_menu LI A {
+	text-decoration: none;
+	color: #FFF;
+}
+
+#container_menu LI A:hover {
+	text-decoration: underline;
+}
+
+#container_left {
+	
+}
+
+#container_right {
+	
+}
+
+#container_center {
+	
+}
+
+#container_centerFull H2 {
+	font-family: Dotum, Gulim;
+	font-size: 14px;
+	font-weight: bold;
+	margin: 10px;
+	padding-left: 25px;
+	background: url(/lawInfoWeb/images/common/dot_pageTitle.gif) no-repeat
+		left center;
+}
+
+#div_tableHolderFull {
+	margin: 0px;
+	padding: 5px;
+}
+
+#div_pageNaviHolder {
+	text-align: center;
+	margin: 0px;
+	padding: opx;
+}
+
+#div_pageNaviHolder UL LI {
+	display: inline;
+	margin: 0px;
+}
+
+#div_pageNaviHolder LI {
+	padding: 5px;
+}
+
+#container_footer {
+	
+}
+
+#divLoading {
+	font-family: Dotum, Gulim;
+	font-size: 12px;
+	color: #039;
+	text-align: center;
+	width: 200px;
+}
+
+#divLoading P {
+	margin: 0px;
+	margin-top: 5px;
+	padding: 0px;
+}

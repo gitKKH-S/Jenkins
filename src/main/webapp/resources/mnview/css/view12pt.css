@@ -1,0 +1,183 @@
+* {
+	font-size: 17px;
+}
+
+/* appBon */
+.title {
+	font-size: 17pt;
+	font-weight: bold;
+	font-family: "Malgun Gothic", "����", "Gulim", "Arial";
+	color : #000000; 
+	text-align: center;
+	border-bottom: #CCC 1px solid;
+	padding: 5px 0 5px 0;
+	margin: 5px 0 0 0;
+}
+
+.selBox {
+	font-size: 12px;
+	background-color: #efefef;
+	text-align: right;
+	padding: 3px 15px 3px 0;
+}
+
+.pyun {
+	font-size: 18px;
+	font-family: "Malgun Gothic", "����", "Gulim", "Arial";
+	color : #000000; 
+	font-weight: bold;
+	padding: 10px 0 0 0;
+	text-align: center
+}
+
+.jang {
+	font-size: 14px;
+	font-family: "Malgun Gothic", "����", "Gulim", "Arial";
+	color : #000000; 
+	font-weight: bold;
+	padding: 3px 0 3px 0;
+	border-bottom: 1px dotted #CCC;
+	text-align: center
+}
+
+.jeol {
+	font-size: 13px;
+	font-family: "Malgun Gothic", "����", "Gulim", "Arial";
+	color : #000000; 
+	font-weight: bold;
+	padding: 3px 0 3px 0px;
+	text-align: center
+}
+
+.gwan {
+	font-size: 12px;
+	font-family: "Malgun Gothic", "����", "Gulim", "Arial";
+	color : #000000; 
+	font-weight: bold;
+	padding: 3px 0 3px 0px;
+	text-align: center
+}
+
+#jo {
+	font-size: 15px;
+	font-family: "Malgun Gothic", "����", "Gulim", "Arial";
+	color : #000000;
+	margin: 4px 0 8px 55px;
+	line-height: 150%;
+	text-indent: -1.2em;
+}
+
+.jotag {
+	font-size: 15px;
+	font-family: "Malgun Gothic", "����", "Gulim", "Arial";
+	color:blue;
+	margin: 4px 0 8px 55px;
+	line-height: 100%;
+}
+
+.jotag2 {
+	font-size: 15px;
+	font-family: "Malgun Gothic", "����", "Gulim", "Arial";
+	color:blue;
+	margin: 0px 0 0px 10px;
+}
+
+#jo STRONG {
+	font-size: 15px;
+	font-family: "Malgun Gothic", "����", "Gulim", "Arial";
+	color: #06C;
+	font-weight: bold;
+}
+
+.histIcon {
+	float: left;
+	margin: 4px 0 0 3px;
+	border: 0;
+	cursor: pointer;
+}
+
+#ho {
+	font-size: 15px;
+	font-family: "Malgun Gothic", "����", "Gulim", "Arial";
+	color : #000000; 
+	margin: 0 0 3px 30px;
+	text-indent: -1.2em;
+}
+
+#mok {
+	font-size: 15px;
+	font-family: "Malgun Gothic", "����", "Gulim", "Arial";
+	color : #000000; 
+	margin: 0 0 2px 50px;
+	text-indent: -1.2em;
+}
+
+#dan {
+	font-size: 15px;
+	font-family: "Malgun Gothic", "����", "Gulim", "Arial";
+	color : #000000; 
+	margin: 0 0 2px 70px;
+	text-indent: -1.2em;
+}
+
+#hang {
+	font-size: 15px;
+	font-family: "Malgun Gothic", "����", "Gulim", "Arial";
+	color : #000000; 
+	margin: 0 0 2px 0px;
+	text-indent: 0em;
+}
+
+
+.jonumber {
+	font-size: 15px;
+	font-family: "Malgun Gothic", "����", "Gulim", "Arial";
+	font-weight: bold;
+	color: #0066CC;
+}
+
+.jotitle {
+	font-size: 15px;
+	font-family: "Malgun Gothic", "����", "Gulim", "Arial";
+	font-weight: bold;
+	color: #0066CC;
+}
+
+.jocontent {
+	font-size: 15px;
+	font-family: "Malgun Gothic", "����", "Gulim", "Arial";
+	color : #000000; 
+	TEXT-ALIGN: justify;
+}
+
+.buchik_title {
+	font-size: 16px;
+	font-weight: bold;
+	font-family: "Malgun Gothic", "����", "Gulim", "Arial";
+	color : #000000; 
+	padding: 5px 0 3px 0;
+	border-bottom: 1px dotted #CCC;
+}
+
+.mten {
+	text-decoration: underline;
+	color: red;
+}
+
+.lawlk {
+	color: #0e5376;
+	border-bottom: #CCC 1px dotted;
+	text-decoration: none;
+	font-weight: bold;
+}
+
+A {
+	color: #333;
+	text-decoration: none;
+}
+
+.highlite {
+	font-size: 15px;
+	font-weight: bold;
+	color: red;
+}

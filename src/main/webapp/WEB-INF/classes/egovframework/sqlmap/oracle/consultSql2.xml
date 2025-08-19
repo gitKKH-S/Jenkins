@@ -1,0 +1,1061 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "/WEB-INF/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="consultSql">
+	   <!-- 법률자문 목록/총건수 조회 조건 sql 
+	   등록,접수신청,부서승인요청,부서반려,부서승인,법무팀접수,법무팀승인요청,법무팀승인,법무팀장반려,법무팀반려,현업만족도완료,완료
+	   
+	   -->
+	<sql id="selectConsultCond">
+		<if test='grpcd == "P"'>
+			AND ( a.INOUTCD ='내부') 
+			<if test="jikcd != '팀장'">
+			AND ( a.JILMUNSABUN = #{writerid} or a.DEPTSENGINSABUN = #{writerid} or a.DEPTID=#{sdeptid} or a.dept = #{sdeptname}
+				<if test="sdeptname == '경영감사팀'">
+					or a.dept in ('감사1팀','감사2팀')
+				</if>
+				) 
+			</if>
+			<if test="jikcd == '팀장'">
+			AND (A.CONSULTSTATECD NOT IN ('등록','부서반려','법무팀반려') and(  a.JILMUNSABUN = #{writerid} or a.DEPTSENGINSABUN = #{writerid} or a.DEPTID=#{sdeptid} or a.dept = #{sdeptname}))
+			</if>
+		</if>
+		<if test='grpcd == "Y" or grpcd == "J"'>
+			<![CDATA[ and ( a.INOUTCD <> '외부')]]>
+			AND (
+				 (A.CONSULTSTATECD NOT IN ('등록','부서반려','부서승인요청','법무팀반려') OR  a.JILMUNSABUN = #{writerid})
+				 <!-- 업무현황 -->
+				<if test="work != '' and work != null">
+				 AND (A.CONSULTSTATECD NOT IN ('현업만족도완료','완료','법무팀승인') OR  a.JILMUNSABUN = #{writerid})
+				</if>
+				<!-- 업무현황 -->
+				 OR (A.CONSULTSTATECD IN ('부서승인요청') AND a.DEPTSENGINSABUN = #{writerid})
+				)
+		</if>
+		
+		<if test="dept != null and dept != ''">
+			AND (a.DEPT = #{dept} OR a.DEPTSENGINSABUN = #{writerid})
+		</if>
+		<if test="deptsenginsabun != null and deptsenginsabun !=''">
+			AND a.DEPTSENGINSABUN = #{deptsenginsabun} 
+		</if>
+		
+		<if test="inoutcd != null and inoutcd != ''">
+			AND a.INOUTCD = #{inoutcd} 
+		</if>
+		<if test="jilmunname != null and jilmunname != ''">
+			AND a.JILMUNNAME = #{jilmunname} 
+		</if>
+		<if test="consultstatecd != null and consultstatecd != ''">
+			AND a.CONSULTSTATECD = #{consultstatecd} 
+		</if>
+		
+		<if test="schGbn == 0"> <!-- 전체 -->
+		
+		</if>
+		<if test="schGbn == 1"> <!-- 진행중 -->
+			AND A.CONSULTSTATECD NOT IN ('완료','협업만족도완료')
+		</if>
+		<if test="schGbn == 2"> <!-- 나의자문 -->
+			AND a.JILMUNNAME = #{writer}
+		</if>
+		<if test="writedt1 != '' and writedt1 != null">
+			AND <![CDATA[REPLACE(A.BALSINDT,'-','') >= REPLACE(#{writedt1},'-','')]]>
+		</if>
+		<if test="writedt2 != '' and writedt2 != null">
+			AND <![CDATA[REPLACE(A.BALSINDT,'-','') <= REPLACE(#{writedt2},'-','')]]>
+		</if> 
+		<if test="consultstatecd != '' and consultstatecd != null">
+			AND a.CONSULTSTATECD = #{consultstatecd}
+		</if>
+		<if test="dept != '' and dept != null">
+			AND a.DEPT = #{dept}
+		</if>
+		<if test="title != '' and title != null">
+			AND a.TITLE LIKE '%' || #{title} || '%'
+		</if>
+		<if test="schKey !=null and schKey !=''">
+			<if test="schKey == 'title'">
+			AND a.TITLE like '%'||#{schVal}||'%'
+			</if>
+			<if test="schKey == 'contents'">
+			AND ( a.YOJI like '%'||#{schVal}||'%' OR a.SASIL_KOREO like '%'||#{schVal}||'%')
+			</if>
+			<if test="schKey == 'all'">
+				AND (a.TITLE like '%'||#{schVal}||'%'
+					 OR a.YOJI like '%'||#{schVal}||'%' 
+					 OR a.SASIL_KOREO like '%'||#{schVal}||'%'
+					)
+			</if>
+		</if>
+	</sql>
+
+
+	<!-- 법령리스트 가져오기 -->
+	<!-- 일반자문 -->
+	
+	
+	<select id="getConsultList" resultType="HashMap">
+		
+		SELECT d.* FROM    
+		(       
+		    SELECT c.* , 
+		    <if test="pagesize != '' and pagesize != null">
+		    ceil( ROWNUM /#{pagesize})  page, 
+		    </if>
+		    ROWNUM AS ROWNUMBER  FROM        
+		    (
+					select 
+			               a.CONSULTID,
+			                a.REFCONSULTID,
+			                a.CONSULTCATCD,
+			                a.CONSULTCD,
+			                a.INOUTCD,
+			                a.TITLE,
+			                a.JILMUNSABUN,
+			                a.JILMUNNAME,
+			                a.DEPT,
+			                a.HOPEDT,
+			                a.DEPTSENGINNAME,
+			                a.BALSINDT,
+			                a.CONSULTSTATECD,
+			                a.BUBNAME,
+			                a.JEOBSUDT,
+						  (select max(b.hoisindt) from tb_su_consultans b where a.consultid = b.consultid or a.consultid = b.refconsultid) hoisindt,
+					      (select count(c.consultid) from tb_su_consult c where a.consultid = c.refconsultid and a.consultid != c.consultid) outconsult,
+					      (select count(fileid) from tb_su_c_file f where f.SOURCETABLEID = a.consultid and f.filecd='계약서') as fcnt
+					 FROM tb_su_consult a
+		             WHERE 1 = 1 
+		              <if test="MENU_MNG_NO != '' and MENU_MNG_NO != null">
+		             and a.MENU_MNG_NO in (
+														select MENU_MNG_NO from TB_COM_MENU start with MENU_MNG_NO = #{MENU_MNG_NO}
+														connect by prior MENU_MNG_NO=menuparid
+													)
+					</if>			
+				<include refid="selectConsultCond"/>
+		
+				
+				ORDER BY a.consultid desc, hoisindt desc
+				
+			) c
+		) d
+		<trim prefix="WHERE" prefixOverrides="AND |OR ">
+			<if test="pagesize != '' and pagesize != null">
+		    <if test="pageno != ''">
+		        page = #{pageno}
+		    </if>
+		    </if>
+		</trim>
+	</select>
+	
+
+	<!-- 
+	<select id="getConsultList" resultType="HashMap">
+		SELECT b.* FROM
+		(
+		SELECT a.* , ceil( AS ROWNUMBER/#{pagesize}) page , AS ROWNUMBER FROM
+		(
+		SELECT CONSULTID, INOUTCD, TITLE, DEPT, JILMUNNAME, BUBNAME, HOPEDT,
+		BALSINDT, JEOBSUDT, CONSULTSTATECD
+		FROM tb_su_consult
+		<trim prefix="WHERE" prefixOverrides="AND |OR ">
+			<if test="schtxt != ''">
+				TITLE LIKE '%'||#{schtxt}||'%'
+			</if>
+		</trim>
+		and CONSULTCATCD = '일반자문'
+		<if test="orderby != ''">
+			${orderby}
+		</if>
+		<if test="orderby == '' or orderby == null ">
+			ORDER BY HOPEDT DESC
+		</if>
+		) a
+		) b
+		<trim prefix="WHERE" prefixOverrides="AND |OR ">
+			<if test="pageno != ''">
+				page = #{pageno}
+			</if>
+		</trim>
+	</select>
+	 -->
+
+
+	<select id="getConsultListCnt" resultType="int">
+		select COUNT(a.consultid) AS TOTAL
+		from tb_su_consult a
+		WHERE 1 = 1 and a.MENU_MNG_NO = #{MENU_MNG_NO}
+		<include refid="selectConsultCond"/>
+	</select>
+	
+	<resultMap type="HashMap" id="consultinfodata">
+        <result property="SASIL_KOREO" column="SASIL_KOREO" jdbcType="CLOB" javaType="java.lang.String" />
+        <result property="YOJI" column="YOJI" jdbcType="CLOB" javaType="java.lang.String" />
+        <result property="DEPTVIEW" column="DEPTVIEW" jdbcType="CLOB" javaType="java.lang.String" />
+        <result property="BANREASON" column="BANREASON" jdbcType="CLOB" javaType="java.lang.String" />
+        <result property="DEPTVIEW2" column="DEPTVIEW2" jdbcType="CLOB" javaType="java.lang.String" />
+        <result property="RELRULE" column="RELRULE" jdbcType="CLOB" javaType="java.lang.String" />
+        <result property="YOJI2" column="YOJI2" jdbcType="CLOB" javaType="java.lang.String" />
+        <result property="SASIL_KOREO2" column="SASIL_KOREO2" jdbcType="CLOB" javaType="java.lang.String" />
+        <result property="SASILYOJI" column="SASILYOJI" jdbcType="CLOB" javaType="java.lang.String" />
+        <result property="BUBVIEW" column="BUBVIEW" jdbcType="CLOB" javaType="java.lang.String" />
+        
+    </resultMap>
+    
+	<!-- 자문의뢰 view -->
+	<select id="selectConsultDetail" resultType="HashMap">
+        <![CDATA[
+            select a.*, (select max(b.consultansid) from tb_su_consultANS b where a.consultid = b.consultid or a.consultid = b.refconsultid) consultansid,
+            (select count(c.consultid) from tb_su_consult c where a.consultid = c.refconsultid and a.consultid != c.consultid) outconsult
+            from tb_su_consult a
+            where  a.CONSULTID = #{consultid} 
+      ]]>
+     
+    </select>
+    
+    <select id="selectRefCConsult" resultType="HashMap">
+        <![CDATA[
+            select a.*, (select b.consultansid from tb_su_consultANS b where a.consultid = b.consultid or a.consultid = b.refconsultid) consultansid,
+            (select count(c.consultid) from tb_su_consult c where a.consultid = c.refconsultid and a.consultid != c.consultid) outconsult
+            from tb_su_consult a
+            where  REFCONSULTID = #{consultid}  and INOUTCD ='외부'
+		]]>
+    </select>
+    
+    	<update id="updateConsult" parameterType="HashMap" >
+		<![CDATA[
+            UPDATE tb_su_consult
+			SET    
+			    REFCONSULTID     = nvl(#{refconsultid},REFCONSULTID),      
+				CONSULTCATCD     = nvl(#{consultcatcd},CONSULTCATCD),      
+				CONSULTCD        = nvl(#{consultcd},CONSULTCD),            
+				INOUTCD          = nvl(#{inoutcd},INOUTCD),                
+				TITLE            = nvl(#{title},TITLE),                    
+				SASIL_KOREO      = nvl(#{sasilkoreo},SASIL_KOREO),         
+				YOJI             = nvl(#{yoji},YOJI),                      
+				RELRULE          = nvl(#{relrule},RELRULE),                
+				DEPTVIEW         = nvl(#{deptview},DEPTVIEW),              
+				JILMUNSABUN      = nvl(#{jilmunsabun},JILMUNSABUN),        
+				JILMUNNAME       = nvl(#{jilmunname},JILMUNNAME),          
+				EMAIL            = nvl(#{email},EMAIL),                    
+				PHONE            = nvl(#{phone},PHONE),                    
+				DEPT             = nvl(#{dept},DEPT),                      
+				HOPEDT           = nvl(replace(#{hopedt},'-',''),HOPEDT),                  
+				DEPTSENGINSABUN  = nvl(#{deptsenginsabun},DEPTSENGINSABUN),
+				DEPTSENGINNAME   = nvl(#{deptsenginname},DEPTSENGINNAME),  
+				BALSINDT         = nvl(replace(#{balsindt},'-',''),BALSINDT),              
+				BANREASON        = nvl(#{banreason},BANREASON),            
+				CONSULTSTATECD   = nvl(#{consultstatecd},CONSULTSTATECD),  
+				BUBSABUN         = nvl(#{bubsabun},BUBSABUN),              
+				BUBNAME          = nvl(#{bubname},BUBNAME),                
+				JEOBSUDT        = nvl(replace(#{jeobsudt},'-',''),JEOBSUDT),            
+				BUBLAWYERID      = nvl(#{bublawyerid},BUBLAWYERID),
+				GRADE_DETAIL     = nvl(#{gradedetail},GRADE_DETAIL)
+			WHERE  CONSULTID     = #{consultid}
+		]]>
+	</update>
+	
+	
+	   <update id="updateApprve" parameterType="HashMap">
+            UPDATE tb_su_consult
+            SET    
+            	<if test="consultstatecd =='부서승인'">
+            		BALSINDT = TO_CHAR(CURRENT_DATE,'YYYYMMDD'),
+            	</if>
+                CONSULTCD        = nvl(#{consultcd},CONSULTCD),            
+                CONSULTSTATECD   = nvl(#{consultstatecd},CONSULTSTATECD),
+                BANREASON        = nvl(#{banreason},'')
+            WHERE  CONSULTID     = #{consultid}
+        <if test="refconsultid != null and refconsultid =''">
+           OR REFCONSULTID = #{refconsultid} 
+        </if>
+    </update>
+    
+    <update id="updateApprve2" parameterType="HashMap">
+	    UPDATE tb_su_consult
+	    SET    
+	        CONSULTSTATECD   = nvl(#{consultstatecd},CONSULTSTATECD)
+	    WHERE  CONSULTID     = #{consultid}
+    </update>
+    
+    <update id="updateApprve3">
+            UPDATE tb_su_consultANS
+            SET    
+                BANREASON        = nvl(#{banreason},'')
+            WHERE  CONSULTID     = #{consultid}
+    </update>   
+    
+    <!-- 담담자선택 -->
+    <select id="getVUserListH" resultType="HashMap">
+		select employee_number,employee_name,ORGANIZATION_NAME,DECODE(employee_number,'080467','팀장',GRADE_DETAIL) GRADE_DETAIL,JOB_SEGMENT4 from TB_LM_ROLE 
+		where ORGANIZATION_NAME = #{organization_name}	
+        <if test="job_segment4 != null and job_segment4 !=''">
+           AND JOB_SEGMENT4 = #{job_segment4}
+        </if>
+        <if test="employee_name != null and em}loyee_name !=''">
+           AND employee_name = #{employee_name}
+        </if>
+		order by employee_name
+	</select>
+	
+	
+	     <!-- 만족도 조사 -->
+     <insert id="setResearcResult" parameterType="HashMap" >
+     
+    	<!-- 
+        <selectKey keyProperty="satisfactionid" >
+            SELECT KEYID.NEXTVAL FROM DUAL
+        </selectKey>
+         -->
+        <![CDATA[
+            insert into TB_SU_SATICFACTION (SATISFACTIONID, CONSULTID, SATISITEMID, SATISLEVEL, WRITER)
+            values(#{satisfactionid}, #{consultid}, #{satisitemid}, #{satislevel}, #writer#)
+        ]]>
+    </insert>
+    
+    
+    <select id="getQuestion" resultType="HashMap">
+        <![CDATA[
+            select * from TB_SU_SATISFACTION_ITEM 
+            where  1=1
+        ]]>
+        <if test="itemid != '' and itemid != null">
+        	and SATISITEMID = #{itemid} 
+        </if>
+		<if test="useyn != ''  and useyn != null">
+			and USEYN = #{useyn}
+		</if>
+		<if test="writercd != '' and writercd != null">
+			and WRITERCD = #{writercd}
+		</if>
+        order by SATISITEMID
+    </select>
+    
+    
+    
+    <select id="getQuestionCnt" resultType="int">
+		select COUNT(a.satisitemid) AS TOTAL
+		from TB_SU_SATISFACTION_ITEM a
+		WHERE 1 = 1
+	</select>
+	
+    
+
+    	
+      <select id="getResult" resultType="HashMap">
+        <![CDATA[
+            select a.SATISITEMID, a.SATISLEVEL, a.WRITER, b.ITEM from TB_SU_SATICFACTION a, TB_SU_SATISFACTION_ITEM b
+            where  a.CONSULTID=#{consultid} 
+            and  a.SATISITEMID = b.SATISITEMID
+            order by a.SATISITEMID
+        ]]>
+    </select>
+    
+    
+    
+
+    <!-- 법률자문 목록/총건수 조회 조건 sql -->
+    <sql id="selectConsultansCond">
+        	<if test="consultid != '' and consultid != null">
+        		and a.CONSULTID = #{consultid} 
+        	</if>
+			<if test="consultansid != '' and consultansid != null">
+				and a.trim(CONSULTANSID) = #{consultansid} 
+			</if>
+    </sql>
+    
+    <!-- 법률자문 총건수 조회  -->
+    <select id="selectConsultansTotalCount"  resultType="int">
+            SELECT count(a.CONSULTANSID)
+            FROM TB_SU_CONSULTANS a
+            WHERE 1=1
+            <include refid="selectConsultansCond"/>
+    </select>
+    
+    <!-- 의견서조회 -->
+    <select id="selectConsultansList" resultType="HashMap"> 
+        <![CDATA[
+            select a.consultansid, a.consultid, a.refconsultid, a.title, 
+            DBMS_LOB.SUBSTR(a.sasilyoji, DBMS_LOB.GETLENGTH(a.sasilyoji)) AS sasilyoji,
+            DBMS_LOB.SUBSTR(a.bubview, DBMS_LOB.GETLENGTH(a.bubview)) AS bubview,
+            a.bubmusenginsabun, a.bubmusenginname, a.emailsusindt, a.hoisindt, a.bublawyerid, a.biz_key,
+            a.aprv_status, a.doc_id, 
+            DBMS_LOB.SUBSTR(a.banreason, DBMS_LOB.GETLENGTH(a.banreason)) AS banreason,(select bubname from tb_su_consult where consultid = a.consultid) as bubname
+            FROM TB_SU_CONSULTANS a
+            where  1=1
+        ]]>
+        <include refid="selectConsultansCond"/>
+    </select>
+ 
+    <select id="selectConsultansPopDetail" resultType="HashMap">
+        <![CDATA[
+            select a.consultansid, a.consultid, a.refconsultid, a.title, 
+            DBMS_LOB.SUBSTR(a.sasilyoji, DBMS_LOB.GETLENGTH(a.sasilyoji)) AS sasilyoji,
+            DBMS_LOB.SUBSTR(a.bubview, DBMS_LOB.GETLENGTH(a.bubview)) AS bubview,
+            a.bubmusenginsabun, a.bubmusenginname, a.emailsusindt, a.hoisindt, a.bublawyerid, a.biz_key,
+            a.aprv_status, a.doc_id, 
+            DBMS_LOB.SUBSTR(a.banreason, DBMS_LOB.GETLENGTH(a.banreason)) AS banreason,
+            (SELECT CONSULTCD FROM TB_SU_CONSULT b WHERE b.CONSULTID = a.CONSULTID) consultcd,
+            (SELECT CONSULTSTATECD FROM TB_SU_CONSULT b WHERE b.CONSULTID = a.CONSULTID) consultstatecd,
+            (SELECT DEPT FROM TB_SU_CONSULT b WHERE b.CONSULTID = a.CONSULTID) dept from TB_SU_CONSULTANS a
+            where  1=1
+        ]]>
+        <if test="consultansid != '' and consultansid != null">
+        	and trim(CONSULTANSID) = #{consultansid} 
+        </if>
+
+    </select>
+    
+    
+    
+
+    
+    
+    
+    	<insert id="insertConsult" parameterType="HashMap">
+        <selectKey keyProperty="consultid" resultType="int" order="BEFORE">
+            <!-- SELECT TBID.NEXTVAL FROM DUAL -->
+             SELECT KEYID.NEXTVAL FROM DUAL
+        </selectKey>
+		<![CDATA[
+			INSERT INTO TB_SU_CONSULT (CONSULTID,
+                    REFCONSULTID,
+                    CONSULTCATCD,
+                    CONSULTCD,
+                    INOUTCD,
+                    TITLE,
+                    SASIL_KOREO,
+                    YOJI,
+                    RELRULE,
+                    DEPTVIEW,
+                    JILMUNSABUN,
+                    JILMUNNAME,
+                    EMAIL,
+                    PHONE,
+                    DEPT,
+                    HOPEDT,
+                    DEPTSENGINSABUN,
+                    DEPTSENGINNAME,
+                    BALSINDT,
+                    BANREASON,
+                    CONSULTSTATECD,
+                    BUBSABUN,
+                    BUBNAME,
+                    BUBLAWYERID,
+                    GRADE_DETAIL,
+                    MENU_MNG_NO,
+                    WRITERID,
+                    WRITER,
+                    DEPTID,
+                    DEPTNAME,
+                    JEOBSUDT)
+			VALUES (#{consultid},
+			        #{refconsultid},
+			        (select menutitle from TB_COM_MENU where MENU_MNG_NO = (select menuparid from TB_COM_MENU where MENU_MNG_NO=#{MENU_MNG_NO})),
+			        #{consultcd},
+			        #{inoutcd},
+			        #{title},
+			        #{sasil_koreo},
+			        #{yoji},
+			        #{relrule},
+			        #{deptview},
+			        #{jilmunsabun},
+			        #{jilmunname},
+			        #{email},
+			        #{phone},
+			        #{dept},
+			        replace(#{hopedt},'-',''),
+			        #{deptsenginsabun},
+			        #{deptsenginname},
+			        replace(#{balsindt},'-',''),
+			        #{banreason},
+			        #{consultstatecd},
+			        #{bubsabun},
+			        #{bubname},
+			        #{bublawyerid},
+			        #{gradedetail},
+			        #{MENU_MNG_NO},
+			        #{writerid},
+			        #{writer},
+			        #{deptid},
+			        #{deptname},
+			        to_char(sysdate, 'YYYY-MM-DD')
+			        )
+		]]>
+	</insert>
+	
+	
+	<delete id="deleteConsult" >
+		<![CDATA[
+			delete from TB_SU_CONSULT
+			where  CONSULTID = #{consultid} 
+		]]>
+	</delete>
+	
+	
+
+	<!-- 관련부서 팝업 부서직원 조회 -->
+	<select id="selectUserList" resultType="HashMap">
+		SELECT ROWNUM AS ROWNUMBER AS RNUM,
+		       U.USER_ID,
+		       U.USER_NM,
+		       U.JIKCHK_NM,
+		       U.DEPT_NO,
+		       (SELECT DEPT_NM FROM TB_COM_ORGCHT WHERE DEPT_NO = U.DEPT_NO) AS SOSOK_NM,
+		       U.USE_YN
+		FROM TB_COM_HRIS U
+		WHERE U.DEPT_NO = #{sosokcd}
+		ORDER BY U.USER_ID
+	</select>
+	
+	<!-- 관련부서 팝업 부서 조회 -->
+	<select id="selectDeptList" resultType="HashMap">
+		SELECT DEPT_NO,
+		       UP_DEPT_NO,
+		       SORT_SEQ,
+		       DEPT_NM,
+		       DEPT_GROUP_NM,
+		       REG_YMD,
+		       USE_YN
+		FROM TB_COM_ORGCHT
+	</select>
+	
+	
+	<!-- 변호사 -->
+	<select id="selectLawyerList" resultType="HashMap">
+		SELECT ROWNUM AS ROWNUMBER AS RNUM, S.*
+		FROM (
+		    SELECT L.LAWYERID,
+		           F.LAWFIRMID,
+		           L.LAWYERNAME,
+		           L.BIRTHDAY,
+		           L.STARTDT,
+		           L.ENDDT,
+		           L.EDUCATION,
+		           L.CAREER,
+		           L.CELLPHONE,
+		           L.EMAIL,
+		           L.LAWYERGBN,
+		           L.USEYN,
+		           F.OFFICE
+		    FROM TB_SU_LAWYER L
+		         LEFT OUTER JOIN TB_SU_LAWFIRM F ON L.LAWFIRMID = F.LAWFIRMID
+		    ORDER BY L.LAWYERID DESC
+		) S 
+	</select>
+	
+	   <insert id="insertConsultans" parameterType="HashMap" >
+        <selectKey keyProperty="consultansid" resultType="int" order="BEFORE">
+            <!-- SELECT TBID.NEXTVAL FROM DUAL -->
+            SELECT KEYID.NEXTVAL FROM DUAL
+        </selectKey>
+        <![CDATA[
+            insert into TB_SU_CONSULTANS (CONSULTANSID, 
+            	CONSULTID, 
+            	REFCONSULTID, 
+            	TITLE, 
+            	SASILYOJI, 
+            	BUBVIEW, 
+            	BUBMUSENGINSABUN, 
+            	BUBMUSENGINNAME, 
+            	EMAILSUSINDT, 
+            	HOISINDT, 
+            	BUBLAWYERID)
+            values(#{consultansid}, 
+            	   #{consultid}, 
+            	   #{refconsultid}, 
+            	   #{title}, 
+            	   #{sasilyoji}, 
+            	   #{bubview}, 
+            	   #{bubmusenginsabun}, 
+            	   #{bubmusenginname}, 
+            	   #{emailsusindt},   
+            	   to_char(sysdate,'yyyymmdd') ,
+            	   #{bublawyerid})
+        ]]>
+    </insert>
+    
+
+    
+    
+   	<!-- 진행상황 조회 -->
+	<select id="selectConsultProgressInfo" resultType="HashMap">
+		SELECT *
+		FROM TB_COM_CD
+		WHERE 1=1
+		<choose>
+		    <when test="typeList.size != 0">
+		        AND CODENAME IN 
+		        <foreach collection="typeList" item="item" index="index" separator="," open="(" close=")">
+		            #{item}
+		        </foreach>
+		    </when>
+		    <when test="typeList.size == 0">
+		    	AND CODENAME = #{type}
+		    </when>
+		</choose>
+	</select>
+	
+	
+	
+	   	<!-- consultcd -->
+	<select id="selectConsultCdInfo" resultType="HashMap">
+		SELECT *
+		FROM TB_COM_CD
+		WHERE 1=1
+		<choose>
+		    <when test="typeList.size != 0">
+		        AND CODENAME IN 
+		        <foreach collection="typeList" item="item" index="index" separator="," open="(" close=")">
+		            #{item}
+		        </foreach>
+		    </when>
+		    <when test="typeList.size == 0">
+		    	AND CODENAME = #{type}
+		    </when>
+		</choose>
+	</select>
+    
+    
+    
+    <!-- 파일 목록/총건수 조회 조건 sql -->
+    <sql id="selectCFileCond">
+        	<if test="sourcetableid != '' and sourcetableid != null">
+        		and a.SOURCETABLEID = #{sourcetableid}  
+        	</if>
+			<if test="filecd != '' and filecd != null">
+        		and a.FILECD = #{filecd} 
+        	</if>
+    </sql>
+
+
+		    
+    <!-- 파일 목록 조회  -->
+    <select id="selectFileList" resultType="HashMap">
+        <![CDATA[
+            select a.* from TB_SU_C_FILE a
+            where  1=1
+        ]]>
+        <include refid="selectCFileCond"/>
+    </select>
+
+ 
+	<!-- FILEID KEY 조회 -->
+	<select id="getFileIdKey" resultType="String">
+		SELECT KEYID.NEXTVAL FROM DUAL
+	</select>
+    	<!-- FILE insert -->
+	<insert id="insertFile" parameterType="HashMap">
+			INSERT INTO TB_SU_C_FILE(
+		    FILEID,
+		   	SOURCETABLEID,
+		   	PCFILENAME,
+		   	SERVERFILENAME,
+		   	FILEEXT,
+		   	FILECD
+		) VALUES (
+		    #{fileid},
+		    #{sourcetableid},
+		    #{pcfilename},
+		    #{serverfilename},
+		    #{fileext},
+		    #{filecd}
+		)
+	</insert>
+    <!-- COURT FILE insert -->
+	<insert id="insertContractFile" parameterType="HashMap">
+		INSERT INTO TB_SU_C_FILE(
+		    FILEID,
+		   	SOURCETABLEID,
+		   	PCFILENAME,
+		   	SERVERFILENAME,
+		   	FILEEXT,
+		   	FILECD
+		) VALUES (
+		    #{fileid},
+		    #{sourcetableid},
+		    #{pcfilename},
+		    #{serverfilename},
+		    #{fileext},
+		    #{filecd}
+		)
+	</insert>
+	
+	<delete id="deleteTB_SU_C_FILE">
+		delete from TB_SU_C_FILE where FILEID = #{FILEID}
+	</delete>
+	
+	<delete id="deleteTB_SU_C_FILE2">
+		delete from TB_SU_C_FILE where SOURCETABLEID = #{SOURCETABLEID} and FILECD=#{FILECD}
+	</delete>
+	
+	<update id="consultStatechg" parameterType="HashMap">
+            UPDATE tb_su_consult
+            SET             
+                CONSULTSTATECD   = nvl(#{consultstatecd},CONSULTSTATECD)
+            WHERE  CONSULTID     = #{consultid}
+    </update>
+    
+	<select id="getBanReasonInfo" resultType="HashMap">
+        <![CDATA[
+            select 
+            DBMS_LOB.SUBSTR(BANREASON, DBMS_LOB.GETLENGTH(BANREASON)) AS BANREASON
+            from TB_SU_CONSULT 
+            where  CONSULTID = #{consultid}
+        ]]>
+    </select>
+    
+    <select id="getBanReasonInfo2" resultType="HashMap">
+        <![CDATA[
+            select 
+            DBMS_LOB.SUBSTR(BANREASON, DBMS_LOB.GETLENGTH(BANREASON)) AS BANREASON
+            from TB_SU_CONSULTANS 
+            where  CONSULTANSID = #{consultansid}
+        ]]>
+    </select>
+    
+    <update id="banReasonUpdate" parameterType="HashMap">
+            UPDATE tb_su_consult
+            SET             
+                BANREASON   = #{banreason}
+            WHERE  CONSULTID     = #{consultid}
+    </update>
+    
+    <update id="banReasonUpdate3" parameterType="HashMap">
+            UPDATE tb_su_consult
+            SET             
+                BANREASON   = #{banreason}
+                ,bubsabun   = #{bubsabun}
+                ,bubname   = #{bubname}
+                ,jeobsudt   = replace(#{jeobsudt},'-','')
+            WHERE  CONSULTID     = #{consultid}
+    </update>
+    
+    <update id="banReasonUpdate2" parameterType="HashMap">
+            UPDATE TB_SU_CONSULTANS
+            SET             
+                BANREASON   = #{banreason}
+            WHERE  CONSULTANSID     = #{consultansid}
+    </update>
+    
+    <select id="selectRoleInfo" resultType="HashMap"> <!-- 권한 -->
+		SELECT ROLEGBN,
+		       CASE WHEN ROLEGBN = 'D' THEN (SELECT D.DEPT_NM FROM TB_COM_ORGCHT D WHERE D.DEPT_NO = ROLEDEPTID)
+		            WHEN ROLEGBN = 'P' THEN (SELECT U.USER_NM FROM TB_COM_HRIS U WHERE U.USER_ID = ROLEWRITERID)
+		       END AS NAME,
+		       ROLEWRITERID,
+		       ROLEDEPTID
+		FROM TB_LM_ROLE
+		WHERE DOCID = #{docid}
+	</select>
+	
+	
+	<delete id="deleteRole"> <!-- 권한 -->
+		DELETE TB_LM_ROLE
+		WHERE DOCID = #{consulid}
+	</delete>
+	
+	<!-- 권한 insert -->
+	<insert id="insertRole" parameterType="HashMap">
+		<selectKey keyProperty="roleid" resultType="int" order="BEFORE">
+			<!-- SELECT NVL(LPAD(MAX(ROLEID)+1, 9, '0'), '100000000') AS SEQ FROM TB_LM_ROLE -->
+			SELECT KEYID.NEXTVAL FROM DUAL
+		</selectKey>
+		INSERT INTO TB_LM_ROLE (
+		    ROLEID,
+		    DOCID,
+		    DOCGBN,
+		    ROLEGBN,
+		    ROLEWRITERID,
+		    ROLEDEPTID,
+		    WRITERID,
+		    WRITER,
+		    UPDT
+		) VALUES (
+		    #{roleid},
+		    #{consultid},
+		    'CONSULT',
+		    #{rolegbn},
+		    #{rolewriterid},
+		    #{roledeptid},
+		    #{writerid},
+		    #{writer},
+		    to_char(sysdate, 'YYYY-MM-DD')
+		)
+	</insert>
+
+		<insert id="researchSave" parameterType="HashMap">
+		<selectKey keyProperty="satisfactionid" resultType="int" order="BEFORE">
+			SELECT KEYID.NEXTVAL FROM DUAL
+		</selectKey>
+		INSERT INTO TB_SU_SATISFACTION (
+		    SATISFACTIONID,
+		    CONSULTID,
+		    SATISITEMID,
+		    SATISLEVEL,
+		    WRITER,
+		    OPINION
+		) VALUES (
+		    #{satisfactionid},
+		    #{consultid},
+		    #{satisitemid},
+		    #{satislevel},
+		    #{writer},
+		    #{opinion}
+		)
+	</insert>
+	
+	
+	<update id="updateQuestion" parameterType="HashMap">
+            UPDATE TB_SU_SATISFACTION_ITEM
+            SET             
+                ITEM   = nvl(#{item},ITEM)
+            WHERE  SATISITEMID     = #{satisitemid}
+    </update>
+	
+	
+	
+    	<insert id="insertQuestion" parameterType="HashMap">
+		<selectKey keyProperty="satisitemid" resultType="int" order="BEFORE">
+			<!-- SELECT NVL(LPAD(MAX(SUITID)+1, 5, '0'), '10000') AS SUITID FROM TB_SU_SUIT -->
+		SELECT NVL(MAX(SATISITEMID),0)+1 AS SATISITEMID FROM TB_SU_SATISFACTION_ITEM
+			<!-- SELECT KEYID.NEXTVAL FROM DUAL -->
+		</selectKey>
+		INSERT INTO TB_SU_SATISFACTION_ITEM(
+		    SATISITEMID,
+		    ITEM,
+		    USEYN,
+		    WRITERCD
+		) VALUES (
+		    #{satisitemid},
+		    #{item},
+		    #{useyn},
+		    #{writercd}
+		)
+	</insert>
+	
+	<delete id="delQuestion" >
+		DELETE TB_SU_SATISFACTION_ITEM
+		WHERE SATISITEMID = #{satisitemid}
+	</delete>
+	
+	
+	<!--  권한 insert -->
+	<insert id="insertConsultRole" parameterType="HashMap">
+		<selectKey keyProperty="roleid" resultType="int" order="BEFORE">
+			<!-- SELECT NVL(LPAD(MAX(ROLEID)+1, 9, '0'), '100000000') AS SUITID FROM TB_LM_ROLE -->
+			SELECT KEYID.NEXTVAL FROM DUAL
+		</selectKey>
+		INSERT INTO TB_LM_ROLE (
+			ROLEID,
+			DOCID,
+			DOCGBN,
+			ROLEGBN,
+			ROLEDEPTID,
+			WRITERID,
+			WRITER,
+			UPDT
+		) VALUES (
+			#{roleid},
+			#{docid},
+			#{docgbn},
+			#{rolegbn},
+			#{deptid},
+			#{writerid},
+			#{writer},
+			to_char(sysdate, 'YYYY-MM-DD')
+		)
+	</insert>
+	
+	<!-- consult excel -->
+	<select id="selectExcelConsultList" resultType="HashMap">
+		SELECT d.* FROM    
+		(       
+		    SELECT c.* , ROWNUM AS ROWNUMBER  FROM        
+		    (
+					select 
+ 							a.CONSULTID,
+                            a.INOUTCD,
+                            a.TITLE,
+                            a.DEPT,
+                            a.JILMUNNAME,
+                            a.BUBNAME,
+                            a.HOPEDT,
+                            a.JEOBSUDT,
+                            a.CONSULTSTATECD,                         
+                            a.BALSINDT,
+						  (select max(b.hoisindt) from tb_su_consultans b where a.consultid = b.consultid or a.consultid = b.refconsultid) hoisindt
+					 FROM tb_su_consult a
+		             WHERE 1 = 1 and a.MENU_MNG_NO = #{MENU_MNG_NO}
+		           <![CDATA[ and ( a.INOUTCD <> '외부')
+					AND    ((A.CONSULTSTATECD NOT IN ('등록','부서반려','부서승인요청','법무팀반려') OR  a.JILMUNSABUN = #{writerid}) OR
+       				(A.CONSULTSTATECD IN ('부서승인요청') AND a.DEPTSENGINSABUN = #{writerid})) ]]>
+       				ORDER BY a.consultid desc, hoisindt desc
+            ) c
+        ) d
+	</select>
+	
+	
+	
+	
+		<!-- consultans excel -->
+	<select id="selectExcelConsultansList" resultType="HashMap">
+	 SELECT c.* , ROWNUM AS ROWNUMBER  FROM        
+        (
+		select a.consultansid, 
+				a.consultid, 
+				a.title, 
+                a.bubmusenginname, 
+                a.hoisindt, 
+                b.balsindt,
+                b.jeobsudt,
+            	b.consultcd, 
+            	b.consultcatcd, 
+            	b.consultstatecd, 
+            	b.inoutcd, 
+            	b.dept, 
+            	b.JILMUNNAME,
+                b.BUBNAME,
+                b.hopedt,
+            	b.MENU_MNG_NO
+            from  TB_SU_CONSULTANS a, tb_su_consult b 
+            where a.consultid = b.consultid
+            and b.MENU_MNG_NO =#{MENU_MNG_NO}
+            )c
+	</select>
+	
+	<select id="selectCBublawyer" resultType="HashMap">
+        <![CDATA[
+            select a.*,b.PPHONE,b.OFFICE from TB_SU_LAWYER a,TB_SU_LAWFIRM b
+            where a.LAWFIRMID=b.LAWFIRMID(+) and a.LAWYERID = #{bublawyerid} 
+        ]]>
+    </select>
+    
+    <select id = "getRolechk2" resultType="int">
+    	select count(*) from tb_su_consult where JILMUNSABUN = #{writerid} or DEPTSENGINSABUN =#{sdeptid} or DEPTID = #{sdeptid} and consultid=#{consultid}
+    </select>
+    
+    
+    <select id="selectCConsultans" resultType="HashMap">
+        <![CDATA[
+            select a.*, (SELECT DEPT FROM tb_su_CONSULT b WHERE b.CONSULTID = a.CONSULTID) dept from tb_su_CONSULTANS a
+            where  1=1
+        ]]>
+        <if test="consultansid != '' and consultansid != null">
+        	and trim(CONSULTANSID) = #{consultansid}
+        </if>
+    </select>
+    
+    <select id="selectCReg" resultType="HashMap">
+            select * from tb_su_REG
+            where  1=1
+            <if test="regid != '' and regid != null">
+	        	AND REGID = #{regid} 
+	        </if>
+	        <if test="sourcetableid != '' and sourcetableid != null">
+	        	AND SOURCETABLEID = #{sourcetableid} 
+	        </if>
+    </select>
+    
+    <insert id="insertCReg" parameterType="HashMap" >
+        <![CDATA[
+            insert into tb_su_REG(REGID, SOURCETABLEID, RSABUN, RNAME, RDTTM, ASABUN, ANAME, ADTTM)
+			values(keyid.next_value, #{sourcetableid}, #{rsabun}, #{rname}, #{rdttm}, #{asabun}, #{aname}, #{adttm})
+        ]]>
+    </insert>
+    
+    <update id="updateCReg">
+		<![CDATA[
+			UPDATE tb_su_REG
+			SET    
+			       RSABUN        = nvl(#{rsabun}, RSABUN),
+			       RNAME         = nvl(#{rname},  RNAME),
+			       RDTTM         = nvl(#{rdttm},  RDTTM),
+			       ASABUN        = nvl(#{asabun}, ASABUN),
+			       ANAME         = nvl(#{aname},  ANAME),
+			       ADTTM         = nvl(#{adttm},  ADTTM)
+			WHERE  SOURCETABLEID = #{sourcetableid}
+		]]>
+	</update>
+	
+	<update id="updateCConsultans">
+        <![CDATA[
+            UPDATE tb_su_CONSULTANS
+			SET    CONSULTID        = nvl(#{consultid},        CONSULTID       ),
+			       REFCONSULTID     = nvl(#{refconsultid},     REFCONSULTID    ),
+			       TITLE            = nvl(#{title},            TITLE           ),
+			       SASILYOJI        = nvl(#{sasilyoji},        SASILYOJI       ),
+			       BUBVIEW          = nvl(#{bubview},          BUBVIEW         ),
+			       BUBMUSENGINSABUN = nvl(#{bubmusenginsabun}, BUBMUSENGINSABUN),
+			       BUBMUSENGINNAME  = nvl(#{bubmusenginname},  BUBMUSENGINNAME ),
+			       EMAILSUSINDT     = nvl(#{emailsusindt},     EMAILSUSINDT    ),
+			       HOISINDT         = nvl(to_char(sysdate,'yyyymmdd'),         HOISINDT        ),
+			       BUBLAWYERID      = nvl(#{bublawyerid},      BUBLAWYERID     ),
+			       BANREASON        = nvl(#{banreason},BANREASON)
+			WHERE  TRIM (CONSULTANSID) = #{consultansid}
+        ]]>
+    </update>
+    
+    <!-- 의뢰서 / 계약서 일괄 다운로드 -->
+    <select id="listFileDownload1" resultType="HashMap">
+		select a.CONSULTID, a.TITLE, serverfilename, pcfilename, filecd
+		FROM tb_su_consult a, tb_su_c_file b
+		where a.consultid=B.SOURCETABLEID
+		<if test="MENU_MNG_NO != '' and MENU_MNG_NO != null">
+		  and a.MENU_MNG_NO in (
+							select MENU_MNG_NO from TB_COM_MENU start with MENU_MNG_NO = #{MENU_MNG_NO}
+							connect by prior MENU_MNG_NO=menuparid
+						  )
+		</if>
+		<include refid="selectConsultCond"/>
+		<if test='gbn == "1"'>
+		  and filecd='의뢰서'
+		</if>
+		<if test='gbn == "3"'>
+		  and filecd='계약서'
+		</if>
+	</select>
+	
+	<!-- 의견서 일괄 다운로드 -->
+	<select id="listFileDownload2" resultType="HashMap">
+		select a.consultansid, a.TITLE, serverfilename, pcfilename, filecd
+		FROM tb_su_consultans a, tb_su_c_file b
+		where a.consultansid=B.SOURCETABLEID
+		and a.consultid in (
+			select a.CONSULTID
+			FROM tb_su_consult a where 1=1
+			<if test="MENU_MNG_NO != '' and MENU_MNG_NO != null">
+			  and a.MENU_MNG_NO in (
+								select MENU_MNG_NO from TB_COM_MENU start with MENU_MNG_NO = #{MENU_MNG_NO}
+								connect by prior MENU_MNG_NO=menuparid
+							  )
+			</if>
+			<include refid="selectConsultCond"/>
+		)
+		and filecd='의견서'
+	</select>
+	
+	<update id="setOpenyn">
+		<![CDATA[
+			update tb_su_consultans
+			set openyn=#{openyn}
+			where trim(consultansid)=#{consultansid}
+		]]>
+	</update>
+	
+	<delete id="deleteCConsultans">
+		<![CDATA[
+			delete from tb_su_consultans
+			where  TRIM (CONSULTANSID) = #{consultansid} 
+		]]>
+	</delete>
+	
+	<select id="selectCgbn" resultType="HashMap">
+		select MENU_MNG_NO,menutitle,menuparid from TB_COM_MENU where urlinfo like '%goConsultList%' and gbn='DOC' order by ord
+	</select>
+	
+	<update id="changeC">
+		update tb_su_consult set MENU_MNG_NO = #{MENU_MNG_NO}
+		,consultcatcd = (select menutitle from TB_COM_MENU where MENU_MNG_NO = (select menuparid from TB_COM_MENU where MENU_MNG_NO = #{MENU_MNG_NO}))
+		where consultid = #{consultid} or refconsultid = #{consultid}
+	</update>
+</mapper>

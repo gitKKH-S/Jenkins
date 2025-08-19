@@ -1,0 +1,226 @@
+<html>
+<head>
+ <TITLE>표준보안API JAVA 메뉴얼</TITLE>
+</head>
+</html>
+
+<body>
+<br><br>
+<p>
+
+<table width="100%">
+<tr>
+ <td align=center valign=bottom>
+   <h1>에러코드</h1>
+ </td>
+</table>
+
+<p>
+<blockquote>
+
+<table width=90% cellspacing=0 cellpadding=5>
+<tr>
+ <td> 표준보안API 사용 시, 에러가 발생하는경우 C/C++ 표준보안API 모듈에서 리턴하는 에러코드를 확인할 수 있습니다. 각 에러코드 별 의미와 대처 방안을 기술한다. </td> 
+</tr>
+</table>
+
+<br>
+
+<table width=90% cellspacing=0 cellpadding=5>
+<tr>
+ <td width=3%>
+  <img src=../img/check.gif>
+ </td>
+ <td> 
+  에러코드 확인방법
+ </td> 
+</tr>
+</table>
+
+<br>
+
+<p>
+<blockquote>
+
+<table width=90% cellspacing=0 cellpadding=5>
+<tr>
+ <td> 메소드 사용 시, C/C++ 표준보안API 모듈에서 에러가 발생하여 exception이 발생하면 아래와 같은 형식으로 에러가 리턴되어 에러코드를 확인할 수 있다.</td> 
+</tr>
+</table>
+
+<table border=1 width=90% cellspacing=0 cellpadding=5>
+<tr>
+ <td valign=middle><pre>
+
+   com.gpki.gpkiapi.exception.GpkiApiException: <b>ErrCode=1215</b>,ErrMsg=[GPKI_VID_VerifyByIVS] 폐지된 인증서 입니다. <ivs> respcode=20001,respdesc=GOOD_BUT_REVOKED_CERT
+   at com.gpki.gpkiapi.ivs.IdentifyUser.identify(IdentifyUser.java:72)
+   at Ivs.identify(Ivs.java:64)
+   at Main.main(Main.java:81)</pre>
+ </td>
+</tr>
+</table>
+
+</blockquote>
+</p>
+
+<br><br>
+
+<table width=90% cellspacing=0 cellpadding=5>
+<tr>
+ <td width=3%>
+  <img src=../img/check.gif>
+ </td>
+ <td> 
+  에러코드 범위 별 의미
+ </td> 
+</table>
+
+<br>
+
+
+<p>
+<blockquote>
+
+<table border=1 width=90% cellspacing=0 cellpadding=5>
+<tr bgcolor=lightgrey>
+ <th>
+  <font size=2>에러코드 범위</font>
+ </th>
+ <th>
+  <font size=2>설명</font>
+ </th>
+</tr>
+<tr>
+ <td align=center>
+  <font size=2><a href="./3_1_01_error_code_1000_1099.html">1000 ~ 1099</a></font>
+ </td>
+ <td>
+  <font size=2>API 초기화와 API 사용 중 포괄적으로 일어날 수 있는 에러코드</font>
+ </td>
+</tr>
+<tr>
+ <td align=center>
+  <font size=2><a href="./3_1_02_error_code_1100_1199.html">1100 ~ 1199</a></font>
+ </td>
+ <td>
+  <font size=2>라이센스 검증과 관련한 에러코드</font>
+ </td>
+</tr>
+<tr>
+ <td align=center>
+  <font size=2><a href="./3_1_03_error_code_1200_1299.html">1200 ~ 1299</a></font>
+ </td>
+ <td>
+  <font size=2>인증서 검증과 정보 조회와 관련한 에러코드</font>
+ </td>
+</tr>
+<tr>
+ <td align=center>
+  <font size=2><a href="./3_1_04_error_code_1300_1399.html">1300 ~ 1399</a></font>
+ </td>
+ <td>
+  <font size=2>개인키 암/복호화와 관련한 에러코드</font>
+ </td>
+</tr>
+<tr>
+ <td align=center>
+  <font size=2><a href="./3_1_05_error_code_1400_1499.html">1400 ~ 1499</a></font>
+ </td>
+ <td>
+  <font size=2>저장매체와 관련한 에러코드</font>
+ </td>
+</tr>
+<tr>
+ <td align=center>
+  <font size=2><a href="./3_1_06_error_code_1500_1599.html">1500 ~ 1599</a></font>
+ </td>
+ <td>
+  <font size=2>유무선 서명, 암호 메시지와 관련한 에러코드</font>
+ </td>
+</tr>
+<tr>
+ <td align=center>
+  <font size=2><a href="./3_1_07_error_code_1600_1699.html">1600 ~ 1699</a></font>
+ </td>
+ <td>
+  <font size=2>시점확인 서비스와 관련한 에러코드</font>
+ </td>
+</tr>
+<tr>
+ <td align=center>
+  <font size=2><a href="./3_1_08_error_code_1700_1799.html">1700 ~ 1799</a></font>
+ </td>
+ <td>
+  <font size=2>본인확인과 관련한 에러코드</font>
+ </td>
+</tr>
+<tr>
+ <td align=center>
+  <font size=2><a href="./3_1_09_error_code_1800_1899.html">1800 ~ 1899</a></font>
+ </td>
+ <td>
+  <font size=2>보안 알고리즘과 관련한 에러코드</font>
+ </td>
+</tr>
+<tr>
+ <td align=center>
+  <font size=2><a href="./3_1_10_error_code_1900_1999.html">1900 ~ 1999</a></font>
+ </td>
+ <td>
+  <font size=2>BASE64 인코딩/디코딩과 관련한 에러코드</font>
+ </td>
+</tr>
+<tr>
+ <td align=center>
+  <font size=2><a href="./3_1_11_error_code_2000_2099.html">2000 ~ 2099</a></font>
+ </td>
+ <td>
+  <font size=2>디렉토리 서버(LDAP)과 관련한 에러코드</font>
+ </td>
+</tr>
+<tr>
+ <td align=center>
+  <font size=2><a href="./3_1_12_error_code_2100_2199.html">2100 ~ 2199</a></font>
+ </td>
+ <td>
+  <font size=2>통합검증 서버와 관련한 에러코드</font>
+ </td>
+</tr>
+<tr>
+ <td align=center>
+  <font size=2><a href="./3_1_13_error_code_2200_2299.html">2200 ~ 2299</a></font>
+ </td>
+ <td>
+  <font size=2>개인정보이동 (PFX) 관련한 에러코드</font>
+ </td>
+</tr>
+</table>
+
+</blockquote>
+</p>
+
+</blockquote>
+</p>
+
+<br>
+<hr size=3 noshade>
+<br>
+<table width=100%>
+<tr>
+ <td align=left width=50% rowspan=2>
+   <a href="../index.html"><img src="../img/home.gif" border=0></a>
+ </td>
+ <td align=right width=50%>
+   <font size=2> Copyright &#169; 2003~2016 Government Computerization Center (GCC). </font>
+ </td>
+</tr>
+<tr>
+ <td align=right>
+   <font size=2> All Rights Reserved. </font>
+ </td>
+</tr>
+</table>
+</font>
+
+</body>
+</html>

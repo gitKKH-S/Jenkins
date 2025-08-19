@@ -1,0 +1,470 @@
+<html>
+<head>
+ <TITLE>표준보안API JAVA 메뉴얼</TITLE>
+</head>
+</html>
+
+<body>
+<br><br>
+<p>
+
+<table width="100%">
+<tr>
+ <td align=center valign=bottom>
+   <h1>에러코드 (1500~1599)</h1>
+ </td>
+</table>
+
+<p>
+<blockquote>
+
+<table border=1 width=90% cellspacing=0 cellpadding=5>
+<tr>
+ <td width=100 align=center>에러코드</td>
+ <td>1500</td>
+</tr>
+<tr>
+ <td align=center>설명</td>
+ <td> 잘못된 유선용 서명 메시지</td>
+</tr>
+<tr>
+ <td align=center>해결방법</td>
+ <td>
+  1. 서명 메시지가 변조되어 서명값 검증에 실패하였을 수 있다. <br>
+  2. 표준보안API에서 지원되지 않는 알고리즘으로 서명되어있을 수 있다. <br>
+  3. 서명 메시지가 잘못 인코딩 되었거나 손상되었을 수 있다.
+ </td>
+</tr>
+</table>
+
+<br>
+
+<table border=1 width=90% cellspacing=0 cellpadding=5>
+<tr>
+ <td width=100 align=center>에러코드</td>
+ <td>1501</td>
+</tr>
+<tr>
+ <td align=center>설명</td>
+ <td>서명 메시지 구성 실패</td>
+</tr>
+<tr>
+ <td align=center>해결방법</td>
+ <td> 거의 일어날 수 없는 에러이며, 해당 에러가 발생한 경우에는 개발자의 실수이거나 시스템 문제일 수 있다.</td>
+</tr>
+</table>
+
+<br>
+
+<table border=1 width=90% cellspacing=0 cellpadding=5>
+<tr>
+ <td width=100 align=center>에러코드</td>
+ <td>1502</td>
+</tr>
+<tr>
+ <td align=center>설명</td>
+ <td>잘못된 암호 메시지</td>
+</tr>
+<tr>
+ <td align=center>해결방법</td>
+ <td>
+  1. 데이터가 표준보안API에서 지원되지 않는 알고리즘으로 암호화되어있을 수 있다. <br>
+  2. 암호 메시지가 잘못 인코딩 되었거나 손상되었을 수 있다.
+</td>
+</tr>
+</table>
+
+<br>
+
+<table border=1 width=90% cellspacing=0 cellpadding=5>
+<tr>
+ <td width=100 align=center>에러코드</td>
+ <td>1503</td>
+</tr>
+<tr>
+ <td align=center>설명</td>
+ <td>암호 메시지 구성 실패</td>
+</tr>
+<tr>
+ <td align=center>해결방법</td>
+ <td> 거의 일어날 수 없는 에러이며, 해당 에러가 발생한 경우에는 개발자의 실수이거나 시스템 문제일 수 있다.</td>
+</tr>
+</table>
+
+<br>
+
+<table border=1 width=90% cellspacing=0 cellpadding=5>
+<tr>
+ <td width=100 align=center>에러코드</td>
+ <td>1504</td>
+</tr>
+<tr>
+ <td align=center>설명</td>
+ <td>잘못된 서명 및 암호 데이터</td>
+</tr>
+<tr>
+ <td align=center>해결방법</td>
+ <td>
+  1. 데이터가 표준보안API에서 지원되지 않는 알고리즘으로 암호화되어있을 수 있다. <br>
+  2. 표준보안API에서 지원되지 않는 알고리즘으로 서명되어있을 수 있다. <br>
+  3. 서명 및 암호 메시지가 변조되어 서명값 검증에 실패하였을 수 있다. <br>
+  4. 서명 및 암호 메시지가 잘못 인코딩 되었거나 손상되었을 수 있다.
+</td>
+</tr>
+</table>
+
+<br>
+
+<table border=1 width=90% cellspacing=0 cellpadding=5>
+<tr>
+ <td width=100 align=center>에러코드</td>
+ <td>1505</td>
+</tr>
+<tr>
+ <td align=center>설명</td>
+ <td>서명 및 암호 데이터 구성 실패</td>
+</tr>
+<tr>
+ <td align=center>해결방법</td>
+ <td>거의 일어날 수 없는 에러이며, 해당 에러가 발생한 경우에는 개발자의 실수이거나 시스템 문제일 수 있다.</td>
+</tr>
+</table>
+
+<br>
+
+<table border=1 width=90% cellspacing=0 cellpadding=5>
+<tr>
+ <td width=100 align=center>에러코드</td>
+ <td>1506</td>
+</tr>
+<tr>
+ <td align=center>설명</td>
+ <td> 서명자의 인증서가 없음 </td>
+</tr>
+<tr>
+ <td align=center>해결방법</td>
+ <td>
+  1. 서명 메시지 또는 서명 및 암호 메시지에 서명자의 인증서가 없음을 말한다. <br>
+  2. TSP 모듈에서는 응답메시지에 TSA 서버의 인증서가 없음을 말한다.
+ </td>
+</tr>
+</table>
+
+<br>
+
+<table border=1 width=90% cellspacing=0 cellpadding=5>
+<tr>
+ <td width=100 align=center>에러코드</td>
+ <td>1507</td>
+</tr>
+<tr>
+ <td align=center>설명</td>
+ <td> 해당 인증서로는 암호 데이터를 처리 할 수 없음</td>
+</tr>
+<tr>
+ <td align=center>해결방법</td>
+ <td> 암호 데이터를 암호화할 때 사용했던 수신자 인증서를 확인한다.</td>
+</tr>
+</table>
+
+<br>
+
+<table border=1 width=90% cellspacing=0 cellpadding=5>
+<tr>
+ <td width=100 align=center>에러코드</td>
+ <td>1508</td>
+</tr>
+<tr>
+ <td align=center>설명</td>
+ <td> 잘못된 수신자 인증서</td>
+</tr>
+<tr>
+ <td align=center>해결방법</td>
+ <td> 서명 및 암호 메시지를 생성하기 위해서 지정한 수신자의 인증서가 손상되었거나 인코딩이 잘못 되었을 수 있다.</td>
+</tr>
+</table>
+
+<br>
+
+<table border=1 width=90% cellspacing=0 cellpadding=5>
+<tr>
+ <td width=100 align=center>에러코드</td>
+ <td>1509</td>
+</tr>
+<tr>
+ <td align=center>설명</td>
+ <td> 잘못된 서명자 인증서</td>
+</tr>
+<tr>
+ <td align=center>해결방법</td>
+ <td> 서명 및 암호 메시지를 생성하기 위해서 지정한 서명자의 인증서가 손상되었거나 인코딩이 잘못 되었을 수 있다.</td>
+</tr>
+</table>
+
+<br>
+
+<table border=1 width=90% cellspacing=0 cellpadding=5>
+<tr>
+ <td width=100 align=center>에러코드</td>
+ <td>1510</td>
+</tr>
+<tr>
+ <td align=center>설명</td>
+ <td> 서명용 인증서가 아님</td>
+</tr>
+<tr>
+ <td align=center>해결방법</td>
+ <td> 서명용으로 사용하기 위해 설정한 인증서의 용도를 확인한다.</td>
+</tr>
+</table>
+
+<br>
+
+<table border=1 width=90% cellspacing=0 cellpadding=5>
+<tr>
+ <td width=100 align=center>에러코드</td>
+ <td>1511</td>
+</tr>
+<tr>
+ <td align=center>설명</td>
+ <td> 암호화용 인증서가 아님</td>
+</tr>
+<tr>
+ <td align=center>해결방법</td>
+ <td> 암호화용으로 사용하기 위해 설정한 인증서의 용도를 확인한다. </td>
+</tr>
+</table>
+
+<br>
+
+<table border=1 width=90% cellspacing=0 cellpadding=5>
+<tr>
+ <td width=100 align=center>에러코드</td>
+ <td>1512</td>
+</tr>
+<tr>
+ <td align=center>설명</td>
+ <td> 서명 메시지로 설정한 데이터가 서명 데이터가 아님</td>
+</tr>
+<tr>
+ <td align=center>해결방법</td>
+ <td> 서명 메시지로 설정해야 할 인자에 다른 데이터를 지정하지 않았는지 확인한다. </td>
+</tr>
+</table>
+
+<br>
+
+<table border=1 width=90% cellspacing=0 cellpadding=5>
+<tr>
+ <td width=100 align=center>에러코드</td>
+ <td>1513</td>
+</tr>
+<tr>
+ <td align=center>설명</td>
+ <td> 암호 메시지로 설정한 데이터가 암호 데이터가 아님</td>
+</tr>
+<tr>
+ <td align=center>해결방법</td>
+ <td> 암호 메시지로 설정해야 할 인자에 다른 데이터를 지정하지 않았는지 확인한다. </td>
+</tr>
+</table>
+
+<br>
+
+<table border=1 width=90% cellspacing=0 cellpadding=5>
+<tr>
+ <td width=100 align=center>에러코드</td>
+ <td>1514</td>
+</tr>
+<tr>
+ <td align=center>설명</td>
+ <td> 서명 및 암호 데이터로 설정한 데이터가 서명 및 암호 데이터가 아님</td>
+</tr>
+<tr>
+ <td align=center>해결방법</td>
+ <td> 서명 및 암호 데이터로 설정해야 할 인자에 다른 데이터를 지정하지 않았는지 확인한다.</td>
+</tr>
+</table>
+
+<br>
+
+<table border=1 width=90% cellspacing=0 cellpadding=5>
+<tr>
+ <td width=100 align=center>에러코드</td>
+ <td>1515</td>
+</tr>
+<tr>
+ <td align=center>설명</td>
+ <td> 대칭키 암호 데이터가 아님</td>
+</tr>
+<tr>
+ <td align=center>해결방법</td>
+ <td> 대칭키 암호 데이터로 설정해야 할 인자에 다른 데이터를 지정하지 않았는지 확인한다.</td>
+</tr>
+</table>
+
+<br>
+
+<table border=1 width=90% cellspacing=0 cellpadding=5>
+<tr>
+ <td width=100 align=center>에러코드</td>
+ <td>1516</td>
+</tr>
+<tr>
+ <td align=center>설명</td>
+ <td> 잘못된 대칭키 암호 데이터 임</td>
+</tr>
+<tr>
+ <td align=center>해결방법</td>
+ <td> 대칭키 암호 메시지를 처리하기 위해서 지정한 대칭키 암호 메시지가 손상되었거나 인코딩이 잘못 되었을 수 있다.</td>
+</tr>
+</table>
+
+<br>
+
+<table border=1 width=90% cellspacing=0 cellpadding=5>
+<tr>
+ <td width=100 align=center>에러코드</td>
+ <td>1517</td>
+</tr>
+<tr>
+ <td align=center>설명</td>
+ <td> 대칭키 암호 데이터 구성 실패</td>
+</tr>
+<tr>
+ <td align=center>해결방법</td>
+ <td> 거의 일어날 수 없는 에러이며, 해당 에러가 발생한 경우에는 개발자의 실수이거나 시스템 문제일 수 있다.</td>
+</tr>
+</table>
+
+<br>
+
+<table border=1 width=90% cellspacing=0 cellpadding=5>
+<tr>
+ <td width=100 align=center>에러코드</td>
+ <td>1518</td>
+</tr>
+<tr>
+ <td align=center>설명</td>
+ <td> 잘못된 서명자 인증서 집합</td>
+</tr>
+<tr>
+ <td align=center>해결방법</td>
+ <td> 거의 일어날 수 없는 에러이며, 해당 에러가 발생한 경우에는 개발자의 실수이거나 시스템 문제일 수 있다.</td>
+</tr>
+</table>
+
+<br>
+
+<table border=1 width=90% cellspacing=0 cellpadding=5>
+<tr>
+ <td width=100 align=center>에러코드</td>
+ <td>1519</td>
+</tr>
+<tr>
+ <td align=center>설명</td>
+ <td> 잘못된 무선용 서명 메시지 형식</td>
+</tr>
+<tr>
+ <td align=center>해결방법</td>
+ <td> 서명 메시지가 잘못 인코딩 되었거나 손상되었을 수 있다.</td>
+</tr>
+</table>
+
+<br>
+
+<table border=1 width=90% cellspacing=0 cellpadding=5>
+<tr>
+ <td width=100 align=center>에러코드</td>
+ <td>1520</td>
+</tr>
+<tr>
+ <td align=center>설명</td>
+ <td> 무선용 서명 메시지 생성 실패</td>
+</tr>
+<tr>
+ <td align=center>해결방법</td>
+ <td> 거의 일어날 수 없는 에러이며, 해당 에러가 발생한 경우에는 개발자의 실수이거나 시스템 문제일 수 있다.</td>
+</tr>
+</table>
+
+<br>
+
+<table border=1 width=90% cellspacing=0 cellpadding=5>
+<tr>
+ <td width=100 align=center>에러코드</td>
+ <td>1521</td>
+</tr>
+<tr>
+ <td align=center>설명</td>
+ <td> 잘못된 무선용 비대칭키 암호 메시지 형식</td>
+</tr>
+<tr>
+ <td align=center>해결방법</td>
+ <td>
+  1. 데이터가 표준보안API에서 지원되지 않는 알고리즘으로 암호화되어있을 수 있다. <br>
+  2. 암호 메시지가 잘못 인코딩 되었거나 손상되었을 수 있다.
+</td>
+</tr>
+</table>
+
+<br>
+
+<table border=1 width=90% cellspacing=0 cellpadding=5>
+<tr>
+ <td width=100 align=center>에러코드</td>
+ <td>1522</td>
+</tr>
+<tr>
+ <td align=center>설명</td>
+ <td> 무선용 비대칭키 암호 메시지 생성 실패</td>
+</tr>
+<tr>
+ <td align=center>해결방법</td>
+ <td> 거의 일어날 수 없는 에러이며, 해당 에러가 발생한 경우에는 개발자의 실수이거나 시스템 문제일 수 있다.</td>
+</tr>
+</table>
+
+<br>
+
+<table border=1 width=90% cellspacing=0 cellpadding=5>
+<tr>
+ <td width=100 align=center>에러코드</td>
+ <td>1523</td>
+</tr>
+<tr>
+ <td align=center>설명</td>
+ <td> 무선용 서명 메시지에서 사용된 서명자 정보 정보를 처리할 수 없음</td>
+</tr>
+<tr>
+ <td align=center>해결방법</td>
+ <td> 표준보안API에서는 무선용 서명 메시지의 서명자 정보로 X.509 형식의 인증서만을 지원한다.</td>
+</tr>
+</table>
+
+</blockquote>
+</p>
+
+<br>
+<hr size=3 noshade>
+<br>
+<table width=100%>
+<tr>
+ <td align=left width=50% rowspan=2>
+   <a href="./3_1_error_code.html"><img src="../img/back.gif" border=0></a>
+   <a href="../index.html"><img src="../img/home.gif" border=0></a>
+ </td>
+ <td align=right width=50%>
+   <font size=2> Copyright &#169; 2003~2016 Government Computerization Center (GCC). </font>
+ </td>
+</tr>
+<tr>
+ <td align=right>
+   <font size=2> All Rights Reserved. </font>
+ </td>
+</tr>
+</table>
+</font>
+
+</body>
+</html>
