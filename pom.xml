@@ -13,23 +13,114 @@
     <maven.compiler.source>17</maven.compiler.source>
     <maven.compiler.target>17</maven.compiler.target>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <maven.compiler.showDeprecation>true</maven.compiler.showDeprecation>
+    <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
   </properties>
 
-  <!-- 필요 최소한의 웹/서블릿 API (코드에 javax.servlet.* 사용 시) -->
   <dependencies>
+    <!-- 서블릿 API (WAS 제공) -->
     <dependency>
       <groupId>javax.servlet</groupId>
       <artifactId>javax.servlet-api</artifactId>
       <version>4.0.1</version>
       <scope>provided</scope>
     </dependency>
-    <!-- JSP를 쓰면 열어두세요
+
+    <!-- Spring MVC 기본 -->
     <dependency>
-      <groupId>javax.servlet.jsp</groupId>
-      <artifactId>javax.servlet.jsp-api</artifactId>
-      <version>2.3.3</version>
-      <scope>provided</scope>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-webmvc</artifactId>
+      <version>5.3.33</version>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-context</artifactId>
+      <version>5.3.33</version>
+    </dependency>
+
+    <!-- Jackson (ObjectMapper 등) -->
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-databind</artifactId>
+      <version>2.17.1</version>
+    </dependency>
+
+    <!-- json-lib (net.sf.json) + 필요한 부가 라이브러리 -->
+    <dependency>
+      <groupId>net.sf.json-lib</groupId>
+      <artifactId>json-lib</artifactId>
+      <version>2.4</version>
+      <classifier>jdk15</classifier>
+    </dependency>
+    <dependency>
+      <groupId>net.sf.ezmorph</groupId>
+      <artifactId>ezmorph</artifactId>
+      <version>1.0.6</version>
+    </dependency>
+    <dependency>
+      <groupId>commons-beanutils</groupId>
+      <artifactId>commons-beanutils</artifactId>
+      <version>1.9.4</version>
+    </dependency>
+    <dependency>
+      <groupId>commons-collections</groupId>
+      <artifactId>commons-collections</artifactId>
+      <version>3.2.2</version>
+    </dependency>
+    <dependency>
+      <groupId>commons-lang</groupId>
+      <artifactId>commons-lang</artifactId>
+      <version>2.6</version>
+    </dependency>
+    <dependency>
+      <groupId>commons-logging</groupId>
+      <artifactId>commons-logging</artifactId>
+      <version>1.2</version>
+    </dependency>
+
+    <!-- Apache HttpClient / HttpMime -->
+    <dependency>
+      <groupId>org.apache.httpcomponents</groupId>
+      <artifactId>httpclient</artifactId>
+      <version>4.5.14</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.httpcomponents</groupId>
+      <artifactId>httpmime</artifactId>
+      <version>4.5.14</version>
+    </dependency>
+
+    <!-- Apache POI (HSSF/XSSF) -->
+    <dependency>
+      <groupId>org.apache.poi</groupId>
+      <artifactId>poi</artifactId>
+      <version>5.2.5</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.poi</groupId>
+      <artifactId>poi-ooxml</artifactId>
+      <version>5.2.5</version>
+    </dependency>
+
+    <!-- commons-codec (Base64 등) -->
+    <dependency>
+      <groupId>commons-codec</groupId>
+      <artifactId>commons-codec</artifactId>
+      <version>1.16.1</version>
+    </dependency>
+
+    <!-- javax.annotation (예: @Resource) -->
+    <dependency>
+      <groupId>javax.annotation</groupId>
+      <artifactId>javax.annotation-api</artifactId>
+      <version>1.3.2</version>
+    </dependency>
+
+    <!-- [선택] eGovFrame - 중앙 저장소에 없으면 주석 유지 후 아래 'C. eGov 처리' 참고 -->
+    <!--
+    <dependency>
+      <groupId>egovframework.rte</groupId>
+      <artifactId>egovframework.rte.fdl.property</artifactId>
+      <version>3.10.0</version>
     </dependency>
     -->
   </dependencies>
@@ -48,15 +139,16 @@
         </configuration>
       </plugin>
 
-      <!-- WAR 패키징 (packaging이 war일 때) -->
+      <!-- WAR 패키징 -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-war-plugin</artifactId>
         <version>3.4.0</version>
         <configuration>
           <failOnMissingWebXml>false</failOnMissingWebXml>
-          <!-- 기존 webapps를 webapp 루트로 쓰고 싶으면 경로 조정 -->
-          <!-- <warSourceDirectory>${basedir}/src/main/webapp</warSourceDirectory> -->
+          <!-- webapps → Maven 표준 경로로 옮겼다면 주석 해제 후 경로 조정
+          <warSourceDirectory>${basedir}/src/main/webapp</warSourceDirectory>
+          -->
         </configuration>
       </plugin>
 
@@ -83,9 +175,7 @@
         <executions>
           <execution>
             <phase>verify</phase>
-            <goals>
-              <goal>spotbugs</goal>
-            </goals>
+            <goals><goal>spotbugs</goal></goals>
           </execution>
         </executions>
       </plugin>
@@ -121,7 +211,6 @@
           </execution>
         </executions>
       </plugin>
-
     </plugins>
   </build>
 </project>
