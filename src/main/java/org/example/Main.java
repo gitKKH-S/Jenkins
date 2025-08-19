@@ -1,17 +1,29 @@
 package org.example;
 
-//TIP 코드를 <b>실행</b>하려면 <shortcut actionId="Run"/>을(를) 누르거나
-// 에디터 여백에 있는 <icon src="AllIcons.Actions.Execute"/> 아이콘을 클릭하세요.
 public class Main {
-    public static void main(String[] args) {
-        //TIP 캐럿을 강조 표시된 텍스트에 놓고 <shortcut actionId="ShowIntentionActions"/>을(를) 누르면
-        // IntelliJ IDEA이(가) 수정을 제안하는 것을 확인할 수 있습니다.
-        System.out.printf("Hello and welcome!\n");
+    public static void main(String[] args) throws Exception {
+        SecureExamples ex = new SecureExamples();
 
-        for (int i = 1; i <= 5; i++) {
-            //TIP <shortcut actionId="Debug"/>을(를) 눌러 코드 디버그를 시작하세요. 1개의 <icon src="AllIcons.Debugger.Db_set_breakpoint"/> 중단점을 설정해 드렸습니다
-            // 언제든 <shortcut actionId="ToggleLineBreakpoint"/>을(를) 눌러 중단점을 더 추가할 수 있습니다.
-            System.out.println("i = " + i);
-        }
+        // 필요한 것만 주석 해제해서 테스트하세요.
+        ex.sqlSafeQueryExample("alice");                            // CWE-89
+        ex.safePathRead("docs/report.pdf");                         // CWE-22/23
+        ex.safeCommandExec("ipconfig");                             // CWE-78
+        ex.parseXmlSafely("<root>ok</root>");                       // CWE-611/776
+        ex.deserializeSafely(SecureExamples.sampleSerialized());    // CWE-502
+        ex.passwordHashAndVerify("P@ssw0rd!");                      // CWE-759/760/916
+        ex.encryptAndDecrypt("top-secret");                         // CWE-327/326
+        ex.generateSecureToken(32);                                 // CWE-330/331
+        ex.safeLogging("user=alice", "pwd=VerySecret!");            // CWE-532/209
+        ex.preventOpenRedirect("/home");                            // CWE-601
+        ex.preventRespSplitting("value");                           // CWE-113
+        ex.safeUploadCheck("profile.png");                          // CWE-434
+        ex.safeEquals("abc", "abc");                                // CWE-208 (타이밍 완화)
+        ex.ldapSafeSearch("alice");                                 // CWE-90
+        ex.xpathSafeSearch("<u><id>alice</id></u>", "alice");       // CWE-643
+        ex.tryWithResourcesDemo();                                  // CWE-772
+        ex.nullSafe("text");                                        // CWE-476
+        ex.writeFileWithLeastPrivilege();                           // CWE-732
+        ex.loadSecretFromEnv();                                     // CWE-798/259
+        ex.tocTouSafeTempWrite("hello");                            // CWE-367
     }
 }
