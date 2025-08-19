@@ -25,7 +25,7 @@
       <scope>provided</scope>
     </dependency>
 
-    <!-- Spring MVC 기본 -->
+    <!-- Spring MVC / Context -->
     <dependency>
       <groupId>org.springframework</groupId>
       <artifactId>spring-webmvc</artifactId>
@@ -37,7 +37,19 @@
       <version>5.3.33</version>
     </dependency>
 
-    <!-- Jackson (ObjectMapper 등) -->
+    <!-- Spring TX/JDBC (org.springframework.dao, transaction.* 등) -->
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-tx</artifactId>
+      <version>5.3.33</version>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-jdbc</artifactId>
+      <version>5.3.33</version>
+    </dependency>
+
+    <!-- Jackson -->
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-databind</artifactId>
@@ -115,13 +127,55 @@
       <version>1.3.2</version>
     </dependency>
 
-    <!-- eGovFrame: 로컬 JAR 직접 참조 (중앙 저장소 조회 금지) -->
+    <!-- eGovFrame FDL property (로컬 JAR) : 3.6.0 하나만 유지 -->
     <dependency>
       <groupId>egovframework.rte</groupId>
       <artifactId>egovframework.rte.fdl.property</artifactId>
       <version>3.6.0</version>
       <scope>system</scope>
       <systemPath>${project.basedir}/src/main/webapp/WEB-INF/lib/egovframework.rte.fdl.property-3.6.0.jar</systemPath>
+    </dependency>
+
+    <!-- eGovFrame PSL dataaccess (로컬 JAR, EgovAbstractMapper 등) -->
+    <dependency>
+      <groupId>egovframework.rte</groupId>
+      <artifactId>egovframework.rte.psl.dataaccess</artifactId>
+      <version>3.6.0</version>
+      <scope>system</scope>
+      <systemPath>${project.basedir}/src/main/webapp/WEB-INF/lib/egovframework.rte.psl.dataaccess-3.6.0.jar</systemPath>
+    </dependency>
+
+    <!-- MyBatis + mybatis-spring -->
+    <dependency>
+      <groupId>org.mybatis</groupId>
+      <artifactId>mybatis</artifactId>
+      <version>3.5.15</version>
+    </dependency>
+    <dependency>
+      <groupId>org.mybatis</groupId>
+      <artifactId>mybatis-spring</artifactId>
+      <version>2.1.1</version>
+    </dependency>
+
+    <!-- Log4j 1.x (코드가 org.apache.log4j 사용) -->
+    <dependency>
+      <groupId>log4j</groupId>
+      <artifactId>log4j</artifactId>
+      <version>1.2.17</version>
+    </dependency>
+
+    <!-- JSON-simple (org.json.simple 및 parser) -->
+    <dependency>
+      <groupId>com.googlecode.json-simple</groupId>
+      <artifactId>json-simple</artifactId>
+      <version>1.1.1</version>
+    </dependency>
+
+    <!-- JDOM 1.x (org.jdom.*, org.jdom.input.*, org.jdom.output.*) -->
+    <dependency>
+      <groupId>jdom</groupId>
+      <artifactId>jdom</artifactId>
+      <version>1.1.3</version>
     </dependency>
   </dependencies>
 
@@ -146,7 +200,9 @@
         <version>3.4.0</version>
         <configuration>
           <failOnMissingWebXml>false</failOnMissingWebXml>
-          <!-- <warSourceDirectory>${basedir}/src/main/webapp</warSourceDirectory> -->
+          <!-- webapps → Maven 표준 경로로 옮겼다면 주석 해제 후 경로 조정
+          <warSourceDirectory>${basedir}/src/main/webapp</warSourceDirectory>
+          -->
         </configuration>
       </plugin>
 
@@ -173,7 +229,9 @@
         <executions>
           <execution>
             <phase>verify</phase>
-            <goals><goal>spotbugs</goal></goals>
+            <goals>
+              <goal>spotbugs</goal>
+            </goals>
           </execution>
         </executions>
       </plugin>
